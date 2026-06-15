@@ -24,6 +24,8 @@ const activeIndex = computed(() => {
   return index >= 0 ? index : 0
 })
 
+const itemPercent = computed(() => 100 / navItems.length)
+
 function navigateTo(item: NavItem) {
   router.push(item.path)
 }
@@ -32,14 +34,13 @@ function navigateTo(item: NavItem) {
 <template>
   <nav class="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
     <div class="mx-auto max-w-md px-4 pb-2 pt-1">
-      <div class="relative flex items-center justify-around rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 px-2 py-2">
+      <div class="relative flex items-center justify-around rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5 overflow-hidden">
         <!-- Animated indicator -->
         <div
-          class="nav-indicator absolute top-1 bottom-1 rounded-full bg-red-700/10 dark:bg-red-500/15"
+          class="nav-indicator absolute top-1.5 bottom-1.5 rounded-full bg-red-700/10 dark:bg-red-500/15"
           :style="{
-            width: `${100 / navItems.length}%`,
-            transform: `translateX(${activeIndex * 100}%)`,
-            left: '4px'
+            width: `${itemPercent}%`,
+            left: `${activeIndex * itemPercent}%`
           }"
         />
 

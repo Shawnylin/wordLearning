@@ -4,7 +4,8 @@ import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import {
-  Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info
+  Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
+  Download, Upload
 } from 'lucide-vue-next'
 
 const themeStore = useThemeStore()
@@ -17,6 +18,7 @@ const tempApiKey = ref(settingsStore.apiKey)
 const showClearConfirm = ref(false)
 const showClearCacheConfirm = ref(false)
 const apiKeySaved = ref(false)
+const importResult = ref<{ success: boolean; message: string } | null>(null)
 
 const maskedApiKey = computed(() => {
   if (!settingsStore.apiKey) return '未设置'
@@ -57,6 +59,37 @@ function handleClearCache() {
   idiomStore.clearCache()
   idiomStore.clearHistory()
   showClearCacheConfirm.value = false
+}
+
+// 导出 JSON
+function handleExport() {
+  const json = idiomStore.exportData()
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `成语学习_备份_${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 导入 JSON
+function handleImport() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string
+      importResult.value = idiomStore.importData(content)
+      setTimeout(() => { importResult.value = null }, 3000)
+    }
+    reader.readAsText(file)
+  }
+  input.click()
 }
 </script>
 
@@ -208,11 +241,37 @@ function handleClearCache() {
           </div>
           <div>
             <h3 class="font-semibold text-gray-900 dark:text-gray-100">数据管理</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">管理本地缓存数据</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">导入导出与清理</p>
           </div>
         </div>
 
         <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              @click="handleExport"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <Download :size="16" />
+              导出数据
+            </button>
+            <button
+              @click="handleImport"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <Upload :size="16" />
+              导入数据
+            </button>
+          </div>
+
+          <!-- Import result message -->
+          <div
+            v-if="importResult"
+            class="p-3 rounded-xl text-sm"
+            :class="importResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'"
+          >
+            {{ importResult.message }}
+          </div>
+
           <button
             @click="showClearConfirm = true"
             class="w-full py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"

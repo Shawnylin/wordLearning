@@ -4,8 +4,8 @@ import type { IdiomData, SearchRecord } from '../types/idiom'
 import { generateIdiomContent } from '../api/deepseek'
 
 export const useIdiomStore = defineStore('idiom', () => {
-  // 已缓存的成语数据
-  const idiomCache = ref<Map<string, IdiomData>>(new Map())
+  // 已缓存的成语数据（使用普通对象代替 Map，确保 JSON 序列化正常）
+  const idiomCache = ref<Record<string, IdiomData>>({})
 
   // 搜索历史
   const searchHistory = ref<SearchRecord[]>([])
@@ -20,7 +20,7 @@ export const useIdiomStore = defineStore('idiom', () => {
   const errorMessage = ref('')
 
   // 已学习成语数量
-  const learnedCount = computed(() => idiomCache.value.size)
+  const learnedCount = computed(() => Object.keys(idiomCache.value).length)
 
   // 搜索历史（按时间倒序）
   const sortedHistory = computed(() =>
@@ -29,17 +29,15 @@ export const useIdiomStore = defineStore('idiom', () => {
 
   /**
    * 搜索成语
-   * 先检查缓存，如果有直接返回；否则调用 API
    */
   async function searchIdiom(word: string, apiKey: string): Promise<IdiomData | null> {
     const trimmedWord = word.trim()
     if (!trimmedWord) return null
 
     // 检查缓存
-    const cached = idiomCache.value.get(trimmedWord)
+    const cached = idiomCache.value[trimmedWord]
     if (cached) {
       currentIdiom.value = cached
-      // 更新搜索记录时间
       updateSearchTimestamp(trimmedWord)
       return cached
     }
@@ -63,13 +61,8 @@ export const useIdiomStore = defineStore('idiom', () => {
         createdAt: Date.now()
       }
 
-      // 存入缓存
-      idiomCache.value.set(trimmedWord, idiomData)
-
-      // 添加搜索记录
+      idiomCache.value[trimmedWord] = idiomData
       addSearchRecord(trimmedWord)
-
-      // 设置当前成语
       currentIdiom.value = idiomData
 
       return idiomData
@@ -106,10 +99,7 @@ export const useIdiomStore = defineStore('idiom', () => {
         createdAt: Date.now()
       }
 
-      // 更新缓存
-      idiomCache.value.set(trimmedWord, idiomData)
-
-      // 设置当前成语
+      idiomCache.value[trimmedWord] = idiomData
       currentIdiom.value = idiomData
 
       return idiomData
@@ -121,16 +111,11 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
-  /**
-   * 添加搜索记录
-   */
   function addSearchRecord(word: string) {
     const existingIndex = searchHistory.value.findIndex(r => r.word === word)
     if (existingIndex >= 0) {
-      // 已存在，更新时间
       searchHistory.value[existingIndex].timestamp = Date.now()
     } else {
-      // 新记录
       searchHistory.value.push({
         id: `record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         word,
@@ -139,9 +124,6 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
-  /**
-   * 更新搜索记录时间戳
-   */
   function updateSearchTimestamp(word: string) {
     const record = searchHistory.value.find(r => r.word === word)
     if (record) {
@@ -149,16 +131,10 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
-  /**
-   * 从缓存获取成语
-   */
   function getIdiomFromCache(word: string): IdiomData | null {
-    return idiomCache.value.get(word) || null
+    return idiomCache.value[word] || null
   }
 
-  /**
-   * 删除搜索记录
-   */
   function deleteSearchRecord(recordId: string) {
     const index = searchHistory.value.findIndex(r => r.id === recordId)
     if (index >= 0) {
@@ -166,37 +142,58 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
-  /**
-   * 清空所有历史记录
-   */
   function clearHistory() {
     searchHistory.value = []
   }
 
-  /**
-   * 清空所有缓存
-   */
   function clearCache() {
-    idiomCache.value.clear()
+    idiomCache.value = {}
     currentIdiom.value = null
   }
 
-  /**
-   * 设置当前成语（从缓存中）
-   */
   function setCurrentIdiom(word: string) {
-    const cached = idiomCache.value.get(word)
+    const cached = idiomCache.value[word]
     if (cached) {
       currentIdiom.value = cached
       updateSearchTimestamp(word)
     }
   }
 
-  /**
-   * 清除错误信息
-   */
   function clearError() {
     errorMessage.value = ''
+  }
+
+  // JSON 导出
+  function exportData(): string {
+    return JSON.stringify({
+      idiomCache: idiomCache.value,
+      searchHistory: searchHistory.value
+    }, null, 2)
+  }
+
+  // JSON 导入
+  function importData(json: string): { success: boolean; message: string } {
+    try {
+      const data = JSON.parse(json)
+      if (!data.idiomCache || !data.searchHistory) {
+        return { success: false, message: '数据格式不正确' }
+      }
+      // 合并缓存（不覆盖已有的）
+      for (const [word, idiom] of Object.entries(data.idiomCache)) {
+        if (!idiomCache.value[word]) {
+          idiomCache.value[word] = idiom as IdiomData
+        }
+      }
+      // 合并历史（不重复添加）
+      for (const record of data.searchHistory as SearchRecord[]) {
+        if (!searchHistory.value.find(r => r.word === record.word)) {
+          searchHistory.value.push(record)
+        }
+      }
+      return { success: true, message: `成功导入 ${Object.keys(data.idiomCache).length} 个成语` }
+    } catch {
+      return { success: false, message: 'JSON 解析失败，请检查文件格式' }
+    }
   }
 
   return {
@@ -214,7 +211,9 @@ export const useIdiomStore = defineStore('idiom', () => {
     clearHistory,
     clearCache,
     setCurrentIdiom,
-    clearError
+    clearError,
+    exportData,
+    importData
   }
 }, {
   persist: {

@@ -6,20 +6,7 @@ export type ThemeMode = 'light' | 'dark'
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>('light')
 
-  // 初始化时检查系统偏好
-  function initTheme() {
-    const savedTheme = localStorage.getItem('theme-mode') as ThemeMode | null
-    if (savedTheme) {
-      theme.value = savedTheme
-    } else {
-      // 检查系统偏好
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      theme.value = prefersDark ? 'dark' : 'light'
-    }
-    applyTheme()
-  }
-
-  // 应用主题
+  // 应用主题到 DOM
   function applyTheme() {
     const html = document.documentElement
     if (theme.value === 'dark') {
@@ -29,17 +16,20 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 切换主题
-  function toggleTheme() {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-    localStorage.setItem('theme-mode', theme.value)
+  // 初始化主题
+  function initTheme() {
+    // persist 插件会自动恢复 theme 值
+    // 如果没有保存过（首次访问），检查系统偏好
+    if (!localStorage.getItem('theme-store')) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      theme.value = prefersDark ? 'dark' : 'light'
+    }
     applyTheme()
   }
 
-  // 设置指定主题
-  function setTheme(newTheme: ThemeMode) {
-    theme.value = newTheme
-    localStorage.setItem('theme-mode', theme.value)
+  // 切换主题
+  function toggleTheme() {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
     applyTheme()
   }
 
@@ -47,8 +37,7 @@ export const useThemeStore = defineStore('theme', () => {
   function watchSystemTheme() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQuery.addEventListener('change', (e) => {
-      // 只在用户没有手动设置时跟随系统
-      if (!localStorage.getItem('theme-mode')) {
+      if (!localStorage.getItem('theme-store')) {
         theme.value = e.matches ? 'dark' : 'light'
         applyTheme()
       }
@@ -59,7 +48,6 @@ export const useThemeStore = defineStore('theme', () => {
     theme,
     initTheme,
     toggleTheme,
-    setTheme,
     watchSystemTheme
   }
 }, {
