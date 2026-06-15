@@ -215,5 +215,15 @@ export async function generateComparison(
     }
   }
 
-  return { ...parsed, tokenUsage }
+  // 去掉 AI 返回内容中可能带的标题前缀
+  const stripLabel = (text: string) =>
+    text.replace(/^[^：:]*[：:]\s*/, '')
+
+  return {
+    meaningDiff: stripLabel(parsed.meaningDiff),
+    usageDiff: stripLabel(parsed.usageDiff),
+    scenarios: stripLabel(parsed.scenarios),
+    confusionPoints: stripLabel(parsed.confusionPoints),
+    tokenUsage
+  }
 }
