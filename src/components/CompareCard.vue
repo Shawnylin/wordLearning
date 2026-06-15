@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RefreshCw, GitCompare, Coins, BookOpen, Lightbulb, Map, AlertTriangle } from 'lucide-vue-next'
 import type { CompareRecord } from '../types/idiom'
 
-defineProps<{
+const props = defineProps<{
   compare: CompareRecord
   loading?: boolean
 }>()
@@ -17,6 +18,19 @@ const sections = [
   { key: 'scenarios', label: '适用场景', icon: Map },
   { key: 'confusionPoints', label: '常见混淆点', icon: AlertTriangle }
 ]
+
+// 根据词语数量调整字体大小
+const wordCount = computed(() => props.compare.words.length)
+const wordClass = computed(() => {
+  if (wordCount.value <= 3) return 'text-2xl md:text-3xl'
+  if (wordCount.value === 4) return 'text-xl md:text-2xl'
+  return 'text-lg md:text-xl'
+})
+const vsClass = computed(() => {
+  if (wordCount.value <= 3) return 'text-lg'
+  if (wordCount.value === 4) return 'text-base'
+  return 'text-sm'
+})
 </script>
 
 <template>
@@ -40,15 +54,15 @@ const sections = [
           <span class="text-sm font-medium text-blue-600 dark:text-blue-400">词语对比</span>
         </div>
 
-        <!-- Words -->
-        <div class="flex flex-wrap items-center justify-center gap-2">
+        <!-- Words - single line -->
+        <div class="flex items-center justify-center gap-2 flex-nowrap overflow-hidden px-2">
           <template v-for="(word, index) in compare.words" :key="word">
-            <span class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-50">
+            <span :class="['font-bold text-gray-900 dark:text-gray-50 whitespace-nowrap', wordClass]">
               {{ word }}
             </span>
             <span
               v-if="index < compare.words.length - 1"
-              class="text-lg text-gray-400 dark:text-gray-500"
+              :class="['text-gray-400 dark:text-gray-500 whitespace-nowrap', vsClass]"
             >
               vs
             </span>
@@ -78,9 +92,15 @@ const sections = [
               {{ section.label }}
             </h3>
           </div>
-          <p class="text-base leading-relaxed text-gray-600 dark:text-gray-400 pl-9 whitespace-pre-line">
-            {{ compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'] }}
-          </p>
+          <div class="pl-9 space-y-2">
+            <p
+              v-for="(line, i) in compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'].split('\n').filter(l => l.trim())"
+              :key="i"
+              class="text-base leading-relaxed text-gray-600 dark:text-gray-400"
+            >
+              {{ line }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
