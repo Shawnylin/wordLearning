@@ -3,11 +3,12 @@ import { ref } from 'vue'
 
 export type ThemeMode = 'light' | 'dark'
 
+const STORAGE_KEY = 'word-learning-theme'
+
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>('light')
   const followSystem = ref(true)
 
-  // 应用主题到 DOM
   function applyTheme() {
     const html = document.documentElement
     if (theme.value === 'dark') {
@@ -17,14 +18,34 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 获取系统主题
+  function saveToStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      theme: theme.value,
+      followSystem: followSystem.value
+    }))
+  }
+
+  function loadFromStorage(): boolean {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.theme) theme.value = data.theme
+        if (typeof data.followSystem === 'boolean') followSystem.value = data.followSystem
+        return true
+      }
+    } catch {}
+    return false
+  }
+
   function getSystemTheme(): ThemeMode {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
 
-  // 初始化主题
+  // 初始化主题（同步调用，在 App 的 setup 中执行）
   function initTheme() {
-    if (followSystem.value) {
+    const hasSaved = loadFromStorage()
+    if (!hasSaved || followSystem.value) {
       theme.value = getSystemTheme()
     }
     applyTheme()
@@ -35,6 +56,7 @@ export const useThemeStore = defineStore('theme', () => {
     followSystem.value = false
     theme.value = theme.value === 'light' ? 'dark' : 'light'
     applyTheme()
+    saveToStorage()
   }
 
   // 设置跟随系统
@@ -42,8 +64,9 @@ export const useThemeStore = defineStore('theme', () => {
     followSystem.value = value
     if (value) {
       theme.value = getSystemTheme()
-      applyTheme()
     }
+    applyTheme()
+    saveToStorage()
   }
 
   // 监听系统主题变化
@@ -53,6 +76,7 @@ export const useThemeStore = defineStore('theme', () => {
       if (followSystem.value) {
         theme.value = e.matches ? 'dark' : 'light'
         applyTheme()
+        saveToStorage()
       }
     })
   }
@@ -64,10 +88,5 @@ export const useThemeStore = defineStore('theme', () => {
     toggleTheme,
     setFollowSystem,
     watchSystemTheme
-  }
-}, {
-  persist: {
-    key: 'theme-store',
-    paths: ['theme', 'followSystem']
   }
 })

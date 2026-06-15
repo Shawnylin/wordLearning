@@ -26,6 +26,12 @@ const activeIndex = computed(() => {
 
 const count = navItems.length
 
+const indicatorStyle = computed(() => ({
+  width: `calc(${100 / count}% - 4px)`,
+  left: `calc(${(100 / count) * activeIndex.value}% + 2px)`,
+  transition: 'left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+}))
+
 function navigateTo(item: NavItem) {
   router.push(item.path)
 }
@@ -37,11 +43,8 @@ function navigateTo(item: NavItem) {
       <div class="relative flex items-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5">
         <!-- Animated indicator -->
         <div
-          class="absolute top-1 bottom-1 rounded-full bg-red-700/10 dark:bg-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-          :style="{
-            width: `calc(${100 / count}% - 4px)`,
-            left: `calc(${(100 / count) * activeIndex}% + 2px)`
-          }"
+          class="absolute top-1 bottom-1 rounded-full bg-red-700/10 dark:bg-red-500/15"
+          :style="indicatorStyle"
         />
 
         <!-- Nav items -->

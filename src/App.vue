@@ -5,15 +5,16 @@ import BottomNav from './components/BottomNav.vue'
 
 const themeStore = useThemeStore()
 
+// 同步初始化，避免闪烁
+themeStore.initTheme()
+
 onMounted(() => {
-  themeStore.initTheme()
   themeStore.watchSystemTheme()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-    <!-- Main content area -->
     <main class="pb-safe">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -21,8 +22,6 @@ onMounted(() => {
         </transition>
       </router-view>
     </main>
-
-    <!-- Bottom Navigation -->
     <BottomNav />
   </div>
 </template>
@@ -32,7 +31,6 @@ onMounted(() => {
 .fade-leave-active {
   transition: opacity 0.2s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
