@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RefreshCw, GitCompare, Coins } from 'lucide-vue-next'
+import { RefreshCw, GitCompare, Coins, BookOpen, Lightbulb, Map, AlertTriangle } from 'lucide-vue-next'
 import type { CompareRecord } from '../types/idiom'
 
 defineProps<{
@@ -11,8 +11,12 @@ const emit = defineEmits<{
   regenerate: []
 }>()
 
-// 将内容按换行符分割为段落
-const paragraphs = (content: string) => content.split('\n').filter(p => p.trim().length > 0)
+const sections = [
+  { key: 'meaningDiff', label: '含义区别', icon: BookOpen },
+  { key: 'usageDiff', label: '用法差异', icon: Lightbulb },
+  { key: 'scenarios', label: '适用场景', icon: Map },
+  { key: 'confusionPoints', label: '常见混淆点', icon: AlertTriangle }
+]
 </script>
 
 <template>
@@ -60,15 +64,22 @@ const paragraphs = (content: string) => content.split('\n').filter(p => p.trim()
         </div>
       </div>
 
-      <!-- Content -->
-      <div class="px-6 pb-6">
-        <div class="space-y-3">
-          <p
-            v-for="(para, index) in paragraphs(compare.content)"
-            :key="index"
-            class="text-base leading-relaxed text-gray-600 dark:text-gray-400"
-          >
-            {{ para }}
+      <!-- Content sections -->
+      <div class="px-6 pb-6 space-y-5">
+        <div
+          v-for="section in sections"
+          :key="section.key"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+              <component :is="section.icon" :size="14" />
+            </div>
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              {{ section.label }}
+            </h3>
+          </div>
+          <p class="text-base leading-relaxed text-gray-600 dark:text-gray-400 pl-9 whitespace-pre-line">
+            {{ compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'] }}
           </p>
         </div>
       </div>

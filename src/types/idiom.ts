@@ -25,10 +25,17 @@ export interface DeepSeekResponse {
   relatedIdioms: string[]
 }
 
+export interface CompareContent {
+  meaningDiff: string
+  usageDiff: string
+  scenarios: string
+  confusionPoints: string
+}
+
 export interface CompareRecord {
   id: string
   words: string[]
-  content: string
+  content: CompareContent
   tokenUsage: number
   createdAt: number
 }

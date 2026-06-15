@@ -166,7 +166,12 @@ export const useIdiomStore = defineStore('idiom', () => {
       const compareRecord: CompareRecord = {
         id: `compare_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         words: trimmedWords,
-        content: result.comparison,
+        content: {
+          meaningDiff: result.meaningDiff,
+          usageDiff: result.usageDiff,
+          scenarios: result.scenarios,
+          confusionPoints: result.confusionPoints
+        },
         tokenUsage: result.tokenUsage,
         createdAt: Date.now()
       }
@@ -201,7 +206,12 @@ export const useIdiomStore = defineStore('idiom', () => {
       const compareRecord: CompareRecord = {
         id: `compare_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         words: trimmedWords,
-        content: result.comparison,
+        content: {
+          meaningDiff: result.meaningDiff,
+          usageDiff: result.usageDiff,
+          scenarios: result.scenarios,
+          confusionPoints: result.confusionPoints
+        },
         tokenUsage: result.tokenUsage,
         createdAt: Date.now()
       }
