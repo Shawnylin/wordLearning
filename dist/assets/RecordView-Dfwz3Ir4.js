@@ -1,4 +1,4 @@
-import{j as b,d as E,c as i,F as v,a as e,b as d,u as o,t as u,f as x,n as R,B as $,g as L,G as k,w as F,v as G,l as M,i as P,r as p,p as S,o as n}from"./index-C2-_DekR.js";import{u as O,a as Q}from"./settings-D0X7fVom.js";import{_ as U,S as W}from"./IdiomCard.vue_vue_type_script_setup_true_lang-BMmvhcBo.js";import{_ as J}from"./CompareCard.vue_vue_type_script_setup_true_lang-njDqrbnn.js";import{C as X}from"./refresh-cw-aGGh4r4s.js";import{T as j}from"./trash-2-CaQgY8ZH.js";import"./coins-BHQFWjUM.js";/**
+import{j as b,d as E,c as i,F as v,a as e,b as d,u as o,t as u,f as x,n as R,B as $,g as L,G as k,w as F,v as G,l as M,i as P,r as p,p as S,o as n}from"./index-2fu0OC5O.js";import{u as O,a as Q}from"./settings-Dz-2Cuuy.js";import{_ as U,S as W}from"./IdiomCard.vue_vue_type_script_setup_true_lang-e4pP3qSy.js";import{_ as J}from"./CompareCard.vue_vue_type_script_setup_true_lang-e_4uFoF9.js";import{C as X}from"./refresh-cw-l1AnlqI7.js";import{T as j}from"./trash-2-Vit9T27q.js";import"./coins-Cq-L9PQy.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.

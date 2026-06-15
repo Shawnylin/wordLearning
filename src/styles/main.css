@@ -19,14 +19,21 @@ html.dark {
 }
 
 /* Prevent overscroll bounce on iOS */
-body {
+html, body {
   overscroll-behavior: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 /* Safe area padding for bottom nav */
 .pb-safe {
-  padding-bottom: calc(var(--safe-area-bottom) + 80px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
 }
 
 /* Custom scrollbar for dark mode */
