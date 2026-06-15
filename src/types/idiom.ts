@@ -24,3 +24,16 @@ export interface DeepSeekResponse {
   usage: string
   relatedIdioms: string[]
 }
+
+export interface CompareRecord {
+  id: string
+  words: string[]
+  content: string
+  tokenUsage: number
+  createdAt: number
+}
+
+export interface TokenStats {
+  totalTokens: number
+  requestCount: number
+}

@@ -2,18 +2,30 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
-import { Search, Clock, Trash2, ChevronRight, BookOpen } from 'lucide-vue-next'
+import { Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare } from 'lucide-vue-next'
 
 const router = useRouter()
 const idiomStore = useIdiomStore()
 
 const searchQuery = ref('')
+const activeTab = ref<'idiom' | 'compare'>('idiom')
 
+// 词语记录过滤
 const filteredHistory = computed(() => {
   const history = idiomStore.sortedHistory
   if (!searchQuery.value.trim()) return history
   const query = searchQuery.value.trim().toLowerCase()
   return history.filter(item => item.word.toLowerCase().includes(query))
+})
+
+// 对比记录过滤（搜索任意一个词即可匹配）
+const filteredCompareHistory = computed(() => {
+  const history = idiomStore.sortedCompareHistory
+  if (!searchQuery.value.trim()) return history
+  const query = searchQuery.value.trim().toLowerCase()
+  return history.filter(item =>
+    item.words.some(w => w.toLowerCase().includes(query))
+  )
 })
 
 function formatTime(timestamp: number): string {
@@ -34,9 +46,18 @@ function viewIdiom(word: string) {
   router.push('/learn')
 }
 
-function deleteRecord(recordId: string, event: Event) {
+function viewCompare(id: string) {
+  router.push({ path: '/compare', query: { loadId: id } })
+}
+
+function deleteIdiomRecord(recordId: string, event: Event) {
   event.stopPropagation()
   idiomStore.deleteSearchRecord(recordId)
+}
+
+function deleteCompareRecord(recordId: string, event: Event) {
+  event.stopPropagation()
+  idiomStore.deleteCompareRecord(recordId)
 }
 </script>
 
@@ -45,9 +66,34 @@ function deleteRecord(recordId: string, event: Event) {
     <!-- Header -->
     <div class="text-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">学习记录</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        已学习 {{ idiomStore.learnedCount }} 个成语
-      </p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="mx-auto max-w-lg mb-4">
+      <div class="flex p-1 rounded-2xl bg-gray-100 dark:bg-gray-800">
+        <button
+          @click="activeTab = 'idiom'"
+          class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+          :class="activeTab === 'idiom'
+            ? 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 shadow-sm'
+            : 'text-gray-500 dark:text-gray-400'"
+        >
+          <BookOpen :size="16" />
+          词语记录
+          <span class="text-xs opacity-60">({{ idiomStore.sortedHistory.length }})</span>
+        </button>
+        <button
+          @click="activeTab = 'compare'"
+          class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+          :class="activeTab === 'compare'
+            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+            : 'text-gray-500 dark:text-gray-400'"
+        >
+          <GitCompare :size="16" />
+          对比记录
+          <span class="text-xs opacity-60">({{ idiomStore.sortedCompareHistory.length }})</span>
+        </button>
+      </div>
     </div>
 
     <!-- Search bar -->
@@ -59,14 +105,14 @@ function deleteRecord(recordId: string, event: Event) {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="搜索已学习的成语..."
+          :placeholder="activeTab === 'idiom' ? '搜索已学习的成语...' : '搜索对比记录中的词语...'"
           class="flex-1 px-3 py-3 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
         />
       </div>
     </div>
 
-    <!-- History list -->
-    <div class="mx-auto max-w-lg">
+    <!-- 词语记录 Tab -->
+    <div v-if="activeTab === 'idiom'" class="mx-auto max-w-lg">
       <div v-if="filteredHistory.length > 0" class="space-y-2">
         <button
           v-for="record in filteredHistory"
@@ -90,7 +136,7 @@ function deleteRecord(recordId: string, event: Event) {
           </div>
           <div class="flex items-center gap-2">
             <button
-              @click="deleteRecord(record.id, $event)"
+              @click="deleteIdiomRecord(record.id, $event)"
               class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
               title="删除记录"
             >
@@ -101,7 +147,6 @@ function deleteRecord(recordId: string, event: Event) {
         </button>
       </div>
 
-      <!-- Empty state -->
       <div v-else class="text-center py-16">
         <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           <Clock :size="32" class="text-gray-400 dark:text-gray-500" />
@@ -115,6 +160,59 @@ function deleteRecord(recordId: string, event: Event) {
           class="mt-4 px-6 py-2 rounded-full bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
         >
           开始学习
+        </button>
+      </div>
+    </div>
+
+    <!-- 对比记录 Tab -->
+    <div v-if="activeTab === 'compare'" class="mx-auto max-w-lg">
+      <div v-if="filteredCompareHistory.length > 0" class="space-y-2">
+        <button
+          v-for="record in filteredCompareHistory"
+          :key="record.id"
+          @click="viewCompare(record.id)"
+          class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 group"
+        >
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shrink-0">
+            <GitCompare :size="18" />
+          </div>
+          <div class="flex-1 text-left">
+            <p class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {{ record.words.join(' vs ') }}
+            </p>
+            <div class="flex items-center gap-1 mt-0.5">
+              <Clock :size="12" class="text-gray-400 dark:text-gray-500" />
+              <span class="text-xs text-gray-400 dark:text-gray-500">
+                {{ formatTime(record.createdAt) }}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="deleteCompareRecord(record.id, $event)"
+              class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+              title="删除记录"
+            >
+              <Trash2 :size="16" />
+            </button>
+            <ChevronRight :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors" />
+          </div>
+        </button>
+      </div>
+
+      <div v-else class="text-center py-16">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          <GitCompare :size="32" class="text-gray-400 dark:text-gray-500" />
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">
+          {{ searchQuery ? '没有找到匹配的对比记录' : '还没有对比记录' }}
+        </p>
+        <button
+          v-if="!searchQuery"
+          @click="router.push('/compare')"
+          class="mt-4 px-6 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          开始对比
         </button>
       </div>
     </div>

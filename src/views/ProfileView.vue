@@ -5,7 +5,7 @@ import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import {
   Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
-  Download, Upload, Monitor
+  Download, Upload, Monitor, Coins
 } from 'lucide-vue-next'
 
 const themeStore = useThemeStore()
@@ -52,12 +52,14 @@ function clearApiKey() {
 
 function handleClearHistory() {
   idiomStore.clearHistory()
+  idiomStore.clearCompareHistory()
   showClearConfirm.value = false
 }
 
 function handleClearCache() {
   idiomStore.clearCache()
   idiomStore.clearHistory()
+  idiomStore.clearCompareHistory()
   showClearCacheConfirm.value = false
 }
 
@@ -112,18 +114,40 @@ function handleImport() {
             <p class="text-xs text-gray-500 dark:text-gray-400">你的学习进度</p>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
-            <p class="text-3xl font-bold text-red-600 dark:text-red-400">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
+            <p class="text-2xl font-bold text-red-600 dark:text-red-400">
               {{ idiomStore.learnedCount }}
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">已学成语</p>
           </div>
-          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
-            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {{ idiomStore.searchHistory.length }}
+          <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {{ idiomStore.sortedCompareHistory.length }}
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">搜索次数</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">对比次数</p>
+          </div>
+        </div>
+
+        <!-- Token Stats -->
+        <div class="mt-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+          <div class="flex items-center gap-2 mb-3">
+            <Coins :size="16" class="text-amber-600 dark:text-amber-400" />
+            <span class="text-sm font-medium text-amber-800 dark:text-amber-200">Token 消耗统计</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
+                {{ idiomStore.tokenStats.totalTokens.toLocaleString() }}
+              </p>
+              <p class="text-xs text-amber-600/70 dark:text-amber-400/70">总消耗 Tokens</p>
+            </div>
+            <div>
+              <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
+                {{ idiomStore.tokenStats.requestCount }}
+              </p>
+              <p class="text-xs text-amber-600/70 dark:text-amber-400/70">API 调用次数</p>
+            </div>
           </div>
         </div>
       </div>

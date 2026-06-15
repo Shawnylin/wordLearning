@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BookOpen, History, User } from 'lucide-vue-next'
+import { BookOpen, GitCompare, History, User } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +15,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: 'learn', label: '学习', icon: BookOpen, path: '/learn' },
+  { name: 'compare', label: '对比', icon: GitCompare, path: '/compare' },
   { name: 'record', label: '记录', icon: History, path: '/record' },
   { name: 'profile', label: '个人', icon: User, path: '/profile' }
 ]
