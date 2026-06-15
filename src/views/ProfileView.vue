@@ -5,7 +5,7 @@ import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import {
   Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
-  Download, Upload
+  Download, Upload, Monitor
 } from 'lucide-vue-next'
 
 const themeStore = useThemeStore()
@@ -207,28 +207,58 @@ function handleImport() {
       </div>
 
       <!-- Theme Setting -->
-      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
-              <component :is="themeStore.theme === 'dark' ? Moon : Sun" :size="20" />
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 dark:text-gray-100">主题模式</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ themeStore.theme === 'dark' ? '深色模式' : '浅色模式' }}
-              </p>
-            </div>
+      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+            <component :is="themeStore.followSystem ? Monitor : (themeStore.theme === 'dark' ? Moon : Sun)" :size="20" />
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900 dark:text-gray-100">主题模式</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ themeStore.followSystem ? '跟随系统' : (themeStore.theme === 'dark' ? '深色模式' : '浅色模式') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Follow system toggle -->
+        <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+          <div class="flex items-center gap-2">
+            <Monitor :size="16" class="text-gray-500 dark:text-gray-400" />
+            <span class="text-sm text-gray-700 dark:text-gray-300">跟随系统</span>
           </div>
           <button
-            @click="themeStore.toggleTheme()"
-            class="relative w-14 h-7 rounded-full transition-colors duration-300"
-            :class="themeStore.theme === 'dark' ? 'bg-red-600' : 'bg-gray-300'"
+            @click="themeStore.setFollowSystem(!themeStore.followSystem)"
+            class="relative w-11 h-6 rounded-full transition-colors duration-300"
+            :class="themeStore.followSystem ? 'bg-red-600' : 'bg-gray-300 dark:bg-gray-600'"
           >
             <span
-              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300"
-              :class="themeStore.theme === 'dark' ? 'translate-x-7' : 'translate-x-0.5'"
+              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300"
+              :style="{ transform: themeStore.followSystem ? 'translateX(20px)' : 'translateX(0)' }"
             />
+          </button>
+        </div>
+
+        <!-- Manual theme selector (only when not following system) -->
+        <div v-if="!themeStore.followSystem" class="flex gap-2">
+          <button
+            @click="themeStore.theme === 'dark' && themeStore.toggleTheme()"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            :class="themeStore.theme === 'light'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+          >
+            <Sun :size="16" />
+            浅色
+          </button>
+          <button
+            @click="themeStore.theme === 'light' && themeStore.toggleTheme()"
+            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            :class="themeStore.theme === 'dark'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+          >
+            <Moon :size="16" />
+            深色
           </button>
         </div>
       </div>

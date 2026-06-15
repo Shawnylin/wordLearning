@@ -5,6 +5,7 @@ export type ThemeMode = 'light' | 'dark'
 
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>('light')
+  const followSystem = ref(true)
 
   // 应用主题到 DOM
   function applyTheme() {
@@ -16,28 +17,40 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
+  // 获取系统主题
+  function getSystemTheme(): ThemeMode {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
   // 初始化主题
   function initTheme() {
-    // persist 插件会自动恢复 theme 值
-    // 如果没有保存过（首次访问），检查系统偏好
-    if (!localStorage.getItem('theme-store')) {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      theme.value = prefersDark ? 'dark' : 'light'
+    if (followSystem.value) {
+      theme.value = getSystemTheme()
     }
     applyTheme()
   }
 
-  // 切换主题
+  // 手动切换主题（关闭跟随系统）
   function toggleTheme() {
+    followSystem.value = false
     theme.value = theme.value === 'light' ? 'dark' : 'light'
     applyTheme()
+  }
+
+  // 设置跟随系统
+  function setFollowSystem(value: boolean) {
+    followSystem.value = value
+    if (value) {
+      theme.value = getSystemTheme()
+      applyTheme()
+    }
   }
 
   // 监听系统主题变化
   function watchSystemTheme() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQuery.addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme-store')) {
+      if (followSystem.value) {
         theme.value = e.matches ? 'dark' : 'light'
         applyTheme()
       }
@@ -46,13 +59,15 @@ export const useThemeStore = defineStore('theme', () => {
 
   return {
     theme,
+    followSystem,
     initTheme,
     toggleTheme,
+    setFollowSystem,
     watchSystemTheme
   }
 }, {
   persist: {
     key: 'theme-store',
-    paths: ['theme']
+    paths: ['theme', 'followSystem']
   }
 })
