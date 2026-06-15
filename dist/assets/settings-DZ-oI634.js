@@ -1,1 +1,0 @@
-import{s as r,r as a}from"./index-Dq6K3PAr.js";const u=r("settings",()=>{const e=a("");function t(n){e.value=n.trim()}function s(){e.value=""}function i(){return e.value.length>0}return{apiKey:e,setApiKey:t,clearApiKey:s,hasApiKey:i}},{persist:{key:"settings-store",paths:["apiKey"]}});export{u};

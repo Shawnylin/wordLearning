@@ -24,7 +24,7 @@ const activeIndex = computed(() => {
   return index >= 0 ? index : 0
 })
 
-const itemPercent = computed(() => 100 / navItems.length)
+const count = navItems.length
 
 function navigateTo(item: NavItem) {
   router.push(item.path)
@@ -34,13 +34,13 @@ function navigateTo(item: NavItem) {
 <template>
   <nav class="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
     <div class="mx-auto max-w-md px-4 pb-2 pt-1">
-      <div class="relative flex items-center justify-around rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5 overflow-hidden">
+      <div class="relative flex items-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5">
         <!-- Animated indicator -->
         <div
-          class="nav-indicator absolute top-1.5 bottom-1.5 rounded-full bg-red-700/10 dark:bg-red-500/15"
+          class="absolute top-1 bottom-1 rounded-full bg-red-700/10 dark:bg-red-500/15 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           :style="{
-            width: `${itemPercent}%`,
-            left: `${activeIndex * itemPercent}%`
+            width: `calc(${100 / count}% - 4px)`,
+            left: `calc(${(100 / count) * activeIndex}% + 2px)`
           }"
         />
 
@@ -49,7 +49,7 @@ function navigateTo(item: NavItem) {
           v-for="(item, index) in navItems"
           :key="item.name"
           @click="navigateTo(item)"
-          class="relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+          class="relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors duration-300"
           :class="activeIndex === index ? 'text-red-700 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'"
         >
           <component
