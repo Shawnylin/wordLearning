@@ -35,11 +35,12 @@ const indicatorStyle = computed(() => ({
 
 function navigateTo(item: NavItem) {
   router.push(item.path)
+  document.getElementById('app')?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 z-50" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
+  <nav class="fixed bottom-0 left-0 right-0 z-50" style="padding-bottom: 34px">
     <div class="mx-auto max-w-md px-4 pt-1" style="padding-bottom: 4px">
       <div class="relative flex items-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5">
         <!-- Animated indicator -->

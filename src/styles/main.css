@@ -33,7 +33,7 @@ html, body {
 
 /* Safe area padding for bottom nav */
 .pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+  padding-bottom: 96px;
 }
 
 /* Custom scrollbar for dark mode */
