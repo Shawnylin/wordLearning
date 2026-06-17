@@ -59,6 +59,14 @@ export const useThemeStore = defineStore('theme', () => {
     saveToStorage()
   }
 
+  // 设置指定主题（关闭跟随系统）
+  function setTheme(mode: ThemeMode) {
+    followSystem.value = false
+    theme.value = mode
+    applyTheme()
+    saveToStorage()
+  }
+
   // 设置跟随系统
   function setFollowSystem(value: boolean) {
     followSystem.value = value
@@ -86,6 +94,7 @@ export const useThemeStore = defineStore('theme', () => {
     followSystem,
     initTheme,
     toggleTheme,
+    setTheme,
     setFollowSystem,
     watchSystemTheme
   }

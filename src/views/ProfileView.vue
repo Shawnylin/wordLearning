@@ -5,8 +5,10 @@ import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import {
   Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
-  Download, Upload, Monitor, Coins
+  Download, Upload, Monitor, Coins, RefreshCw
 } from 'lucide-vue-next'
+
+const APP_VERSION = '0.0.1'
 
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
@@ -61,6 +63,11 @@ function handleClearCache() {
   idiomStore.clearHistory()
   idiomStore.clearCompareHistory()
   showClearCacheConfirm.value = false
+}
+
+// 刷新页面
+function handleRefresh() {
+  location.reload()
 }
 
 // 导出 JSON
@@ -265,7 +272,7 @@ function handleImport() {
         <!-- Manual theme selector (only when not following system) -->
         <div v-if="!themeStore.followSystem" class="flex gap-2">
           <button
-            @click="themeStore.theme === 'dark' && themeStore.toggleTheme()"
+            @click="themeStore.setTheme('light')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="themeStore.theme === 'light'
               ? 'bg-red-600 text-white'
@@ -275,7 +282,7 @@ function handleImport() {
             浅色
           </button>
           <button
-            @click="themeStore.theme === 'light' && themeStore.toggleTheme()"
+            @click="themeStore.setTheme('dark')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="themeStore.theme === 'dark'
               ? 'bg-red-600 text-white'
@@ -326,6 +333,13 @@ function handleImport() {
             {{ importResult.message }}
           </div>
 
+          <button
+            @click="handleRefresh"
+            class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <RefreshCw :size="16" />
+            刷新应用
+          </button>
           <button
             @click="showClearConfirm = true"
             class="w-full py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -405,5 +419,10 @@ function handleImport() {
         </div>
       </div>
     </Teleport>
+
+    <!-- Version -->
+    <div class="text-center mt-8 mb-4">
+      <p class="text-xs text-gray-400 dark:text-gray-500">v{{ APP_VERSION }}</p>
+    </div>
   </div>
 </template>

@@ -37,7 +37,7 @@ const vsClass = computed(() => {
   <div class="animate-card-enter">
     <div class="rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       <!-- Header -->
-      <div class="relative px-6 pt-8 pb-6 bg-gradient-to-b from-blue-50 to-transparent dark:from-blue-950/20 dark:to-transparent">
+      <div class="relative px-6 pt-8 pb-6 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-gray-800">
         <!-- Regenerate button -->
         <button
           @click="emit('regenerate')"

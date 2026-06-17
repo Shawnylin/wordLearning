@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
-import { Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare, ArrowLeft, AlertCircle } from 'lucide-vue-next'
+import { Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare, ArrowLeft, AlertCircle, Heart } from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareCard from '../components/CompareCard.vue'
 
@@ -16,10 +16,14 @@ const activeTab = ref<'idiom' | 'compare'>('idiom')
 const detailMode = ref<'idiom' | 'compare' | null>(null)
 const detailWord = ref<string | null>(null)
 const detailCompareId = ref<string | null>(null)
+const showFavoritesOnly = ref(false)
 
 // 词语记录过滤
 const filteredHistory = computed(() => {
-  const history = idiomStore.sortedHistory
+  let history = idiomStore.sortedHistory
+  if (showFavoritesOnly.value) {
+    history = history.filter(item => idiomStore.isFavorite(item.word))
+  }
   if (!searchQuery.value.trim()) return history
   const query = searchQuery.value.trim().toLowerCase()
   return history.filter(item => item.word.toLowerCase().includes(query))
@@ -183,9 +187,9 @@ function deleteCompareRecord(recordId: string, event: Event) {
         </div>
       </div>
 
-      <!-- Search bar -->
-      <div class="mx-auto max-w-lg mb-6">
-        <div class="relative flex items-center rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+      <!-- Search bar + favorites filter -->
+      <div class="mx-auto max-w-lg mb-6 flex gap-2">
+        <div class="relative flex-1 flex items-center rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
           <div class="pl-4 text-gray-400 dark:text-gray-500">
             <Search :size="18" />
           </div>
@@ -196,6 +200,17 @@ function deleteCompareRecord(recordId: string, event: Event) {
             class="flex-1 px-3 py-3 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
           />
         </div>
+        <button
+          v-if="activeTab === 'idiom'"
+          @click="showFavoritesOnly = !showFavoritesOnly"
+          class="shrink-0 p-3 rounded-2xl shadow-md border transition-colors duration-200"
+          :class="showFavoritesOnly
+            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500 dark:text-red-400'
+            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400'"
+          :title="showFavoritesOnly ? '显示全部' : '仅显示收藏'"
+        >
+          <Heart :size="18" :fill="showFavoritesOnly ? 'currentColor' : 'none'" />
+        </button>
       </div>
 
       <!-- 词语记录 Tab -->
@@ -211,8 +226,14 @@ function deleteCompareRecord(recordId: string, event: Event) {
               <BookOpen :size="18" />
             </div>
             <div class="flex-1 text-left">
-              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors flex items-center gap-1.5">
                 {{ record.word }}
+                <Heart
+                  v-if="idiomStore.isFavorite(record.word)"
+                  :size="14"
+                  class="text-red-500 dark:text-red-400 shrink-0"
+                  fill="currentColor"
+                />
               </p>
               <div class="flex items-center gap-1 mt-0.5">
                 <Clock :size="12" class="text-gray-400 dark:text-gray-500" />

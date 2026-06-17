@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2 } from 'lucide-vue-next'
+import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2, Heart } from 'lucide-vue-next'
 import type { IdiomData } from '../types/idiom'
+import { useIdiomStore } from '../stores/idiom'
+
+const idiomStore = useIdiomStore()
 
 const props = defineProps<{
   idiom: IdiomData
@@ -35,7 +38,19 @@ function getSectionContent(key: string): string {
   <div class="animate-card-enter">
     <div class="rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       <!-- Header: Word + Pinyin -->
-      <div class="relative px-6 pt-8 pb-6 text-center bg-gradient-to-b from-red-50 to-transparent dark:from-red-950/20 dark:to-transparent">
+      <div class="relative px-6 pt-8 pb-6 text-center bg-gradient-to-b from-red-50 to-white dark:from-red-950/20 dark:to-gray-800">
+        <!-- Favorite button -->
+        <button
+          @click="idiomStore.toggleFavorite(idiom.word)"
+          class="absolute top-4 left-4 p-2 rounded-full transition-all duration-200"
+          :class="idiomStore.isFavorite(idiom.word)
+            ? 'text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300'
+            : 'text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400'"
+          :title="idiomStore.isFavorite(idiom.word) ? '取消收藏' : '收藏'"
+        >
+          <Heart :size="18" :fill="idiomStore.isFavorite(idiom.word) ? 'currentColor' : 'none'" />
+        </button>
+
         <!-- Regenerate button -->
         <button
           @click="emit('regenerate')"

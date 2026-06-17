@@ -218,9 +218,16 @@ export async function generateComparison(
     }
   }
 
-  // 去掉 AI 返回内容中可能带的标题前缀
-  const stripLabel = (text: string) =>
-    text.replace(/^[^：:]*[：:]\s*/, '')
+  // 去掉 AI 返回内容中可能带的章节标题前缀（不动词语标识如 A：B：）
+  const knownLabels = ['含义区别', '用法差异', '适用场景', '常见混淆点']
+  const stripLabel = (text: string) => {
+    for (const label of knownLabels) {
+      if (text.startsWith(label + '：') || text.startsWith(label + ':')) {
+        return text.slice(label.length + 1).trim()
+      }
+    }
+    return text
+  }
 
   return {
     meaningDiff: stripLabel(parsed.meaningDiff),

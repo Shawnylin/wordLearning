@@ -19,6 +19,9 @@ export const useIdiomStore = defineStore('idiom', () => {
   // Token 统计
   const tokenStats = ref<TokenStats>({ totalTokens: 0, requestCount: 0 })
 
+  // 收藏的词语
+  const favorites = ref<string[]>([])
+
   // 当前显示的成语
   const currentIdiom = ref<IdiomData | null>(null)
 
@@ -318,6 +321,21 @@ export const useIdiomStore = defineStore('idiom', () => {
     errorMessage.value = ''
   }
 
+  // 收藏/取消收藏
+  function toggleFavorite(word: string) {
+    const index = favorites.value.indexOf(word)
+    if (index >= 0) {
+      favorites.value.splice(index, 1)
+    } else {
+      favorites.value.push(word)
+    }
+  }
+
+  // 是否已收藏
+  function isFavorite(word: string): boolean {
+    return favorites.value.includes(word)
+  }
+
   // JSON 导出
   function exportData(): string {
     return JSON.stringify({
@@ -382,6 +400,7 @@ export const useIdiomStore = defineStore('idiom', () => {
     compareCache,
     compareHistory,
     tokenStats,
+    favorites,
     currentIdiom,
     currentCompare,
     isLoading,
@@ -402,12 +421,14 @@ export const useIdiomStore = defineStore('idiom', () => {
     clearCompareHistory,
     clearCache,
     clearError,
+    toggleFavorite,
+    isFavorite,
     exportData,
     importData
   }
 }, {
   persist: {
     key: 'idiom-store',
-    paths: ['idiomCache', 'searchHistory', 'compareCache', 'compareHistory', 'tokenStats']
+    paths: ['idiomCache', 'searchHistory', 'compareCache', 'compareHistory', 'tokenStats', 'favorites']
   }
 })
