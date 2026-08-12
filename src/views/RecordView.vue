@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
-import { Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare, ArrowLeft, AlertCircle, Heart } from 'lucide-vue-next'
+import type { SearchRecord, CompareRecord } from '../types/idiom'
+import {
+  Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare, ArrowLeft,
+  AlertCircle, Heart, ListChecks, Check, X
+} from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareCard from '../components/CompareCard.vue'
 
@@ -17,6 +21,16 @@ const detailMode = ref<'idiom' | 'compare' | null>(null)
 const detailWord = ref<string | null>(null)
 const detailCompareId = ref<string | null>(null)
 const showFavoritesOnly = ref(false)
+
+// 批量管理状态
+const editMode = ref(false)
+const selectedIds = ref<string[]>([])
+const confirmDelete = ref<{ ids: string[]; isCompare: boolean; label: string } | null>(null)
+
+// 切换 Tab 时清空选择
+watch(activeTab, () => {
+  selectedIds.value = []
+})
 
 // 词语记录过滤
 const filteredHistory = computed(() => {
@@ -39,6 +53,21 @@ const filteredCompareHistory = computed(() => {
   )
 })
 
+const hasAnyRecord = computed(() =>
+  activeTab.value === 'idiom'
+    ? idiomStore.sortedHistory.length > 0
+    : idiomStore.sortedCompareHistory.length > 0
+)
+
+const selectedCount = computed(() => selectedIds.value.length)
+
+const isAllSelected = computed(() => {
+  const total = activeTab.value === 'idiom'
+    ? filteredHistory.value.length
+    : filteredCompareHistory.value.length
+  return total > 0 && selectedIds.value.length === total
+})
+
 function formatTime(timestamp: number): string {
   const now = new Date()
   const diff = now.getTime() - timestamp
@@ -50,6 +79,11 @@ function formatTime(timestamp: number): string {
 
   const date = new Date(timestamp)
   return `${date.getMonth() + 1}月${date.getDate()}日`
+}
+
+function switchTab(tab: 'idiom' | 'compare') {
+  activeTab.value = tab
+  selectedIds.value = []
 }
 
 function viewIdiom(word: string) {
@@ -85,14 +119,86 @@ function handleRelatedClick(word: string) {
   detailWord.value = word
 }
 
-function deleteIdiomRecord(recordId: string, event: Event) {
-  event.stopPropagation()
-  idiomStore.deleteSearchRecord(recordId)
+// —— 批量管理 ——
+function toggleEditMode() {
+  editMode.value = !editMode.value
+  selectedIds.value = []
 }
 
-function deleteCompareRecord(recordId: string, event: Event) {
-  event.stopPropagation()
-  idiomStore.deleteCompareRecord(recordId)
+function isSelected(id: string) {
+  return selectedIds.value.includes(id)
+}
+
+function toggleSelect(id: string) {
+  const index = selectedIds.value.indexOf(id)
+  if (index >= 0) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
+}
+
+function selectAll() {
+  const ids = activeTab.value === 'idiom'
+    ? filteredHistory.value.map(r => r.id)
+    : filteredCompareHistory.value.map(r => r.id)
+  selectedIds.value = [...ids]
+}
+
+function clearSelection() {
+  selectedIds.value = []
+}
+
+function onIdiomRowClick(record: SearchRecord) {
+  if (editMode.value) {
+    toggleSelect(record.id)
+  } else {
+    viewIdiom(record.word)
+  }
+}
+
+function onCompareRowClick(record: CompareRecord) {
+  if (editMode.value) {
+    toggleSelect(record.id)
+  } else {
+    viewCompare(record.id)
+  }
+}
+
+// 单个删除（弹出确认）
+function requestDeleteIdiom(record: SearchRecord) {
+  confirmDelete.value = { ids: [record.id], isCompare: false, label: `「${record.word}」` }
+}
+
+function requestDeleteCompare(record: CompareRecord) {
+  confirmDelete.value = { ids: [record.id], isCompare: true, label: `「${record.words.join(' vs ')}」` }
+}
+
+// 批量删除（弹出确认）
+function requestBatchDelete() {
+  if (selectedIds.value.length === 0) return
+  const isCompare = activeTab.value === 'compare'
+  confirmDelete.value = {
+    ids: [...selectedIds.value],
+    isCompare,
+    label: `已选的 ${selectedIds.value.length} 条记录`
+  }
+}
+
+function doConfirmDelete() {
+  if (!confirmDelete.value) return
+  const { ids, isCompare } = confirmDelete.value
+  if (isCompare) {
+    idiomStore.deleteCompareRecords(ids)
+  } else {
+    idiomStore.deleteSearchRecords(ids)
+  }
+  selectedIds.value = []
+  confirmDelete.value = null
+  // 若当前 Tab 已无记录，退出管理模式
+  if (!hasAnyRecord.value) {
+    editMode.value = false
+  }
 }
 </script>
 
@@ -155,15 +261,26 @@ function deleteCompareRecord(recordId: string, event: Event) {
     <!-- List mode -->
     <template v-else>
       <!-- Header -->
-      <div class="text-center mb-6">
+      <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">学习记录</h1>
+        <button
+          v-if="hasAnyRecord"
+          @click="toggleEditMode"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+          :class="editMode
+            ? 'bg-red-600 text-white'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'"
+        >
+          <component :is="editMode ? X : ListChecks" :size="16" />
+          {{ editMode ? '完成' : '管理' }}
+        </button>
       </div>
 
       <!-- Tab switcher -->
       <div class="mx-auto max-w-lg mb-4">
         <div class="flex p-1 rounded-2xl bg-gray-100 dark:bg-gray-800">
           <button
-            @click="activeTab = 'idiom'"
+            @click="switchTab('idiom')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="activeTab === 'idiom'
               ? 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 shadow-sm'
@@ -174,7 +291,7 @@ function deleteCompareRecord(recordId: string, event: Event) {
             <span class="text-xs opacity-60">({{ idiomStore.sortedHistory.length }})</span>
           </button>
           <button
-            @click="activeTab = 'compare'"
+            @click="switchTab('compare')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="activeTab === 'compare'
               ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -188,7 +305,7 @@ function deleteCompareRecord(recordId: string, event: Event) {
       </div>
 
       <!-- Search bar + favorites filter -->
-      <div class="mx-auto max-w-lg mb-6 flex gap-2">
+      <div class="mx-auto max-w-lg mb-4 flex gap-2">
         <div class="relative flex-1 flex items-center rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
           <div class="pl-4 text-gray-400 dark:text-gray-500">
             <Search :size="18" />
@@ -213,15 +330,50 @@ function deleteCompareRecord(recordId: string, event: Event) {
         </button>
       </div>
 
+      <!-- Batch action bar (edit mode) -->
+      <div v-if="editMode" class="mx-auto max-w-lg mb-4 flex items-center gap-3">
+        <button
+          @click="isAllSelected ? clearSelection() : selectAll()"
+          class="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300"
+        >
+          <Check :size="16" :class="isAllSelected ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'" />
+          {{ isAllSelected ? '取消全选' : '全选' }}
+        </button>
+        <span class="text-xs text-gray-400 dark:text-gray-500">已选 {{ selectedCount }} 项</span>
+        <button
+          @click="requestBatchDelete"
+          :disabled="selectedCount === 0"
+          class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+        >
+          <Trash2 :size="16" />
+          删除
+        </button>
+      </div>
+
       <!-- 词语记录 Tab -->
       <div v-if="activeTab === 'idiom'" class="mx-auto max-w-lg">
         <div v-if="filteredHistory.length > 0" class="space-y-2">
-          <button
+          <div
             v-for="record in filteredHistory"
             :key="record.id"
-            @click="viewIdiom(record.word)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 group"
+            @click="onIdiomRowClick(record)"
+            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 group cursor-pointer"
+            :class="{ 'border-red-300 dark:border-red-700 ring-1 ring-red-200 dark:ring-red-800': editMode && isSelected(record.id) }"
+            role="button"
+            tabindex="0"
+            @keydown.enter="onIdiomRowClick(record)"
           >
+            <!-- Checkbox (edit mode) -->
+            <div
+              v-if="editMode"
+              class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
+              :class="isSelected(record.id)
+                ? 'bg-red-600 border-red-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 text-transparent'"
+            >
+              <Check :size="12" :stroke-width="3" />
+            </div>
+
             <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 shrink-0">
               <BookOpen :size="18" />
             </div>
@@ -242,17 +394,17 @@ function deleteCompareRecord(recordId: string, event: Event) {
                 </span>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <template v-if="!editMode">
               <button
-                @click="deleteIdiomRecord(record.id, $event)"
-                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                @click.stop="requestDeleteIdiom(record)"
+                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
               </button>
               <ChevronRight :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-red-400 dark:group-hover:text-red-500 transition-colors" />
-            </div>
-          </button>
+            </template>
+          </div>
         </div>
 
         <div v-else class="text-center py-16">
@@ -275,12 +427,27 @@ function deleteCompareRecord(recordId: string, event: Event) {
       <!-- 对比记录 Tab -->
       <div v-if="activeTab === 'compare'" class="mx-auto max-w-lg">
         <div v-if="filteredCompareHistory.length > 0" class="space-y-2">
-          <button
+          <div
             v-for="record in filteredCompareHistory"
             :key="record.id"
-            @click="viewCompare(record.id)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 group"
+            @click="onCompareRowClick(record)"
+            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 group cursor-pointer"
+            :class="{ 'border-blue-300 dark:border-blue-700 ring-1 ring-blue-200 dark:ring-blue-800': editMode && isSelected(record.id) }"
+            role="button"
+            tabindex="0"
+            @keydown.enter="onCompareRowClick(record)"
           >
+            <!-- Checkbox (edit mode) -->
+            <div
+              v-if="editMode"
+              class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
+              :class="isSelected(record.id)
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 text-transparent'"
+            >
+              <Check :size="12" :stroke-width="3" />
+            </div>
+
             <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shrink-0">
               <GitCompare :size="18" />
             </div>
@@ -295,17 +462,17 @@ function deleteCompareRecord(recordId: string, event: Event) {
                 </span>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <template v-if="!editMode">
               <button
-                @click="deleteCompareRecord(record.id, $event)"
-                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                @click.stop="requestDeleteCompare(record)"
+                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
               </button>
               <ChevronRight :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors" />
-            </div>
-          </button>
+            </template>
+          </div>
         </div>
 
         <div v-else class="text-center py-16">
@@ -325,5 +492,37 @@ function deleteCompareRecord(recordId: string, event: Event) {
         </div>
       </div>
     </template>
+
+    <!-- Delete Confirm Modal -->
+    <Teleport to="body">
+      <div
+        v-if="confirmDelete"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        @click.self="confirmDelete = null"
+      >
+        <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            删除记录？
+          </h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            确定要删除 {{ confirmDelete.label }} 吗？此操作不会删除已缓存的词语内容，且不可恢复。
+          </p>
+          <div class="flex gap-3">
+            <button
+              @click="confirmDelete = null"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              @click="doConfirmDelete"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+            >
+              确认删除
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

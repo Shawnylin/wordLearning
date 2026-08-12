@@ -302,6 +302,18 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
+  // 批量删除搜索记录（仅移除历史记录，不动缓存库）
+  function deleteSearchRecords(ids: string[]) {
+    const idSet = new Set(ids)
+    searchHistory.value = searchHistory.value.filter(r => !idSet.has(r.id))
+  }
+
+  // 批量删除对比记录
+  function deleteCompareRecords(ids: string[]) {
+    const idSet = new Set(ids)
+    compareHistory.value = compareHistory.value.filter(r => !idSet.has(r.id))
+  }
+
   function clearHistory() {
     searchHistory.value = []
   }
@@ -339,11 +351,13 @@ export const useIdiomStore = defineStore('idiom', () => {
   // JSON 导出
   function exportData(): string {
     return JSON.stringify({
+      version: 2,
       idiomCache: idiomCache.value,
       searchHistory: searchHistory.value,
       compareCache: compareCache.value,
       compareHistory: compareHistory.value,
-      tokenStats: tokenStats.value
+      tokenStats: tokenStats.value,
+      favorites: favorites.value
     }, null, 2)
   }
 
@@ -388,6 +402,15 @@ export const useIdiomStore = defineStore('idiom', () => {
         tokenStats.value.requestCount += data.tokenStats.requestCount || 0
       }
 
+      // 合并收藏（旧版本导出可能没有该字段）
+      if (Array.isArray(data.favorites)) {
+        for (const word of data.favorites as string[]) {
+          if (typeof word === 'string' && !favorites.value.includes(word)) {
+            favorites.value.push(word)
+          }
+        }
+      }
+
       return { success: true, message: `成功导入 ${Object.keys(data.idiomCache).length} 个成语` }
     } catch {
       return { success: false, message: 'JSON 解析失败，请检查文件格式' }
@@ -417,6 +440,8 @@ export const useIdiomStore = defineStore('idiom', () => {
     setCurrentCompare,
     deleteSearchRecord,
     deleteCompareRecord,
+    deleteSearchRecords,
+    deleteCompareRecords,
     clearHistory,
     clearCompareHistory,
     clearCache,

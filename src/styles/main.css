@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* 使用 .dark class 控制暗色模式（Tailwind v4 默认跟随系统 prefers-color-scheme，
+   这里显式改为 class 变体，配合 theme store 在 <html> 上切换 .dark） */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Custom CSS Variables */
 :root {
   --color-zhuhong: #C0392B;

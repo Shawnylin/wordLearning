@@ -8,7 +8,7 @@ import {
   Download, Upload, Monitor, Coins, RefreshCw
 } from 'lucide-vue-next'
 
-const APP_VERSION = '0.0.1'
+const APP_VERSION = '0.2.0'
 
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
