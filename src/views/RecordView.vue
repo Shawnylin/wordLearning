@@ -27,12 +27,10 @@ const editMode = ref(false)
 const selectedIds = ref<string[]>([])
 const confirmDelete = ref<{ ids: string[]; isCompare: boolean; label: string } | null>(null)
 
-// 切换 Tab 时清空选择
 watch(activeTab, () => {
   selectedIds.value = []
 })
 
-// 词语记录过滤
 const filteredHistory = computed(() => {
   let history = idiomStore.sortedHistory
   if (showFavoritesOnly.value) {
@@ -43,7 +41,6 @@ const filteredHistory = computed(() => {
   return history.filter(item => item.word.toLowerCase().includes(query))
 })
 
-// 对比记录过滤
 const filteredCompareHistory = computed(() => {
   const history = idiomStore.sortedCompareHistory
   if (!searchQuery.value.trim()) return history
@@ -119,7 +116,6 @@ function handleRelatedClick(word: string) {
   detailWord.value = word
 }
 
-// —— 批量管理 ——
 function toggleEditMode() {
   editMode.value = !editMode.value
   selectedIds.value = []
@@ -165,7 +161,6 @@ function onCompareRowClick(record: CompareRecord) {
   }
 }
 
-// 单个删除（弹出确认）
 function requestDeleteIdiom(record: SearchRecord) {
   confirmDelete.value = { ids: [record.id], isCompare: false, label: `「${record.word}」` }
 }
@@ -174,7 +169,6 @@ function requestDeleteCompare(record: CompareRecord) {
   confirmDelete.value = { ids: [record.id], isCompare: true, label: `「${record.words.join(' vs ')}」` }
 }
 
-// 批量删除（弹出确认）
 function requestBatchDelete() {
   if (selectedIds.value.length === 0) return
   const isCompare = activeTab.value === 'compare'
@@ -195,7 +189,6 @@ function doConfirmDelete() {
   }
   selectedIds.value = []
   confirmDelete.value = null
-  // 若当前 Tab 已无记录，退出管理模式
   if (!hasAnyRecord.value) {
     editMode.value = false
   }
@@ -203,34 +196,30 @@ function doConfirmDelete() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-4">
-    <!-- Detail mode: show card inline -->
+  <div class="min-h-screen px-4 pt-8 pb-4">
+    <!-- Detail mode -->
     <template v-if="detailMode">
-      <!-- Back button -->
       <div class="mx-auto max-w-lg mb-4">
         <button
           @click="backToList"
-          class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+          class="flex items-center gap-2 text-ink-soft hover:text-ink transition-colors"
         >
           <ArrowLeft :size="20" />
           <span class="text-sm font-medium">返回记录</span>
         </button>
       </div>
 
-      <!-- Error Message -->
       <div
         v-if="idiomStore.errorMessage"
-        class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+        class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
       >
         <div class="flex items-start gap-3">
-          <AlertCircle :size="20" class="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+          <AlertCircle :size="20" class="text-zhuhong shrink-0 mt-0.5" />
           <div>
-            <p class="text-sm text-red-800 dark:text-red-200">
-              {{ idiomStore.errorMessage }}
-            </p>
+            <p class="text-sm text-ink">{{ idiomStore.errorMessage }}</p>
             <button
               @click="idiomStore.clearError()"
-              class="mt-1 text-xs text-red-600 dark:text-red-400 hover:underline"
+              class="mt-1 text-xs text-zhuhong hover:underline"
             >
               关闭
             </button>
@@ -238,7 +227,6 @@ function doConfirmDelete() {
         </div>
       </div>
 
-      <!-- Idiom Card -->
       <div v-if="detailMode === 'idiom' && idiomStore.currentIdiom" class="mx-auto max-w-lg">
         <IdiomCard
           :idiom="idiomStore.currentIdiom"
@@ -248,7 +236,6 @@ function doConfirmDelete() {
         />
       </div>
 
-      <!-- Compare Card -->
       <div v-if="detailMode === 'compare' && idiomStore.currentCompare" class="mx-auto max-w-lg">
         <CompareCard
           :compare="idiomStore.currentCompare"
@@ -260,16 +247,15 @@ function doConfirmDelete() {
 
     <!-- List mode -->
     <template v-else>
-      <!-- Header -->
       <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">学习记录</h1>
+        <h1 class="font-kai text-3xl text-ink leading-tight">学习记录</h1>
         <button
           v-if="hasAnyRecord"
           @click="toggleEditMode"
           class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
           :class="editMode
-            ? 'bg-red-600 text-white'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'"
+            ? 'btn-primary'
+            : 'bg-soft text-ink-soft border border-line'"
         >
           <component :is="editMode ? X : ListChecks" :size="16" />
           {{ editMode ? '完成' : '管理' }}
@@ -278,13 +264,13 @@ function doConfirmDelete() {
 
       <!-- Tab switcher -->
       <div class="mx-auto max-w-lg mb-4">
-        <div class="flex p-1 rounded-2xl bg-gray-100 dark:bg-gray-800">
+        <div class="flex p-1 rounded-2xl bg-soft">
           <button
             @click="switchTab('idiom')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="activeTab === 'idiom'
-              ? 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 shadow-sm'
-              : 'text-gray-500 dark:text-gray-400'"
+              ? 'bg-card text-zhuhong shadow-sm'
+              : 'text-ink-mute'"
           >
             <BookOpen :size="16" />
             词语记录
@@ -294,8 +280,8 @@ function doConfirmDelete() {
             @click="switchTab('compare')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="activeTab === 'compare'
-              ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-              : 'text-gray-500 dark:text-gray-400'"
+              ? 'bg-card text-dai shadow-sm'
+              : 'text-ink-mute'"
           >
             <GitCompare :size="16" />
             对比记录
@@ -306,186 +292,180 @@ function doConfirmDelete() {
 
       <!-- Search bar + favorites filter -->
       <div class="mx-auto max-w-lg mb-4 flex gap-2">
-        <div class="relative flex-1 flex items-center rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
-          <div class="pl-4 text-gray-400 dark:text-gray-500">
+        <div class="relative flex-1 flex items-center rounded-2xl bg-card shadow-sm border border-line overflow-hidden focus-within:ring-2 focus-within:ring-zhuhong/15 focus-within:border-zhuhong">
+          <div class="pl-4 text-ink-mute">
             <Search :size="18" />
           </div>
           <input
             v-model="searchQuery"
             type="text"
-            :placeholder="activeTab === 'idiom' ? '搜索已学习的成语...' : '搜索对比记录中的词语...'"
-            class="flex-1 px-3 py-3 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+            :placeholder="activeTab === 'idiom' ? '搜索已学习的成语…' : '搜索对比记录中的词语…'"
+            class="flex-1 px-3 py-3 text-sm bg-transparent text-ink placeholder-ink-mute outline-none"
           />
         </div>
         <button
           v-if="activeTab === 'idiom'"
           @click="showFavoritesOnly = !showFavoritesOnly"
-          class="shrink-0 p-3 rounded-2xl shadow-md border transition-colors duration-200"
+          class="shrink-0 p-3 rounded-2xl shadow-sm border transition-colors duration-200"
           :class="showFavoritesOnly
-            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500 dark:text-red-400'
-            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400'"
+            ? 'bg-zhuhong-soft border-zhuhong/30 text-zhuhong'
+            : 'bg-card border-line text-ink-mute hover:text-zhuhong'"
           :title="showFavoritesOnly ? '显示全部' : '仅显示收藏'"
         >
           <Heart :size="18" :fill="showFavoritesOnly ? 'currentColor' : 'none'" />
         </button>
       </div>
 
-      <!-- Batch action bar (edit mode) -->
+      <!-- Batch action bar -->
       <div v-if="editMode" class="mx-auto max-w-lg mb-4 flex items-center gap-3">
         <button
           @click="isAllSelected ? clearSelection() : selectAll()"
-          class="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300"
+          class="flex items-center gap-1.5 text-sm font-medium text-ink-soft"
         >
-          <Check :size="16" :class="isAllSelected ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'" />
+          <Check :size="16" :class="isAllSelected ? 'text-zhuhong' : 'text-ink-mute'" />
           {{ isAllSelected ? '取消全选' : '全选' }}
         </button>
-        <span class="text-xs text-gray-400 dark:text-gray-500">已选 {{ selectedCount }} 项</span>
+        <span class="text-xs text-ink-mute">已选 {{ selectedCount }} 项</span>
         <button
           @click="requestBatchDelete"
           :disabled="selectedCount === 0"
-          class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+          class="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium btn-primary transition-colors"
         >
           <Trash2 :size="16" />
           删除
         </button>
       </div>
 
-      <!-- 词语记录 Tab -->
+      <!-- 词语记录 -->
       <div v-if="activeTab === 'idiom'" class="mx-auto max-w-lg">
         <div v-if="filteredHistory.length > 0" class="space-y-2">
           <div
             v-for="record in filteredHistory"
             :key="record.id"
             @click="onIdiomRowClick(record)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 group cursor-pointer"
-            :class="{ 'border-red-300 dark:border-red-700 ring-1 ring-red-200 dark:ring-red-800': editMode && isSelected(record.id) }"
+            class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-zhuhong/50 transition-all duration-200 group cursor-pointer"
+            :class="{ 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
             @keydown.enter="onIdiomRowClick(record)"
           >
-            <!-- Checkbox (edit mode) -->
             <div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
               :class="isSelected(record.id)
-                ? 'bg-red-600 border-red-600 text-white'
-                : 'border-gray-300 dark:border-gray-600 text-transparent'"
+                ? 'bg-zhuhong-solid border-zhuhong-solid text-paper-ink'
+                : 'border-line text-transparent'"
             >
               <Check :size="12" :stroke-width="3" />
             </div>
 
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 shrink-0">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong shrink-0">
               <BookOpen :size="18" />
             </div>
             <div class="flex-1 text-left">
-              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors flex items-center gap-1.5">
+              <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
                 {{ record.word }}
                 <Heart
                   v-if="idiomStore.isFavorite(record.word)"
                   :size="14"
-                  class="text-red-500 dark:text-red-400 shrink-0"
+                  class="text-zhuhong shrink-0"
                   fill="currentColor"
                 />
               </p>
               <div class="flex items-center gap-1 mt-0.5">
-                <Clock :size="12" class="text-gray-400 dark:text-gray-500" />
-                <span class="text-xs text-gray-400 dark:text-gray-500">
-                  {{ formatTime(record.timestamp) }}
-                </span>
+                <Clock :size="12" class="text-ink-mute" />
+                <span class="text-xs text-ink-mute">{{ formatTime(record.timestamp) }}</span>
               </div>
             </div>
             <template v-if="!editMode">
               <button
                 @click.stop="requestDeleteIdiom(record)"
-                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                class="p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
               </button>
-              <ChevronRight :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-red-400 dark:group-hover:text-red-500 transition-colors" />
+              <ChevronRight :size="18" class="text-ink-mute group-hover:text-zhuhong transition-colors" />
             </template>
           </div>
         </div>
 
         <div v-else class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <Clock :size="32" class="text-gray-400 dark:text-gray-500" />
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
+            <Clock :size="32" class="text-ink-mute" />
           </div>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">
+          <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的成语' : '还没有学习记录' }}
           </p>
           <button
             v-if="!searchQuery"
             @click="router.push('/learn')"
-            class="mt-4 px-6 py-2 rounded-full bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
+            class="mt-4 px-6 py-2 rounded-full btn-primary text-sm font-medium transition-colors"
           >
             开始学习
           </button>
         </div>
       </div>
 
-      <!-- 对比记录 Tab -->
+      <!-- 对比记录 -->
       <div v-if="activeTab === 'compare'" class="mx-auto max-w-lg">
         <div v-if="filteredCompareHistory.length > 0" class="space-y-2">
           <div
             v-for="record in filteredCompareHistory"
             :key="record.id"
             @click="onCompareRowClick(record)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 group cursor-pointer"
-            :class="{ 'border-blue-300 dark:border-blue-700 ring-1 ring-blue-200 dark:ring-blue-800': editMode && isSelected(record.id) }"
+            class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-dai/50 transition-all duration-200 group cursor-pointer"
+            :class="{ 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
             @keydown.enter="onCompareRowClick(record)"
           >
-            <!-- Checkbox (edit mode) -->
             <div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
               :class="isSelected(record.id)
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'border-gray-300 dark:border-gray-600 text-transparent'"
+                ? 'bg-dai-solid border-dai-solid text-paper-ink'
+                : 'border-line text-transparent'"
             >
               <Check :size="12" :stroke-width="3" />
             </div>
 
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shrink-0">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0">
               <GitCompare :size="18" />
             </div>
             <div class="flex-1 text-left">
-              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <p class="text-base font-semibold text-ink group-hover:text-dai transition-colors">
                 {{ record.words.join(' vs ') }}
               </p>
               <div class="flex items-center gap-1 mt-0.5">
-                <Clock :size="12" class="text-gray-400 dark:text-gray-500" />
-                <span class="text-xs text-gray-400 dark:text-gray-500">
-                  {{ formatTime(record.createdAt) }}
-                </span>
+                <Clock :size="12" class="text-ink-mute" />
+                <span class="text-xs text-ink-mute">{{ formatTime(record.createdAt) }}</span>
               </div>
             </div>
             <template v-if="!editMode">
               <button
                 @click.stop="requestDeleteCompare(record)"
-                class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                class="p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
               </button>
-              <ChevronRight :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors" />
+              <ChevronRight :size="18" class="text-ink-mute group-hover:text-dai transition-colors" />
             </template>
           </div>
         </div>
 
         <div v-else class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <GitCompare :size="32" class="text-gray-400 dark:text-gray-500" />
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
+            <GitCompare :size="32" class="text-ink-mute" />
           </div>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">
+          <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的对比记录' : '还没有对比记录' }}
           </p>
           <button
             v-if="!searchQuery"
             @click="router.push('/compare')"
-            class="mt-4 px-6 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+            class="mt-4 px-6 py-2 rounded-full btn-dai text-sm font-medium transition-colors"
           >
             开始对比
           </button>
@@ -500,23 +480,21 @@ function doConfirmDelete() {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="confirmDelete = null"
       >
-        <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            删除记录？
-          </h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
+          <h3 class="text-lg font-semibold text-ink mb-2">删除记录？</h3>
+          <p class="text-sm text-ink-soft mb-6">
             确定要删除 {{ confirmDelete.label }} 吗？此操作不会删除已缓存的词语内容，且不可恢复。
           </p>
           <div class="flex gap-3">
             <button
               @click="confirmDelete = null"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               取消
             </button>
             <button
               @click="doConfirmDelete"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
               确认删除
             </button>

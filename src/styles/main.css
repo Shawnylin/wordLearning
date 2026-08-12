@@ -4,61 +4,225 @@
    这里显式改为 class 变体，配合 theme store 在 <html> 上切换 .dark） */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Custom CSS Variables */
+/* ============ 古风色板（宣纸 · 朱砂 · 墨 · 黛蓝 · 金 · 竹青） ============ */
 :root {
-  --color-zhuhong: #C0392B;
-  --color-zhuhong-light: #E74C3C;
-  --color-zhuhong-dark: #A93226;
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --paper: #f3ecdc;
+  --card: #fbf7ec;
+  --soft: #eae2ce;
+  --line: #e0d6be;
+  --ink: #2a241c;
+  --ink-soft: #6a6152;
+  --ink-mute: #9a907e;
+
+  --zhuhong: #b23a2c;
+  --zhuhong-soft: #f1dfd8;
+  --zhuhong-solid: #b23a2c;
+
+  --dai: #3e5a76;
+  --dai-soft: #e1e8ef;
+  --dai-solid: #3e5a76;
+
+  --gold: #a97b22;
+  --gold-soft: #f1e6c8;
+
+  --bamboo: #4a7a57;
+  --bamboo-soft: #e1ebe2;
+
+  --violet: #7a5c8e;
+  --violet-soft: #ece3f0;
 }
 
-/* Dark mode variables */
 html.dark {
   color-scheme: dark;
+
+  --paper: #1d1913;
+  --card: #272119;
+  --soft: #322b20;
+  --line: #3d3527;
+  --ink: #ede5d3;
+  --ink-soft: #b7ad9c;
+  --ink-mute: #877d6b;
+
+  --zhuhong: #d98776;
+  --zhuhong-soft: #3a241e;
+  --zhuhong-solid: #b8412f;
+
+  --dai: #86a2be;
+  --dai-soft: #252f3a;
+  --dai-solid: #37546e;
+
+  --gold: #d2ac55;
+  --gold-soft: #38301f;
+
+  --bamboo: #7faa8b;
+  --bamboo-soft: #243429;
+
+  --violet: #b396c2;
+  --violet-soft: #312737;
 }
 
-/* Smooth transitions for theme switching */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+/* 将色板映射为 Tailwind 工具类（bg-card / text-ink / border-line …） */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-soft: var(--soft);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+
+  --color-zhuhong: var(--zhuhong);
+  --color-zhuhong-soft: var(--zhuhong-soft);
+  --color-zhuhong-solid: var(--zhuhong-solid);
+
+  --color-dai: var(--dai);
+  --color-dai-soft: var(--dai-soft);
+  --color-dai-solid: var(--dai-solid);
+
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+
+  --color-bamboo: var(--bamboo);
+  --color-bamboo-soft: var(--bamboo-soft);
+
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
 }
 
-/* Prevent overscroll bounce on iOS */
-html, body {
-  overscroll-behavior: none;
+/* 字体（静态，无需随主题切换） */
+@theme {
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", "Songti SC", serif;
+  --font-kai: "Ma Shan Zheng", "KaiTi", "STKaiti", "AR PL UKai CN", cursive;
+  /* 恒定浅色纸张色：用于彩色底上的文字/把手，两种主题下都保持浅色 */
+  --color-paper-ink: #fbf7ec;
+}
+
+/* ============ 基础样式 ============ */
+html,
+body {
   height: 100%;
+  overscroll-behavior: none;
   overflow: hidden;
 }
 
+body {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 252, 244, 0.6), rgba(255, 252, 244, 0) 55%),
+    radial-gradient(100% 70% at 100% 100%, rgba(178, 58, 44, 0.03), rgba(178, 58, 44, 0) 60%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 宣纸纸纹：极淡的纤维噪点 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html.dark body::before {
+  opacity: 0.06;
+}
+
 #app {
+  position: relative;
+  z-index: 1;
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Safe area padding for bottom nav */
+/* 主题切换的柔和过渡（只作用于颜色类属性，避免布局抖动） */
+* {
+  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+/* ============ 通用组件 ============ */
+
+/* 卡片 */
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(42, 36, 28, 0.03), 0 8px 24px -16px rgba(42, 36, 28, 0.18);
+}
+
+/* 印章（红色方形，白/宣纸字） */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--zhuhong-solid);
+  color: #fbf7ec;
+  font-family: var(--font-kai);
+  line-height: 1;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 1.5px rgba(251, 247, 236, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* 主按钮（朱砂） */
+.btn-primary {
+  background-color: var(--zhuhong-solid);
+  color: #fbf7ec;
+}
+.btn-primary:hover {
+  filter: brightness(0.94);
+}
+.btn-primary:disabled {
+  background-color: var(--soft);
+  color: var(--ink-mute);
+  filter: none;
+  cursor: not-allowed;
+}
+
+/* 次按钮（黛蓝） */
+.btn-dai {
+  background-color: var(--dai-solid);
+  color: #f6fafd;
+}
+.btn-dai:hover {
+  filter: brightness(0.94);
+}
+.btn-dai:disabled {
+  background-color: var(--soft);
+  color: var(--ink-mute);
+  filter: none;
+  cursor: not-allowed;
+}
+
+/* 安全区底栏预留 */
 .pb-safe {
   padding-bottom: 96px;
 }
 
-/* Custom scrollbar for dark mode */
-html.dark ::-webkit-scrollbar {
+/* ============ 滚动条 ============ */
+::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
-
-html.dark ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: #444;
+::-webkit-scrollbar-thumb {
+  background: var(--line);
   border-radius: 3px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-mute);
+}
 
-/* Animation for card entrance */
+/* ============ 动画 ============ */
 @keyframes card-enter {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -67,10 +231,9 @@ html.dark ::-webkit-scrollbar-thumb {
 }
 
 .animate-card-enter {
-  animation: card-enter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Pulse animation for loading */
 @keyframes pulse-custom {
   0%, 100% {
     opacity: 1;
@@ -84,7 +247,25 @@ html.dark ::-webkit-scrollbar-thumb {
   animation: pulse-custom 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Bottom nav indicator animation */
-.nav-indicator {
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+.stagger > * {
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger > *:nth-child(6) { animation-delay: 0.22s; }
+.stagger > *:nth-child(7) { animation-delay: 0.26s; }
+.stagger > *:nth-child(8) { animation-delay: 0.3s; }

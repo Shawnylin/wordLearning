@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import SearchInput from '../components/SearchInput.vue'
 import IdiomCard from '../components/IdiomCard.vue'
-import { AlertCircle, Settings } from 'lucide-vue-next'
+import { AlertCircle, Settings, Clock, Heart, BookOpen } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 const idiomStore = useIdiomStore()
@@ -12,6 +12,12 @@ const settingsStore = useSettingsStore()
 const router = useRouter()
 
 const showNoApiKeyWarning = ref(false)
+
+// 快速入口：最近学习 + 收藏
+const recentWords = computed(() =>
+  idiomStore.sortedHistory.slice(0, 6).map(r => r.word)
+)
+const favoriteWords = computed(() => idiomStore.favorites.slice(0, 6))
 
 async function handleSearch(word: string) {
   if (!settingsStore.hasApiKey()) {
@@ -37,11 +43,12 @@ function goToSettings() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-4">
+  <div class="min-h-screen px-4 pt-8 pb-4">
     <!-- Header -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">成语学习</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">输入成语，开始学习</p>
+      <div class="seal w-12 h-12 text-3xl mx-auto mb-3">学</div>
+      <h1 class="font-kai text-4xl text-ink leading-tight">成语学习</h1>
+      <p class="text-sm text-ink-mute mt-1 tracking-wide">公考必备 · 字字珠玑</p>
     </div>
 
     <!-- Search Input -->
@@ -55,20 +62,20 @@ function goToSettings() {
     <!-- No API Key Warning -->
     <div
       v-if="showNoApiKeyWarning"
-      class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+      class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-gold-soft border border-gold/30"
     >
       <div class="flex items-start gap-3">
-        <AlertCircle :size="20" class="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <AlertCircle :size="20" class="text-gold shrink-0 mt-0.5" />
         <div>
-          <p class="text-sm text-amber-800 dark:text-amber-200 font-medium">
+          <p class="text-sm text-ink font-medium">
             请先设置 API Key
           </p>
-          <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          <p class="text-xs text-ink-soft mt-1">
             使用本功能需要设置 DeepSeek API Key
           </p>
           <button
             @click="goToSettings"
-            class="mt-2 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100"
+            class="mt-2 flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80"
           >
             <Settings :size="14" />
             前往设置
@@ -80,17 +87,17 @@ function goToSettings() {
     <!-- Error Message -->
     <div
       v-if="idiomStore.errorMessage"
-      class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+      class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
     >
       <div class="flex items-start gap-3">
-        <AlertCircle :size="20" class="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+        <AlertCircle :size="20" class="text-zhuhong shrink-0 mt-0.5" />
         <div>
-          <p class="text-sm text-red-800 dark:text-red-200">
+          <p class="text-sm text-ink">
             {{ idiomStore.errorMessage }}
           </p>
           <button
             @click="idiomStore.clearError()"
-            class="mt-1 text-xs text-red-600 dark:text-red-400 hover:underline"
+            class="mt-1 text-xs text-zhuhong hover:underline"
           >
             关闭
           </button>
@@ -99,28 +106,22 @@ function goToSettings() {
     </div>
 
     <!-- Loading State -->
-    <div
-      v-if="idiomStore.isLoading"
-      class="mx-auto max-w-lg"
-    >
-      <div class="rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 p-8">
+    <div v-if="idiomStore.isLoading" class="mx-auto max-w-lg">
+      <div class="rounded-3xl card p-8">
         <div class="animate-pulse-custom space-y-6">
-          <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded-full w-32 mx-auto"></div>
-          <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl w-48 mx-auto"></div>
+          <div class="h-6 bg-soft rounded-full w-32 mx-auto"></div>
+          <div class="h-12 bg-soft rounded-xl w-48 mx-auto"></div>
           <div class="space-y-4">
-            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-20"></div>
-            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-3/4"></div>
+            <div class="h-4 bg-soft rounded-full w-20"></div>
+            <div class="h-4 bg-soft rounded-full"></div>
+            <div class="h-4 bg-soft rounded-full w-3/4"></div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Idiom Card -->
-    <div
-      v-else-if="idiomStore.currentIdiom"
-      class="mx-auto max-w-lg"
-    >
+    <div v-else-if="idiomStore.currentIdiom" class="mx-auto max-w-lg">
       <IdiomCard
         :idiom="idiomStore.currentIdiom"
         :loading="idiomStore.isLoading"
@@ -129,17 +130,53 @@ function goToSettings() {
       />
     </div>
 
-    <!-- Empty State -->
-    <div
-      v-else
-      class="mx-auto max-w-lg text-center py-16"
-    >
-      <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-        <span class="text-4xl">📖</span>
+    <!-- Empty State + 快速入口 -->
+    <div v-else class="mx-auto max-w-lg">
+      <div class="text-center pt-4 pb-6">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
+          <BookOpen :size="32" class="text-ink-mute" />
+        </div>
+        <p class="text-ink-mute text-sm">
+          输入成语或词语，开始你的学习之旅
+        </p>
       </div>
-      <p class="text-gray-500 dark:text-gray-400 text-sm">
-        输入成语或词语，开始你的学习之旅
-      </p>
+
+      <!-- 快速入口 -->
+      <div class="space-y-5">
+        <div v-if="recentWords.length > 0">
+          <div class="flex items-center gap-2 mb-2">
+            <Clock :size="14" class="text-ink-mute" />
+            <h3 class="text-xs font-semibold text-ink-mute tracking-wide">最近学习</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="word in recentWords"
+              :key="word"
+              @click="handleSearch(word)"
+              class="px-4 py-2 rounded-full text-sm bg-card border border-line text-ink-soft hover:border-zhuhong hover:text-zhuhong transition-colors duration-200"
+            >
+              {{ word }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="favoriteWords.length > 0">
+          <div class="flex items-center gap-2 mb-2">
+            <Heart :size="14" class="text-zhuhong" fill="currentColor" />
+            <h3 class="text-xs font-semibold text-ink-mute tracking-wide">我的收藏</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="word in favoriteWords"
+              :key="word"
+              @click="handleSearch(word)"
+              class="px-4 py-2 rounded-full text-sm bg-zhuhong-soft border border-zhuhong/20 text-zhuhong hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+            >
+              {{ word }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

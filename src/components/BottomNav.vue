@@ -29,8 +29,8 @@ const activeIndex = computed(() => {
 const count = navItems.length
 
 const indicatorStyle = computed(() => ({
-  width: `calc(${100 / count}% - 4px)`,
-  left: `calc(${(100 / count) * activeIndex.value}% + 2px)`,
+  width: `calc(${100 / count}% - 8px)`,
+  left: `calc(${(100 / count) * activeIndex.value}% + 4px)`,
   transition: 'left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
 }))
 
@@ -43,10 +43,10 @@ function navigateTo(item: NavItem) {
 <template>
   <nav class="fixed bottom-0 left-0 right-0 z-50" style="padding-bottom: 34px">
     <div class="mx-auto max-w-md px-4 pt-1" style="padding-bottom: 4px">
-      <div class="relative flex items-center rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-1.5">
-        <!-- Animated indicator -->
+      <div class="relative flex items-center rounded-full bg-card/95 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(42,36,28,0.4)] border border-line p-1.5">
+        <!-- 印章滑动指示器 -->
         <div
-          class="absolute top-1 bottom-1 rounded-full bg-red-700/10 dark:bg-red-500/15"
+          class="absolute top-1 bottom-1 rounded-full bg-zhuhong-solid shadow-[0_2px_8px_-2px_rgba(178,58,44,0.6)]"
           :style="indicatorStyle"
         />
 
@@ -56,14 +56,14 @@ function navigateTo(item: NavItem) {
           :key="item.name"
           @click="navigateTo(item)"
           class="relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors duration-300"
-          :class="activeIndex === index ? 'text-red-700 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'"
+          :class="activeIndex === index ? 'text-paper-ink' : 'text-ink-mute'"
         >
           <component
             :is="item.icon"
             :size="20"
-            :stroke-width="activeIndex === index ? 2.5 : 2"
+            :stroke-width="activeIndex === index ? 2.4 : 1.8"
           />
-          <span class="text-[10px] font-medium">{{ item.label }}</span>
+          <span class="text-[11px] font-medium tracking-wide">{{ item.label }}</span>
         </button>
       </div>
     </div>

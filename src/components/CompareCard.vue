@@ -27,22 +27,22 @@ const wordClass = computed(() => {
   return 'text-lg md:text-xl'
 })
 const vsClass = computed(() => {
-  if (wordCount.value <= 3) return 'text-lg'
-  if (wordCount.value === 4) return 'text-base'
-  return 'text-sm'
+  if (wordCount.value <= 3) return 'text-base'
+  if (wordCount.value === 4) return 'text-sm'
+  return 'text-xs'
 })
 </script>
 
 <template>
   <div class="animate-card-enter">
-    <div class="rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="rounded-3xl card overflow-hidden">
       <!-- Header -->
-      <div class="relative px-6 pt-8 pb-6 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-gray-800">
+      <div class="relative px-6 pt-8 pb-6 bg-gradient-to-b from-dai-soft to-card">
         <!-- Regenerate button -->
         <button
           @click="emit('regenerate')"
           :disabled="loading"
-          class="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 disabled:opacity-50"
+          class="absolute top-4 right-4 p-2 rounded-full text-ink-mute hover:text-dai hover:bg-dai-soft transition-all duration-200 disabled:opacity-50"
           title="重新生成"
         >
           <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
@@ -50,19 +50,19 @@ const vsClass = computed(() => {
 
         <!-- Title -->
         <div class="flex items-center justify-center gap-2 mb-3">
-          <GitCompare :size="20" class="text-blue-600 dark:text-blue-400" />
-          <span class="text-sm font-medium text-blue-600 dark:text-blue-400">词语对比</span>
+          <GitCompare :size="18" class="text-dai" />
+          <span class="text-sm font-medium text-dai tracking-wide">词语对比</span>
         </div>
 
         <!-- Words - single line -->
         <div class="flex items-center justify-center gap-2 flex-nowrap overflow-hidden px-2">
           <template v-for="(word, index) in compare.words" :key="word">
-            <span :class="['font-bold text-gray-900 dark:text-gray-50 whitespace-nowrap', wordClass]">
+            <span :class="['font-kai font-normal text-ink whitespace-nowrap leading-tight', wordClass]">
               {{ word }}
             </span>
             <span
               v-if="index < compare.words.length - 1"
-              :class="['text-gray-400 dark:text-gray-500 whitespace-nowrap', vsClass]"
+              :class="['text-ink-mute whitespace-nowrap font-serif', vsClass]"
             >
               vs
             </span>
@@ -71,8 +71,8 @@ const vsClass = computed(() => {
 
         <!-- Token usage -->
         <div class="flex items-center justify-center gap-1 mt-3">
-          <Coins :size="12" class="text-gray-400 dark:text-gray-500" />
-          <span class="text-xs text-gray-400 dark:text-gray-500">
+          <Coins :size="12" class="text-gold" />
+          <span class="text-xs text-gold">
             消耗 {{ compare.tokenUsage }} tokens
           </span>
         </div>
@@ -85,10 +85,10 @@ const vsClass = computed(() => {
           :key="section.key"
         >
           <div class="flex items-center gap-2 mb-2">
-            <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-dai-soft text-dai">
               <component :is="section.icon" :size="14" />
             </div>
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <h3 class="text-sm font-semibold text-ink-soft tracking-wide">
               {{ section.label }}
             </h3>
           </div>
@@ -96,7 +96,7 @@ const vsClass = computed(() => {
             <p
               v-for="(line, i) in compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'].split('\n').filter(l => l.trim())"
               :key="i"
-              class="text-base leading-relaxed text-gray-600 dark:text-gray-400"
+              class="text-base leading-relaxed text-ink-soft"
             >
               {{ line }}
             </p>

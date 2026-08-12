@@ -14,7 +14,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div class="min-h-screen bg-paper text-ink transition-colors duration-300">
     <main class="pb-safe">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">

@@ -65,12 +65,10 @@ function handleClearCache() {
   showClearCacheConfirm.value = false
 }
 
-// 刷新页面
 function handleRefresh() {
   location.reload()
 }
 
-// 导出 JSON
 function handleExport() {
   const json = idiomStore.exportData()
   const blob = new Blob([json], { type: 'application/json' })
@@ -82,7 +80,6 @@ function handleExport() {
   URL.revokeObjectURL(url)
 }
 
-// 导入 JSON
 function handleImport() {
   const input = document.createElement('input')
   input.type = 'file'
@@ -103,89 +100,82 @@ function handleImport() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-4">
+  <div class="min-h-screen px-4 pt-8 pb-4">
     <!-- Header -->
     <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">个人设置</h1>
+      <div class="seal w-12 h-12 text-3xl mx-auto mb-3">我</div>
+      <h1 class="font-kai text-4xl text-ink leading-tight">个人设置</h1>
     </div>
 
-    <div class="mx-auto max-w-lg space-y-6">
+    <div class="mx-auto max-w-lg space-y-4">
       <!-- Stats Card -->
-      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6">
+      <div class="card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong">
             <BookOpen :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-gray-900 dark:text-gray-100">学习统计</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">你的学习进度</p>
+            <h3 class="font-semibold text-ink">学习统计</h3>
+            <p class="text-xs text-ink-mute">你的学习进度</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
-            <p class="text-2xl font-bold text-red-600 dark:text-red-400">
-              {{ idiomStore.learnedCount }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">已学成语</p>
+          <div class="p-3 rounded-xl bg-soft text-center">
+            <p class="font-serif text-2xl font-bold text-zhuhong">{{ idiomStore.learnedCount }}</p>
+            <p class="text-xs text-ink-mute mt-1">已学成语</p>
           </div>
-          <div class="p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-center">
-            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {{ idiomStore.sortedCompareHistory.length }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">对比次数</p>
+          <div class="p-3 rounded-xl bg-soft text-center">
+            <p class="font-serif text-2xl font-bold text-dai">{{ idiomStore.sortedCompareHistory.length }}</p>
+            <p class="text-xs text-ink-mute mt-1">对比次数</p>
           </div>
         </div>
 
         <!-- Token Stats -->
-        <div class="mt-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+        <div class="mt-4 p-4 rounded-xl bg-gold-soft border border-gold/20">
           <div class="flex items-center gap-2 mb-3">
-            <Coins :size="16" class="text-amber-600 dark:text-amber-400" />
-            <span class="text-sm font-medium text-amber-800 dark:text-amber-200">Token 消耗统计</span>
+            <Coins :size="16" class="text-gold" />
+            <span class="text-sm font-medium text-ink-soft">Token 消耗统计</span>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
-                {{ idiomStore.tokenStats.totalTokens.toLocaleString() }}
-              </p>
-              <p class="text-xs text-amber-600/70 dark:text-amber-400/70">总消耗 Tokens</p>
+              <p class="font-serif text-xl font-bold text-gold">{{ idiomStore.tokenStats.totalTokens.toLocaleString() }}</p>
+              <p class="text-xs text-ink-mute">总消耗 Tokens</p>
             </div>
             <div>
-              <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
-                {{ idiomStore.tokenStats.requestCount }}
-              </p>
-              <p class="text-xs text-amber-600/70 dark:text-amber-400/70">API 调用次数</p>
+              <p class="font-serif text-xl font-bold text-gold">{{ idiomStore.tokenStats.requestCount }}</p>
+              <p class="text-xs text-ink-mute">API 调用次数</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- API Key Setting -->
-      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6">
+      <div class="card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai">
             <Key :size="20" />
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-gray-900 dark:text-gray-100">DeepSeek API Key</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">用于生成成语学习内容</p>
+            <h3 class="font-semibold text-ink">DeepSeek API Key</h3>
+            <p class="text-xs text-ink-mute">用于生成成语学习内容</p>
           </div>
-          <div v-if="apiKeySaved" class="flex items-center gap-1 text-green-600 dark:text-green-400">
+          <div v-if="apiKeySaved" class="flex items-center gap-1 text-bamboo">
             <Check :size="14" />
             <span class="text-xs">已保存</span>
           </div>
         </div>
 
         <div v-if="!editingApiKey">
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
             <div class="flex-1">
-              <p class="text-sm text-gray-600 dark:text-gray-400 font-mono">
+              <p class="text-sm text-ink-soft font-mono">
                 {{ showApiKey ? settingsStore.apiKey || '未设置' : maskedApiKey }}
               </p>
             </div>
             <button
               v-if="settingsStore.apiKey"
               @click="showApiKey = !showApiKey"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              class="p-1.5 rounded-lg text-ink-mute hover:text-ink transition-colors"
             >
               <component :is="showApiKey ? EyeOff : Eye" :size="16" />
             </button>
@@ -193,14 +183,14 @@ function handleImport() {
           <div class="flex gap-2 mt-3">
             <button
               @click="startEditApiKey"
-              class="flex-1 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              class="flex-1 py-2 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
               {{ settingsStore.apiKey ? '修改' : '设置 API Key' }}
             </button>
             <button
               v-if="settingsStore.apiKey"
               @click="clearApiKey"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+              class="px-4 py-2 rounded-xl text-sm font-medium text-zhuhong bg-zhuhong-soft hover:opacity-85 transition-colors"
             >
               清除
             </button>
@@ -212,25 +202,25 @@ function handleImport() {
             v-model="tempApiKey"
             type="password"
             placeholder="输入 DeepSeek API Key"
-            class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none border border-gray-200 dark:border-gray-600 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            class="w-full px-4 py-3 rounded-xl bg-soft text-sm text-ink placeholder-ink-mute outline-none border border-line focus:border-zhuhong focus:ring-2 focus:ring-zhuhong/15"
           />
           <div class="flex gap-2">
             <button
               @click="saveApiKey"
-              class="flex-1 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              class="flex-1 py-2 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
               保存
             </button>
             <button
               @click="cancelEditApiKey"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="px-4 py-2 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               取消
             </button>
           </div>
-          <div class="flex items-start gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20">
-            <Info :size="14" class="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <p class="text-xs text-blue-700 dark:text-blue-300">
+          <div class="flex items-start gap-2 p-3 rounded-xl bg-dai-soft">
+            <Info :size="14" class="text-dai shrink-0 mt-0.5" />
+            <p class="text-xs text-ink-soft">
               API Key 仅保存在本地浏览器中，不会上传到任何服务器。
             </p>
           </div>
@@ -238,45 +228,45 @@ function handleImport() {
       </div>
 
       <!-- Theme Setting -->
-      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+      <div class="card rounded-2xl p-6 space-y-4">
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gold-soft text-gold">
             <component :is="themeStore.followSystem ? Monitor : (themeStore.theme === 'dark' ? Moon : Sun)" :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-gray-900 dark:text-gray-100">主题模式</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+            <h3 class="font-semibold text-ink">主题模式</h3>
+            <p class="text-xs text-ink-mute">
               {{ themeStore.followSystem ? '跟随系统' : (themeStore.theme === 'dark' ? '深色模式' : '浅色模式') }}
             </p>
           </div>
         </div>
 
         <!-- Follow system toggle -->
-        <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+        <div class="flex items-center justify-between p-3 rounded-xl bg-soft">
           <div class="flex items-center gap-2">
-            <Monitor :size="16" class="text-gray-500 dark:text-gray-400" />
-            <span class="text-sm text-gray-700 dark:text-gray-300">跟随系统</span>
+            <Monitor :size="16" class="text-ink-soft" />
+            <span class="text-sm text-ink">跟随系统</span>
           </div>
           <button
             @click="themeStore.setFollowSystem(!themeStore.followSystem)"
-            class="relative w-11 h-6 rounded-full transition-colors duration-300"
-            :class="themeStore.followSystem ? 'bg-red-600' : 'bg-gray-300 dark:bg-gray-600'"
+            class="relative w-11 h-6 rounded-full transition-colors duration-300 border"
+            :class="themeStore.followSystem ? 'bg-zhuhong border-zhuhong' : 'bg-soft border-line'"
           >
             <span
-              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300"
+              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-all duration-300"
               :style="{ transform: themeStore.followSystem ? 'translateX(20px)' : 'translateX(0)' }"
             />
           </button>
         </div>
 
-        <!-- Manual theme selector (only when not following system) -->
+        <!-- Manual theme selector -->
         <div v-if="!themeStore.followSystem" class="flex gap-2">
           <button
             @click="themeStore.setTheme('light')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="themeStore.theme === 'light'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+              ? 'btn-primary'
+              : 'bg-soft text-ink-soft'"
           >
             <Sun :size="16" />
             浅色
@@ -285,8 +275,8 @@ function handleImport() {
             @click="themeStore.setTheme('dark')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="themeStore.theme === 'dark'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+              ? 'btn-primary'
+              : 'bg-soft text-ink-soft'"
           >
             <Moon :size="16" />
             深色
@@ -295,14 +285,14 @@ function handleImport() {
       </div>
 
       <!-- Data Management -->
-      <div class="rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 p-6">
+      <div class="card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-soft text-ink-soft">
             <Trash2 :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-gray-900 dark:text-gray-100">数据管理</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">导入导出与清理</p>
+            <h3 class="font-semibold text-ink">数据管理</h3>
+            <p class="text-xs text-ink-mute">导入导出与清理</p>
           </div>
         </div>
 
@@ -310,45 +300,44 @@ function handleImport() {
           <div class="grid grid-cols-2 gap-2">
             <button
               @click="handleExport"
-              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               <Download :size="16" />
               导出数据
             </button>
             <button
               @click="handleImport"
-              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               <Upload :size="16" />
               导入数据
             </button>
           </div>
 
-          <!-- Import result message -->
           <div
             v-if="importResult"
             class="p-3 rounded-xl text-sm"
-            :class="importResult.success ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'"
+            :class="importResult.success ? 'bg-bamboo-soft text-bamboo' : 'bg-zhuhong-soft text-zhuhong'"
           >
             {{ importResult.message }}
           </div>
 
           <button
             @click="handleRefresh"
-            class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
           >
             <RefreshCw :size="16" />
             刷新应用
           </button>
           <button
             @click="showClearConfirm = true"
-            class="w-full py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            class="w-full py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
           >
             清空搜索历史
           </button>
           <button
             @click="showClearCacheConfirm = true"
-            class="w-full py-2.5 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            class="w-full py-2.5 rounded-xl text-sm font-medium text-zhuhong bg-zhuhong-soft hover:opacity-85 transition-colors"
           >
             清空所有缓存
           </button>
@@ -363,23 +352,21 @@ function handleImport() {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="showClearConfirm = false"
       >
-        <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            清空搜索历史？
-          </h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
+          <h3 class="text-lg font-semibold text-ink mb-2">清空搜索历史？</h3>
+          <p class="text-sm text-ink-soft mb-6">
             此操作将清空所有搜索记录，但已缓存的成语内容不会被删除。
           </p>
           <div class="flex gap-3">
             <button
               @click="showClearConfirm = false"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               取消
             </button>
             <button
               @click="handleClearHistory"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
               确认清空
             </button>
@@ -395,23 +382,21 @@ function handleImport() {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="showClearCacheConfirm = false"
       >
-        <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            清空所有缓存？
-          </h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
+          <h3 class="text-lg font-semibold text-ink mb-2">清空所有缓存？</h3>
+          <p class="text-sm text-ink-soft mb-6">
             此操作将删除所有已缓存的成语内容和搜索记录，且不可恢复。
           </p>
           <div class="flex gap-3">
             <button
               @click="showClearCacheConfirm = false"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               取消
             </button>
             <button
               @click="handleClearCache"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
               确认清空
             </button>
@@ -422,7 +407,7 @@ function handleImport() {
 
     <!-- Version -->
     <div class="text-center mt-8 mb-4">
-      <p class="text-xs text-gray-400 dark:text-gray-500">v{{ APP_VERSION }}</p>
+      <p class="text-xs text-ink-mute">v{{ APP_VERSION }}</p>
     </div>
   </div>
 </template>
