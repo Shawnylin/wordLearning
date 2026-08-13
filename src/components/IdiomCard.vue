@@ -100,12 +100,13 @@ function getSectionContent(key: string): string {
               相关成语
             </h3>
           </div>
-          <div class="flex flex-wrap gap-2 pl-9">
+          <div class="grid grid-cols-3 gap-2 pl-9">
             <button
               v-for="related in idiom.relatedIdioms"
               :key="related"
               @click="emit('relatedClick', related)"
-              class="px-4 py-2 rounded-full text-sm font-medium bg-soft text-ink-soft hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+              class="min-w-0 px-2 py-2 rounded-full text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis bg-soft text-ink-soft hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+              :title="related"
             >
               {{ related }}
             </button>

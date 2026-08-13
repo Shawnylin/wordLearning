@@ -3,8 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import {
-  BookOpen, Search, CalendarDays, Coins, Zap,
-  TrendingUp, Hash, Clock, BarChart3
+  BookOpen, BarChart3, Shuffle, TrendingUp, Clock
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -15,12 +14,12 @@ const learnedCount = computed(() => Object.keys(idiomStore.idiomCache).length)
 const favoriteCount = computed(() => idiomStore.favorites.length)
 const searchWordCount = computed(() => idiomStore.searchHistory.length)
 const compareCount = computed(() => idiomStore.compareHistory.length)
-const totalTokens = computed(() => idiomStore.tokenStats.totalTokens)
-const requestCount = computed(() => idiomStore.tokenStats.requestCount)
 
 const hasData = computed(
   () => learnedCount.value > 0 || searchWordCount.value > 0 || compareCount.value > 0
 )
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 // 某天 0 点的时间戳
 function startOfDay(ts: number): number {
@@ -29,12 +28,46 @@ function startOfDay(ts: number): number {
   return d.getTime()
 }
 
-// 活跃天数
-const activeDays = computed(() => {
+// 头部日期
+const todayLabel = computed(() => {
+  const d = new Date()
+  const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+  return `${d.getMonth() + 1}月${d.getDate()}日 · 周${week}`
+})
+
+// 活跃日期集合（搜索 + 对比）
+const activeDaySet = computed(() => {
   const days = new Set<number>()
   for (const r of idiomStore.searchHistory) days.add(startOfDay(r.timestamp))
   for (const r of idiomStore.compareHistory) days.add(startOfDay(r.createdAt))
-  return days.size
+  return days
+})
+
+// 连续打卡天数（今天还没学则从昨天起算，不打断打卡）
+const streakDays = computed(() => {
+  const days = activeDaySet.value
+  if (days.size === 0) return 0
+  let cursor = startOfDay(Date.now())
+  if (!days.has(cursor)) cursor -= DAY_MS
+  let streak = 0
+  while (days.has(cursor)) {
+    streak++
+    cursor -= DAY_MS
+  }
+  return streak
+})
+
+// 今日学习次数
+const todayCount = computed(() => {
+  const today = startOfDay(Date.now())
+  let count = 0
+  for (const r of idiomStore.searchHistory) {
+    if (startOfDay(r.timestamp) === today) count++
+  }
+  for (const r of idiomStore.compareHistory) {
+    if (startOfDay(r.createdAt) === today) count++
+  }
+  return count
 })
 
 // —— 7 日趋势数据 ——
@@ -49,8 +82,8 @@ const weeklyTrend = computed<TrendPoint[]>(() => {
   const points: TrendPoint[] = []
 
   for (let i = 6; i >= 0; i--) {
-    const dayStart = today - i * 24 * 60 * 60 * 1000
-    const dayEnd = dayStart + 24 * 60 * 60 * 1000
+    const dayStart = today - i * DAY_MS
+    const dayEnd = dayStart + DAY_MS
     let count = 0
     for (const r of idiomStore.searchHistory) {
       if (r.timestamp >= dayStart && r.timestamp < dayEnd) count++
@@ -70,11 +103,11 @@ const total7d = computed(() => weeklyTrend.value.reduce((s, p) => s + p.count, 0
 
 // —— SVG 折线图坐标 ——
 const CHART_W = 340
-const CHART_H = 160
+const CHART_H = 132
 const PAD_L = 14
 const PAD_R = 14
-const PAD_T = 22
-const PAD_B = 14
+const PAD_T = 16
+const PAD_B = 12
 
 const plotMax = computed(() => {
   const max = Math.max(...weeklyTrend.value.map(p => p.count), 0)
@@ -111,31 +144,19 @@ const areaPath = computed(() => {
 
 const hoverIdx = ref(-1)
 
-// —— 词长分布 ——
-interface LengthBucket {
-  label: string
-  count: number
-  percent: number
-}
-
-const lengthDistribution = computed<LengthBucket[]>(() => {
-  const buckets = [
-    { label: '2 字', min: 2, max: 2, count: 0 },
-    { label: '3 字', min: 3, max: 3, count: 0 },
-    { label: '4 字', min: 4, max: 4, count: 0 },
-    { label: '5 字及以上', min: 5, max: Infinity, count: 0 }
-  ]
-  for (const word of Object.keys(idiomStore.idiomCache)) {
-    const len = word.length
-    const bucket = buckets.find(b => len >= b.min && len <= b.max)
-    if (bucket) bucket.count++
+// —— 本周热词（近 7 天搜索次数 Top 5，可点击复习） ——
+const weeklyHotWords = computed(() => {
+  const weekStart = startOfDay(Date.now()) - 6 * DAY_MS
+  const counts = new Map<string, number>()
+  for (const r of idiomStore.searchHistory) {
+    if (r.timestamp >= weekStart) {
+      counts.set(r.word, (counts.get(r.word) || 0) + 1)
+    }
   }
-  const total = learnedCount.value || 1
-  return buckets.map(b => ({
-    label: b.label,
-    count: b.count,
-    percent: Math.round((b.count / total) * 100)
-  }))
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([word, count]) => ({ word, count }))
 })
 
 // —— 最近学习 ——
@@ -155,15 +176,26 @@ function formatRelative(ts: number): string {
 function goLearn() {
   router.push('/learn')
 }
+
+function openWord(word: string) {
+  idiomStore.setCurrentIdiom(word)
+  router.push('/learn')
+}
+
+function randomReview() {
+  const keys = Object.keys(idiomStore.idiomCache)
+  if (keys.length === 0) return
+  const pick = keys[Math.floor(Math.random() * keys.length)]
+  openWord(pick)
+}
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-8 pb-4">
-    <!-- Header -->
-    <div class="text-center mb-6">
-      <div class="seal w-12 h-12 text-3xl mx-auto mb-3">报</div>
-      <h1 class="font-kai text-4xl text-ink leading-tight">学习报告</h1>
-      <p class="text-sm text-ink-mute mt-1 tracking-wide">温故知新 · 积微成著</p>
+  <div class="min-h-screen px-4 pt-6 pb-4">
+    <!-- 单行标题，无 logo 占位 -->
+    <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
+      <h1 class="font-kai text-3xl text-ink leading-tight">学习报告</h1>
+      <span class="text-xs text-ink-mute">{{ todayLabel }}</span>
     </div>
 
     <!-- Empty state -->
@@ -181,16 +213,23 @@ function goLearn() {
     </div>
 
     <div v-else class="mx-auto max-w-lg space-y-4 stagger">
-      <!-- 总览 Hero -->
-      <div class="card rounded-3xl p-6">
-        <div class="flex items-center gap-4">
-          <div class="seal w-14 h-14 text-3xl shrink-0">学</div>
-          <div>
-            <p class="text-xs text-ink-mute tracking-wide">已学词语</p>
-            <p class="font-serif text-4xl font-bold text-ink leading-none mt-1">{{ learnedCount }}</p>
+      <!-- 总览 -->
+      <div class="card rounded-3xl p-5">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-end gap-2">
+            <p class="font-serif text-5xl font-bold text-ink leading-none">{{ learnedCount }}</p>
+            <p class="text-xs text-ink-mute pb-0.5">已学词语</p>
           </div>
+          <button
+            v-if="learnedCount > 0"
+            @click="randomReview"
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-zhuhong-soft text-zhuhong text-xs font-medium hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+          >
+            <Shuffle :size="14" />
+            随机复习
+          </button>
         </div>
-        <div class="mt-5 pt-5 border-t border-line grid grid-cols-3 gap-3 text-center">
+        <div class="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3 text-center">
           <div>
             <p class="font-serif text-xl font-bold text-zhuhong">{{ favoriteCount }}</p>
             <p class="text-xs text-ink-mute mt-0.5">收藏</p>
@@ -200,66 +239,22 @@ function goLearn() {
             <p class="text-xs text-ink-mute mt-0.5">对比</p>
           </div>
           <div>
-            <p class="font-serif text-xl font-bold text-gold">{{ activeDays }}</p>
-            <p class="text-xs text-ink-mute mt-0.5">活跃天数</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 学习指标 -->
-      <div class="card rounded-2xl p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <TrendingUp :size="16" class="text-ink-mute" />
-          <h3 class="text-sm font-semibold text-ink-soft tracking-wide">学习指标</h3>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-dai-soft text-dai shrink-0">
-              <Search :size="16" />
-            </div>
-            <div>
-              <p class="font-serif text-lg font-bold text-ink">{{ searchWordCount }}</p>
-              <p class="text-xs text-ink-mute">搜索词语</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-bamboo-soft text-bamboo shrink-0">
-              <CalendarDays :size="16" />
-            </div>
-            <div>
-              <p class="font-serif text-lg font-bold text-ink">{{ activeDays }}</p>
-              <p class="text-xs text-ink-mute">活跃天数</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gold-soft text-gold shrink-0">
-              <Coins :size="16" />
-            </div>
-            <div>
-              <p class="font-serif text-lg font-bold text-ink">{{ totalTokens.toLocaleString() }}</p>
-              <p class="text-xs text-ink-mute">Token 消耗</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-soft text-violet shrink-0">
-              <Zap :size="16" />
-            </div>
-            <div>
-              <p class="font-serif text-lg font-bold text-ink">{{ requestCount }}</p>
-              <p class="text-xs text-ink-mute">API 调用</p>
-            </div>
+            <p class="font-serif text-xl font-bold text-gold">
+              {{ streakDays }}<span class="text-xs font-normal ml-0.5">天</span>
+            </p>
+            <p class="text-xs text-ink-mute mt-0.5">连续打卡</p>
           </div>
         </div>
       </div>
 
       <!-- 7 日学习趋势 -->
-      <div class="card rounded-2xl p-5">
+      <div class="card rounded-2xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <BarChart3 :size="16" class="text-zhuhong" />
             <h3 class="text-sm font-semibold text-ink-soft tracking-wide">7 日学习趋势</h3>
           </div>
-          <span class="text-xs text-ink-mute">共 {{ total7d }} 次</span>
+          <span class="text-xs text-ink-mute">{{ total7d }} 次 · 今日 {{ todayCount }}</span>
         </div>
 
         <div class="relative select-none" @mouseleave="hoverIdx = -1">
@@ -299,7 +294,7 @@ function goLearn() {
             />
           </svg>
 
-          <!-- 悬停命中区 -->
+          <!-- 悬停/点按命中区 -->
           <div class="absolute inset-0 flex">
             <div
               v-for="(_p, i) in points"
@@ -337,31 +332,29 @@ function goLearn() {
         </div>
       </div>
 
-      <!-- 词长分布 -->
-      <div class="card rounded-2xl p-5">
-        <div class="flex items-center gap-2 mb-4">
-          <Hash :size="16" class="text-dai" />
-          <h3 class="text-sm font-semibold text-ink-soft tracking-wide">词长分布</h3>
+      <!-- 本周热词 -->
+      <div v-if="weeklyHotWords.length > 0" class="card rounded-2xl p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <TrendingUp :size="16" class="text-gold" />
+          <h3 class="text-sm font-semibold text-ink-soft tracking-wide">本周热词</h3>
+          <span class="ml-auto text-xs text-ink-mute">点击复习</span>
         </div>
-        <div class="space-y-3">
-          <div v-for="bucket in lengthDistribution" :key="bucket.label">
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-xs text-ink-soft">{{ bucket.label }}</span>
-              <span class="text-xs text-ink-mute">{{ bucket.count }} 个 · {{ bucket.percent }}%</span>
-            </div>
-            <div class="h-3 rounded-full bg-soft">
-              <div
-                class="h-full rounded-r-full bg-dai transition-all duration-500"
-                :style="{ width: `${bucket.percent}%` }"
-              />
-            </div>
-          </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="item in weeklyHotWords"
+            :key="item.word"
+            @click="openWord(item.word)"
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-soft text-sm font-medium text-ink-soft hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+          >
+            {{ item.word }}
+            <span class="text-xs text-zhuhong">×{{ item.count }}</span>
+          </button>
         </div>
       </div>
 
       <!-- 最近学习 -->
-      <div class="card rounded-2xl p-5">
-        <div class="flex items-center gap-2 mb-4">
+      <div class="card rounded-2xl p-4">
+        <div class="flex items-center gap-2 mb-3">
           <Clock :size="16" class="text-bamboo" />
           <h3 class="text-sm font-semibold text-ink-soft tracking-wide">最近学习</h3>
         </div>
@@ -369,7 +362,7 @@ function goLearn() {
           <button
             v-for="record in recentWords"
             :key="record.id"
-            @click="idiomStore.setCurrentIdiom(record.word); router.push('/learn')"
+            @click="openWord(record.word)"
             class="w-full flex items-center gap-3 p-3 rounded-xl bg-soft hover:bg-zhuhong-soft transition-colors text-left"
           >
             <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-zhuhong-soft text-zhuhong shrink-0">

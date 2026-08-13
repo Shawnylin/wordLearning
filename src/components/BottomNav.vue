@@ -28,9 +28,12 @@ const activeIndex = computed(() => {
 
 const count = navItems.length
 
+// 指示器定位：绝对定位的百分比相对容器的 padding-box（不含 1px 边框），
+// 而按钮平分的是内容区（padding-box 减去两侧 p-1.5 = 6px 内边距）。
+// 因此按“100% - 12px”均分、偏移 6px，指示器才能与每个 flex-1 按钮严格同心。
 const indicatorStyle = computed(() => ({
-  width: `calc(${100 / count}% - 8px)`,
-  left: `calc(${(100 / count) * activeIndex.value}% + 4px)`,
+  width: `calc((100% - 12px) / ${count})`,
+  left: `calc((100% - 12px) * ${activeIndex.value} / ${count} + 6px)`,
   transition: 'left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
 }))
 

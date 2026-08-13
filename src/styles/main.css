@@ -6,59 +6,61 @@
 
 /* ============ 古风色板（宣纸 · 朱砂 · 墨 · 黛蓝 · 金 · 竹青） ============ */
 :root {
-  --paper: #f8f3e9;
-  --card: #fbf7ec;
-  --soft: #f5efe3;
-  --line: #e0d6be;
-  --ink: #2a241c;
-  --ink-soft: #6a6152;
-  --ink-mute: #9a907e;
+  /* 浅色：偏白米色（白 > 米，弱化黄调） */
+  --paper: #faf9f5;
+  --card: #ffffff;
+  --soft: #f4f3ee;
+  --line: #e9e8e2;
+  --ink: #2b2721;
+  --ink-soft: #6c6558;
+  --ink-mute: #a29b8c;
 
   --zhuhong: #b23a2c;
-  --zhuhong-soft: #f1dfd8;
+  --zhuhong-soft: #f3e2db;
   --zhuhong-solid: #b23a2c;
 
   --dai: #3e5a76;
-  --dai-soft: #e1e8ef;
+  --dai-soft: #e2e9f0;
   --dai-solid: #3e5a76;
 
   --gold: #a97b22;
-  --gold-soft: #f7efda;
+  --gold-soft: #f6f1e3;
 
   --bamboo: #4a7a57;
-  --bamboo-soft: #e1ebe2;
+  --bamboo-soft: #e3ece5;
 
   --violet: #7a5c8e;
-  --violet-soft: #ece3f0;
+  --violet-soft: #ede5f1;
 }
 
 html.dark {
   color-scheme: dark;
 
-  --paper: #1d1913;
-  --card: #272119;
-  --soft: #322b20;
-  --line: #3d3527;
-  --ink: #ede5d3;
-  --ink-soft: #b7ad9c;
-  --ink-mute: #877d6b;
+  /* 深色：更深的中性墨色（压低亮度、去除黄调） */
+  --paper: #141311;
+  --card: #1d1b18;
+  --soft: #272420;
+  --line: #36322b;
+  --ink: #e8e4db;
+  --ink-soft: #a9a497;
+  --ink-mute: #706a5f;
 
-  --zhuhong: #d98776;
-  --zhuhong-soft: #3a241e;
-  --zhuhong-solid: #b8412f;
+  --zhuhong: #d98a7c;
+  --zhuhong-soft: #2e1d18;
+  --zhuhong-solid: #c14a36;
 
-  --dai: #86a2be;
-  --dai-soft: #252f3a;
-  --dai-solid: #37546e;
+  --dai: #8aa6c0;
+  --dai-soft: #1f2a35;
+  --dai-solid: #3a5873;
 
-  --gold: #d2ac55;
-  --gold-soft: #38301f;
+  --gold: #cfa95b;
+  --gold-soft: #2b2517;
 
-  --bamboo: #7faa8b;
-  --bamboo-soft: #243429;
+  --bamboo: #83ad8f;
+  --bamboo-soft: #1d2921;
 
-  --violet: #b396c2;
-  --violet-soft: #312737;
+  --violet: #b79ac6;
+  --violet-soft: #292031;
 }
 
 /* 将色板映射为 Tailwind 工具类（bg-card / text-ink / border-line …） */
@@ -94,7 +96,7 @@ html.dark {
   --font-serif: "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", "Songti SC", serif;
   --font-kai: "Ma Shan Zheng", "KaiTi", "STKaiti", "AR PL UKai CN", cursive;
   /* 恒定浅色纸张色：用于彩色底上的文字/把手，两种主题下都保持浅色 */
-  --color-paper-ink: #fbf7ec;
+  --color-paper-ink: #fdfcf8;
 }
 
 /* ============ 基础样式 ============ */
@@ -109,9 +111,6 @@ body {
   font-family: var(--font-serif);
   color: var(--ink);
   background-color: var(--paper);
-  background-image:
-    radial-gradient(120% 90% at 50% 0%, rgba(255, 252, 244, 0.6), rgba(255, 252, 244, 0) 55%),
-    radial-gradient(100% 70% at 100% 100%, rgba(178, 58, 44, 0.03), rgba(178, 58, 44, 0) 60%);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -160,7 +159,7 @@ html.dark body::before {
   align-items: center;
   justify-content: center;
   background-color: var(--zhuhong-solid);
-  color: #fbf7ec;
+  color: #fdfcf8;
   font-family: var(--font-kai);
   line-height: 1;
   border-radius: 0.5rem;
@@ -171,7 +170,7 @@ html.dark body::before {
 /* 主按钮（朱砂） */
 .btn-primary {
   background-color: var(--zhuhong-solid);
-  color: #fbf7ec;
+  color: #fdfcf8;
 }
 .btn-primary:hover {
   filter: brightness(0.94);
