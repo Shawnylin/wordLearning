@@ -1,0 +1,1 @@
+import{H as u,r as i}from"./index-Be66V92y.js";const c=u("settings",()=>{const e=i(""),r=i(10);function s(t){e.value=t.trim()}function n(){e.value=""}function a(){return e.value.length>0}function o(t){r.value=t}return{apiKey:e,reviewTarget:r,setApiKey:s,clearApiKey:n,hasApiKey:a,setReviewTarget:o}},{persist:{key:"settings-store",paths:["apiKey","reviewTarget"]}});export{c as u};

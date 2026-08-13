@@ -2,12 +2,14 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
+import { useReviewStore } from '../stores/review'
 import {
-  BookOpen, BarChart3, Shuffle, TrendingUp, Clock
+  BookOpen, BarChart3, Shuffle, Clock, Trophy, ChevronRight
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const idiomStore = useIdiomStore()
+const reviewStore = useReviewStore()
 
 // —— 基础统计 ——
 const learnedCount = computed(() => Object.keys(idiomStore.idiomCache).length)
@@ -144,20 +146,8 @@ const areaPath = computed(() => {
 
 const hoverIdx = ref(-1)
 
-// —— 本周热词（近 7 天搜索次数 Top 5，可点击复习） ——
-const weeklyHotWords = computed(() => {
-  const weekStart = startOfDay(Date.now()) - 6 * DAY_MS
-  const counts = new Map<string, number>()
-  for (const r of idiomStore.searchHistory) {
-    if (r.timestamp >= weekStart) {
-      counts.set(r.word, (counts.get(r.word) || 0) + 1)
-    }
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([word, count]) => ({ word, count }))
-})
+// —— 查询排行（累计查询次数 Top 8） ——
+const queryRanking = computed(() => idiomStore.queryRanking.slice(0, 8))
 
 // —— 最近学习 ——
 const recentWords = computed(() =>
@@ -177,16 +167,13 @@ function goLearn() {
   router.push('/learn')
 }
 
+function goReview() {
+  router.push('/review')
+}
+
 function openWord(word: string) {
   idiomStore.setCurrentIdiom(word)
   router.push('/learn')
-}
-
-function randomReview() {
-  const keys = Object.keys(idiomStore.idiomCache)
-  if (keys.length === 0) return
-  const pick = keys[Math.floor(Math.random() * keys.length)]
-  openWord(pick)
 }
 </script>
 
@@ -222,11 +209,11 @@ function randomReview() {
           </div>
           <button
             v-if="learnedCount > 0"
-            @click="randomReview"
+            @click="goReview"
             class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-zhuhong-soft text-zhuhong text-xs font-medium hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
           >
             <Shuffle :size="14" />
-            随机复习
+            {{ reviewStore.sessionActive ? `继续复习 · 剩${reviewStore.remaining}` : '开始复习' }}
           </button>
         </div>
         <div class="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3 text-center">
@@ -332,22 +319,35 @@ function randomReview() {
         </div>
       </div>
 
-      <!-- 本周热词 -->
-      <div v-if="weeklyHotWords.length > 0" class="card rounded-2xl p-4">
+      <!-- 查询排行 -->
+      <div v-if="queryRanking.length > 0" class="card rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-3">
-          <TrendingUp :size="16" class="text-gold" />
-          <h3 class="text-sm font-semibold text-ink-soft tracking-wide">本周热词</h3>
-          <span class="ml-auto text-xs text-ink-mute">点击复习</span>
+          <Trophy :size="16" class="text-gold" />
+          <h3 class="text-sm font-semibold text-ink-soft tracking-wide">查询排行</h3>
+          <span class="ml-auto text-xs text-ink-mute">累计查询次数 · 点击复习</span>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="space-y-1">
           <button
-            v-for="item in weeklyHotWords"
+            v-for="(item, i) in queryRanking"
             :key="item.word"
             @click="openWord(item.word)"
-            class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-soft text-sm font-medium text-ink-soft hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-soft transition-colors text-left"
           >
-            {{ item.word }}
-            <span class="text-xs text-zhuhong">×{{ item.count }}</span>
+            <span
+              class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0"
+              :class="i === 0
+                ? 'bg-gold-soft text-gold'
+                : i === 1
+                  ? 'bg-dai-soft text-dai'
+                  : i === 2
+                    ? 'bg-zhuhong-soft text-zhuhong'
+                    : 'bg-soft text-ink-mute'"
+            >
+              {{ i + 1 }}
+            </span>
+            <span class="flex-1 text-sm font-medium text-ink">{{ item.word }}</span>
+            <span class="text-xs text-zhuhong font-semibold">×{{ item.count }}</span>
+            <ChevronRight :size="14" class="text-ink-mute" />
           </button>
         </div>
       </div>

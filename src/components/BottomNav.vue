@@ -22,6 +22,8 @@ const navItems: NavItem[] = [
 ]
 
 const activeIndex = computed(() => {
+  // 复习页归属「报告」分组，保持高亮
+  if (route.name === 'review') return navItems.findIndex(item => item.name === 'report')
   const index = navItems.findIndex(item => item.name === route.name)
   return index >= 0 ? index : 0
 })

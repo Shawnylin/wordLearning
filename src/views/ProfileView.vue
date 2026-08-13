@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
+import { useReviewStore } from '../stores/review'
 import {
   Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
   Download, Upload, Monitor, Coins, RefreshCw
@@ -13,6 +14,7 @@ const APP_VERSION = '0.2.0'
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
 const settingsStore = useSettingsStore()
+const reviewStore = useReviewStore()
 
 const showApiKey = ref(false)
 const editingApiKey = ref(false)
@@ -62,6 +64,7 @@ function handleClearCache() {
   idiomStore.clearCache()
   idiomStore.clearHistory()
   idiomStore.clearCompareHistory()
+  reviewStore.resetAll()
   showClearCacheConfirm.value = false
 }
 

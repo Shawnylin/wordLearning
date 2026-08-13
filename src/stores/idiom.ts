@@ -22,6 +22,16 @@ export const useIdiomStore = defineStore('idiom', () => {
   // 收藏的词语
   const favorites = ref<string[]>([])
 
+  // 查询次数统计（每次查询都计数，缓存命中与新查询均计）
+  const queryCounts = ref<Record<string, number>>({})
+
+  // 查询排行（按次数降序）
+  const queryRanking = computed(() =>
+    Object.entries(queryCounts.value)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))
+  )
+
   // 当前显示的成语
   const currentIdiom = ref<IdiomData | null>(null)
 
@@ -64,6 +74,9 @@ export const useIdiomStore = defineStore('idiom', () => {
   async function searchIdiom(word: string, apiKey: string): Promise<IdiomData | null> {
     const trimmedWord = word.trim()
     if (!trimmedWord) return null
+
+    // 统计查询次数（无论是否命中缓存都算一次查询）
+    queryCounts.value[trimmedWord] = (queryCounts.value[trimmedWord] || 0) + 1
 
     const cached = idiomCache.value[trimmedWord]
     if (cached) {
@@ -357,7 +370,8 @@ export const useIdiomStore = defineStore('idiom', () => {
       compareCache: compareCache.value,
       compareHistory: compareHistory.value,
       tokenStats: tokenStats.value,
-      favorites: favorites.value
+      favorites: favorites.value,
+      queryCounts: queryCounts.value
     }, null, 2)
   }
 
@@ -411,6 +425,15 @@ export const useIdiomStore = defineStore('idiom', () => {
         }
       }
 
+      // 合并查询次数统计
+      if (data.queryCounts && typeof data.queryCounts === 'object') {
+        for (const [word, count] of Object.entries(data.queryCounts)) {
+          if (typeof count === 'number' && !(word in queryCounts.value)) {
+            queryCounts.value[word] = count
+          }
+        }
+      }
+
       return { success: true, message: `成功导入 ${Object.keys(data.idiomCache).length} 个成语` }
     } catch {
       return { success: false, message: 'JSON 解析失败，请检查文件格式' }
@@ -424,6 +447,8 @@ export const useIdiomStore = defineStore('idiom', () => {
     compareHistory,
     tokenStats,
     favorites,
+    queryCounts,
+    queryRanking,
     currentIdiom,
     currentCompare,
     isLoading,
@@ -454,6 +479,6 @@ export const useIdiomStore = defineStore('idiom', () => {
 }, {
   persist: {
     key: 'idiom-store',
-    paths: ['idiomCache', 'searchHistory', 'compareCache', 'compareHistory', 'tokenStats', 'favorites']
+    paths: ['idiomCache', 'searchHistory', 'compareCache', 'compareHistory', 'tokenStats', 'favorites', 'queryCounts']
   }
 })
