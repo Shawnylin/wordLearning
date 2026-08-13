@@ -1,4 +1,4 @@
-import{u as y}from"./idiom-XHH0URFW.js";import{l as r,d as z,c as a,a as t,u as i,p as k,b as c,t as l,F as g,i as x,f as _,o as s,e as w,q as C,B as M}from"./index-q3NOxLQ7.js";import{R as I}from"./settings-Bg4g7ek-.js";import{L as F}from"./lightbulb-BqSITf4-.js";/**
+import{u as y}from"./idiom-CB3e3p1N.js";import{l as r,d as z,c as a,a as t,u as i,p as k,b as c,t as l,F as g,i as x,f as _,o as s,e as w,q as C,B as M}from"./index-JVSYM1kJ.js";import{R as I}from"./settings-CRnyTfn5.js";import{L as F}from"./lightbulb-BAQTJJmH.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.
