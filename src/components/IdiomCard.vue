@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2, Heart } from 'lucide-vue-next'
 import type { IdiomData } from '../types/idiom'
 import { useIdiomStore } from '../stores/idiom'
@@ -32,9 +31,6 @@ const sections: CardSection[] = [
 function getSectionContent(key: string): string {
   return (props.idiom as any)[key] || ''
 }
-
-// 印章取首字
-const sealChar = computed(() => props.idiom.word.charAt(0))
 </script>
 
 <template>
@@ -64,16 +60,13 @@ const sealChar = computed(() => props.idiom.word.charAt(0))
           <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
         </button>
 
-        <!-- 印章 -->
-        <div class="seal w-11 h-11 text-2xl mx-auto mb-3">{{ sealChar }}</div>
-
         <!-- Pinyin -->
         <p class="text-lg tracking-widest mb-2 text-zhuhong">
           {{ idiom.pinyin }}
         </p>
 
         <!-- Word -->
-        <h1 class="font-kai text-5xl md:text-6xl font-normal text-ink tracking-widest leading-tight">
+        <h1 class="font-kai text-5xl md:text-6xl font-bold text-ink tracking-widest leading-tight">
           {{ idiom.word }}
         </h1>
       </div>

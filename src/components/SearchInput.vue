@@ -38,7 +38,7 @@ function handleKeydown(event: KeyboardEvent) {
         type="text"
         placeholder="输入成语或词语…"
         :disabled="loading"
-        class="flex-1 px-3 py-3.5 text-base bg-transparent text-ink placeholder-ink-mute outline-none disabled:opacity-50"
+        class="min-w-0 flex-1 px-3 py-3.5 text-base bg-transparent text-ink placeholder-ink-mute outline-none disabled:opacity-50"
       />
       <button
         @click="handleSearch"

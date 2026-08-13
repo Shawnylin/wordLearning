@@ -14,9 +14,6 @@ const settingsStore = useSettingsStore()
 const words = ref<string[]>(['', ''])
 const showNoApiKeyWarning = ref(false)
 
-// 序号（壹贰叁肆伍 与 一二三四五）
-const indexLabels = ['一', '二', '三', '四', '五']
-
 // 从路由 query 中加载对比记录
 watch(() => route.query.loadId, (id) => {
   if (id && typeof id === 'string') {
@@ -65,33 +62,25 @@ function goToSettings() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-8 pb-4">
-    <!-- Header -->
-    <div class="text-center mb-6">
-      <div class="seal w-12 h-12 text-3xl mx-auto mb-3" style="background-color: var(--dai-solid)">比</div>
-      <h1 class="font-kai text-4xl text-ink leading-tight">词语对比</h1>
-      <p class="text-sm text-ink-mute mt-1 tracking-wide">辨析异同 · 触类旁通</p>
-    </div>
-
+  <div class="min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
     <div class="mx-auto max-w-lg mb-6">
       <div class="space-y-3">
         <div
           v-for="(_word, index) in words"
           :key="index"
-          class="flex items-center gap-2.5"
+          class="flex items-center gap-2"
         >
-          <span class="seal w-9 h-9 text-base shrink-0" style="background-color: var(--dai-solid)">{{ indexLabels[index] }}</span>
           <input
             v-model="words[index]"
             type="text"
             :placeholder="`输入词语 ${index + 1}`"
-            class="flex-1 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
+            class="min-w-0 flex-1 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
           />
           <button
             v-if="words.length > 2"
             @click="removeWord(index)"
-            class="p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+            class="p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors shrink-0"
             title="移除"
           >
             <X :size="18" />

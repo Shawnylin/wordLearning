@@ -8,7 +8,7 @@
 :root {
   --paper: #f3ecdc;
   --card: #fbf7ec;
-  --soft: #eae2ce;
+  --soft: #f5efe3;
   --line: #e0d6be;
   --ink: #2a241c;
   --ink-soft: #6a6152;
@@ -136,6 +136,7 @@ html.dark body::before {
   z-index: 1;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 

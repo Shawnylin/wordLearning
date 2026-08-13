@@ -43,14 +43,7 @@ function goToSettings() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-8 pb-4">
-    <!-- Header -->
-    <div class="text-center mb-6">
-      <div class="seal w-12 h-12 text-3xl mx-auto mb-3">学</div>
-      <h1 class="font-kai text-4xl text-ink leading-tight">成语学习</h1>
-      <p class="text-sm text-ink-mute mt-1 tracking-wide">公考必备 · 字字珠玑</p>
-    </div>
-
+  <div class="min-h-screen px-4 pt-6 pb-4">
     <!-- Search Input -->
     <div class="mb-6">
       <SearchInput
