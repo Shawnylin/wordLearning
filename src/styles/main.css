@@ -94,7 +94,7 @@ html.dark {
 /* 字体（静态，无需随主题切换） */
 @theme {
   --font-serif: "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", "Songti SC", serif;
-  --font-kai: "Ma Shan Zheng", "KaiTi", "STKaiti", "AR PL UKai CN", cursive;
+  --font-kai: "KaiTi", "STKaiti", "Kaiti SC", "AR PL UKai CN", serif;
   /* 恒定浅色纸张色：用于彩色底上的文字/把手，两种主题下都保持浅色 */
   --color-paper-ink: #fdfcf8;
 }
