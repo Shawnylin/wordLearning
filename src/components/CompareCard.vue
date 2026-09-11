@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import CompareWords from './CompareWords.vue'
 import { RefreshCw, GitCompare, Coins, BookOpen, Lightbulb, Map, AlertTriangle } from 'lucide-vue-next'
 import type { CompareRecord } from '../types/idiom'
 
-const props = defineProps<{
+defineProps<{
   compare: CompareRecord
   loading?: boolean
 }>()
@@ -19,25 +19,13 @@ const sections = [
   { key: 'confusionPoints', label: '常见混淆点', icon: AlertTriangle }
 ]
 
-// 根据词语数量调整字体大小
-const wordCount = computed(() => props.compare.words.length)
-const wordClass = computed(() => {
-  if (wordCount.value <= 3) return 'text-2xl md:text-3xl'
-  if (wordCount.value === 4) return 'text-xl md:text-2xl'
-  return 'text-lg md:text-xl'
-})
-const vsClass = computed(() => {
-  if (wordCount.value <= 3) return 'text-base'
-  if (wordCount.value === 4) return 'text-sm'
-  return 'text-xs'
-})
 </script>
 
 <template>
   <div class="animate-card-enter">
-    <div class="rounded-3xl card overflow-hidden">
+    <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="relative px-6 pt-8 pb-6 bg-gradient-to-b from-dai-soft to-card">
+      <div class="relative px-6 pt-8 pb-6 glass-card-header">
         <!-- Regenerate button -->
         <button
           @click="emit('regenerate')"
@@ -54,20 +42,7 @@ const vsClass = computed(() => {
           <span class="text-sm font-medium text-dai tracking-wide">词语对比</span>
         </div>
 
-        <!-- Words - single line -->
-        <div class="flex items-center justify-center gap-2 flex-nowrap overflow-hidden px-2">
-          <template v-for="(word, index) in compare.words" :key="word">
-            <span :data-morph-word="word" :class="['font-kai font-normal text-ink whitespace-nowrap leading-tight', wordClass]">
-              {{ word }}
-            </span>
-            <span
-              v-if="index < compare.words.length - 1"
-              :class="['text-ink-mute whitespace-nowrap font-serif', vsClass]"
-            >
-              vs
-            </span>
-          </template>
-        </div>
+        <CompareWords :words="compare.words" />
 
         <!-- Token usage -->
         <div class="flex items-center justify-center gap-1 mt-3">
@@ -96,7 +71,7 @@ const vsClass = computed(() => {
             <p
               v-for="(line, i) in compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'].split('\n').filter(l => l.trim())"
               :key="i"
-              class="text-base leading-relaxed text-ink-soft"
+              class="text-base leading-relaxed text-ink-soft [overflow-wrap:anywhere]"
             >
               {{ line }}
             </p>
@@ -106,3 +81,4 @@ const vsClass = computed(() => {
     </div>
   </div>
 </template>
+

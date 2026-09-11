@@ -35,9 +35,9 @@ function getSectionContent(key: string): string {
 
 <template>
   <div class="animate-card-enter">
-    <div class="rounded-3xl card overflow-hidden">
+    <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="relative px-6 pt-8 pb-6 text-center bg-gradient-to-b from-zhuhong-soft to-card">
+      <div class="relative px-6 pt-8 pb-6 text-center glass-card-header">
         <!-- Favorite button -->
         <button
           @click="idiomStore.toggleFavorite(idiom.word)"

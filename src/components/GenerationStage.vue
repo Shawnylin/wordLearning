@@ -29,7 +29,7 @@ onBeforeUnmount(() => { disposed = true; animation?.cancel() })
 
 <template>
   <div class="generation-stage mx-auto max-w-lg" :class="{ 'is-active': active, 'is-expanding': expanding }">
-    <div ref="surface" class="generation-surface">
+    <div ref="surface" class="generation-surface glass-card">
       <component v-if="!active" :is="kind === 'idiom' ? BookOpen : GitCompare" :size="32" class="text-ink-mute" />
       <template v-else>
         <component v-if="expanding" :is="kind === 'idiom' ? BookOpen : GitCompare" :size="32" class="generation-origin-icon text-ink-mute" />
@@ -57,14 +57,14 @@ onBeforeUnmount(() => { disposed = true; animation?.cancel() })
 <style>
 .generation-stage { padding-top: 16px; }
 .generation-stage.is-active { padding-top: 0; }
-.generation-surface { position: relative; width: 80px; height: 80px; margin: 0 auto; display: grid; place-items: center; border: 1px solid var(--line); background: var(--card); border-radius: 40px; overflow: hidden; transform-origin: top left; transition: none; }
+.generation-surface { position: relative; width: 80px; height: 80px; margin: 0 auto; display: grid; place-items: center; border: 1px solid var(--line); background: var(--glass-fill); border-radius: 40px; overflow: hidden; transform-origin: top left; transition: none; }
 .is-active .generation-surface { display: block; width: 100%; height: auto; margin: 0; border-radius: 24px; }
 .generation-skeleton { min-height: 380px; }
 .is-expanding .generation-skeleton { animation: skeleton-reveal 900ms ease both; }
 .generation-origin-icon { position: absolute; top: 23px; left: 23px; animation: origin-away 320ms ease both; }
 .generation-result { animation: result-reveal 320ms ease both; }
 .generation-result .animate-card-enter { animation: none; }
-.generation-result .card { border: none; box-shadow: none; }
+.generation-result .card { border: none; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 @keyframes skeleton-reveal { 0%, 25% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes origin-away { to { opacity: 0; } }
 @keyframes result-reveal { from { opacity: 0; } to { opacity: 1; } }

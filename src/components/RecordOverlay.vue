@@ -21,6 +21,27 @@ function animate(element: HTMLElement, frames: Keyframe[], ms = duration(), curv
   animations.push(animation)
   return animation.finished.catch(() => {})
 }
+// Keep icon and timestamp on independent tracks; the title has its own shared motion.
+function moveRowDetails(reverse: boolean) {
+  if (!rowGhost) return Promise.resolve()
+  const tasks: Promise<unknown>[] = []
+  rowGhost.style.opacity = '1'
+  const icon = rowGhost.querySelector<HTMLElement>('[data-row-icon]')
+  const time = rowGhost.querySelector<HTMLElement>('[data-row-time]')
+  if (icon) tasks.push(animate(icon, reverse
+    ? [{ opacity: 0 }, { opacity: 0, offset: .5 }, { opacity: 1 }]
+    : [{ opacity: 1 }, { opacity: 0, offset: .35 }, { opacity: 0 }], duration(), 'linear'))
+  if (time) tasks.push(animate(time, reverse
+    ? [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 0, transform: 'translateY(10px)', offset: .5 }, { opacity: 1, transform: 'translateY(0)' }]
+    : [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(10px)', offset: .4 }, { opacity: 0, transform: 'translateY(10px)' }], duration(), 'linear'))
+  // Remaining row controls follow a quiet fade, without shifting the title.
+  rowGhost.querySelectorAll<HTMLElement>('button, :scope > svg, [data-row-aux], [data-morph-word]').forEach(element => {
+    tasks.push(animate(element, reverse
+      ? [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }]
+      : [{ opacity: 1 }, { opacity: 0, offset: .28 }, { opacity: 0 }], duration(), 'linear'))
+  })
+  return Promise.all(tasks)
+}
 function frame(rect: DOMRect, radius: number): Keyframe {
   return { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: `${radius}px` }
 }
@@ -31,12 +52,24 @@ function textFrame(element: HTMLElement): Keyframe {
   const style = getComputedStyle(element)
   return { left: `${rect.left}px`, top: `${rect.top}px`, fontSize: style.fontSize, fontWeight: style.fontWeight, letterSpacing: style.letterSpacing, color: style.color }
 }
+function matchingTitle(source: HTMLElement, targets: HTMLElement[]) {
+  return targets.find(target => target.dataset.morphWord === source.dataset.morphWord && target.dataset.morphIndex === source.dataset.morphIndex)
+}
+function singleLine(element: HTMLElement) {
+  const range = document.createRange()
+  range.selectNodeContents(element)
+  const lines = [...range.getClientRects()].filter(rect => rect.width > 0)
+  return lines.length > 0 && lines.every(rect => Math.abs(rect.top - lines[0].top) < 2)
+}
+function canShare(source: HTMLElement, target?: HTMLElement): target is HTMLElement {
+  return !!target && singleLine(source) && singleLine(target)
+}
 async function moveTitles(reverse: boolean) {
   const sourceTitles = [...(props.source?.querySelectorAll<HTMLElement>('[data-morph-word]') || [])]
   const targetTitles = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')]
   const tasks = sourceTitles.map(async source => {
-    const target = targetTitles.find(t => t.dataset.morphWord === source.dataset.morphWord)
-    if (!target) return
+    const target = matchingTitle(source, targetTitles)
+    if (!canShare(source, target)) return
     const from = textFrame(reverse ? target : source)
     const to = textFrame(reverse ? source : target)
     const floating = document.createElement('span')
@@ -83,7 +116,11 @@ onMounted(() => {
     rowGhost.setAttribute('aria-hidden', 'true')
     rowGhost.classList.add('record-row-ghost')
     Object.assign(rowGhost.style, frame(sourceRect, 16), { margin: '0', visibility: 'visible', background: 'transparent', borderColor: 'transparent', boxShadow: 'none' })
-    rowGhost.querySelectorAll<HTMLElement>('[data-morph-word]').forEach(t => { t.style.visibility = 'hidden' })
+    const targets = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')]
+    rowGhost.querySelectorAll<HTMLElement>('[data-morph-word]').forEach(t => {
+      const source = [...props.source!.querySelectorAll<HTMLElement>('[data-morph-word]')].find(s => s.dataset.morphWord === t.dataset.morphWord && s.dataset.morphIndex === t.dataset.morphIndex)!
+      t.style.visibility = canShare(source, matchingTitle(source, targets)) ? 'hidden' : 'visible'
+    })
     dialog.value!.append(rowGhost)
     props.source.style.visibility = 'hidden'
   }
@@ -93,7 +130,7 @@ onMounted(() => {
     titles,
     animate(panel.value!, [frame(sourceRect, 16), frame(targetRect, 24)]),
     animate(content.value!, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear'),
-    rowGhost ? animate(rowGhost, [{ opacity: 1 }, { opacity: 0, offset: .28 }, { opacity: 0 }], duration(), 'linear') : Promise.resolve()
+    moveRowDetails(false)
   ])
 })
 async function close() {
@@ -106,9 +143,9 @@ async function close() {
   const sourceRect = props.source?.getBoundingClientRect() || targetRect
   if (rowGhost) {
     Object.assign(rowGhost.style, frame(sourceRect, 16))
-    const currentWords = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')].map(t => t.dataset.morphWord)
+    const currentTitles = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')]
     rowGhost.querySelectorAll<HTMLElement>('[data-morph-word]').forEach(t => {
-      t.style.visibility = currentWords.includes(t.dataset.morphWord) ? 'hidden' : 'visible'
+      t.style.visibility = canShare(t, matchingTitle(t, currentTitles)) ? 'hidden' : 'visible'
     })
   }
   const titles = moveTitles(true)
@@ -116,7 +153,7 @@ async function close() {
     titles,
     animate(panel.value!, [frame(targetRect, 24), frame(sourceRect, 16)]),
     animate(content.value!, [{ opacity: 1 }, { opacity: 0, offset: .35 }, { opacity: 0 }]),
-    rowGhost ? animate(rowGhost, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear') : Promise.resolve()
+    moveRowDetails(true)
   ])
   if (!disposed) emit('close')
 }
@@ -136,7 +173,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <dialog ref="dialog" class="record-dialog" aria-label="记录详情" @cancel.prevent="close" @click.self="close">
-      <section ref="panel" class="record-panel">
+      <section ref="panel" class="record-panel glass-card">
         <div ref="content" class="record-content">
           <button autofocus class="record-back" @click="close">← 返回记录</button>
           <slot />
@@ -150,12 +187,13 @@ onBeforeUnmount(() => {
 .record-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); border: 0; outline: none; background: transparent; color: var(--ink); overflow: hidden; }
 .record-dialog::backdrop { background: rgb(20 19 17 / .25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: record-backdrop 680ms ease both; }
 .record-dialog.closing::backdrop { animation: record-backdrop-out 680ms ease both; }
-.record-panel { position: fixed; left: max(16px, calc((100vw - 512px) / 2)); top: max(16px, env(safe-area-inset-top)); width: min(calc(100% - 32px), 512px); height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); border-radius: 24px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 24px 80px rgb(0 0 0 / .22); overflow: hidden; transition: none; }
+.record-panel { position: fixed; left: max(16px, calc((100vw - 512px) / 2)); top: max(16px, env(safe-area-inset-top)); width: min(calc(100% - 32px), 512px); height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); border-radius: 24px; background: var(--glass-fill); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), 0 24px 64px rgb(0 0 0 / .12); overflow: hidden; transition: none; }
 .record-content { height: 100%; overflow-y: auto; overscroll-behavior: contain; transition: none; }
-.record-back { display: block; position: sticky; top: 0; z-index: 2; padding: 16px 20px; width: 100%; text-align: left; color: var(--ink-soft); background: var(--card); border: 0; outline: none; box-shadow: none; -webkit-tap-highlight-color: transparent; }
-.record-back:focus-visible { outline: 2px solid var(--ink-mute); outline-offset: -6px; border-radius: 12px; }
+.record-back { display: block; position: sticky; top: 0; z-index: 2; padding: 16px 20px; width: 100%; text-align: left; color: var(--ink-soft); background: var(--glass-fill); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 0; outline: none; box-shadow: none; -webkit-tap-highlight-color: transparent; }
+.record-back:focus, .record-back:focus-visible, .record-back:active { outline: none; box-shadow: none; }
+.record-back:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
 .record-panel .animate-card-enter, .record-panel .stagger > * { animation: none; }
-.record-panel .card { border: 0; box-shadow: none; }
+.record-panel .card { border: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
 .record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
 @keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }

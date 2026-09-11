@@ -9,6 +9,7 @@ import {
   AlertCircle, Heart, ListChecks, Check, X
 } from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
+import CompareWords from '../components/CompareWords.vue'
 import CompareCard from '../components/CompareCard.vue'
 import RecordOverlay from '../components/RecordOverlay.vue'
 
@@ -358,20 +359,20 @@ function doConfirmDelete() {
               <Check :size="12" :stroke-width="3" />
             </div>
 
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong shrink-0">
+            <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong shrink-0">
               <BookOpen :size="18" />
             </div>
-            <div class="flex-1 text-left">
+            <div class="min-w-0 flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
                 <span class="font-kai" :data-morph-word="record.word">{{ record.word }}</span>
-                <Heart
+                <Heart data-row-aux
                   v-if="idiomStore.isFavorite(record.word)"
                   :size="14"
                   class="text-zhuhong shrink-0"
                   fill="currentColor"
                 />
               </p>
-              <div class="flex items-center gap-1 mt-0.5">
+              <div data-row-time class="flex items-center gap-1 mt-0.5">
                 <Clock :size="12" class="text-ink-mute" />
                 <span class="text-xs text-ink-mute">{{ formatTime(record.timestamp) }}</span>
               </div>
@@ -379,7 +380,7 @@ function doConfirmDelete() {
             <template v-if="!editMode">
               <button
                 @click.stop="requestDeleteIdiom(record)"
-                class="p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+                class="shrink-0 p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
@@ -429,14 +430,12 @@ function doConfirmDelete() {
               <Check :size="12" :stroke-width="3" />
             </div>
 
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0">
+            <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0">
               <GitCompare :size="18" />
             </div>
-            <div class="flex-1 text-left">
-              <p class="text-base font-semibold text-ink group-hover:text-dai transition-colors">
-                <template v-for="(word, index) in record.words" :key="word"><span v-if="index"> vs </span><span class="font-kai" :data-morph-word="word">{{ word }}</span></template>
-              </p>
-              <div class="flex items-center gap-1 mt-0.5">
+            <div class="min-w-0 flex-1 text-left">
+              <CompareWords :words="record.words" variant="list" class="text-ink group-hover:text-dai" />
+              <div data-row-time class="flex items-center gap-1 mt-0.5">
                 <Clock :size="12" class="text-ink-mute" />
                 <span class="text-xs text-ink-mute">{{ formatTime(record.createdAt) }}</span>
               </div>
@@ -444,12 +443,12 @@ function doConfirmDelete() {
             <template v-if="!editMode">
               <button
                 @click.stop="requestDeleteCompare(record)"
-                class="p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+                class="shrink-0 p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
                 title="删除记录"
               >
                 <Trash2 :size="16" />
               </button>
-              <ChevronRight :size="18" class="text-ink-mute group-hover:text-dai transition-colors" />
+              <ChevronRight :size="18" class="shrink-0 text-ink-mute group-hover:text-dai transition-colors" />
             </template>
           </div>
         </div>
