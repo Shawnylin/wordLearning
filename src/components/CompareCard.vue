@@ -57,7 +57,7 @@ const vsClass = computed(() => {
         <!-- Words - single line -->
         <div class="flex items-center justify-center gap-2 flex-nowrap overflow-hidden px-2">
           <template v-for="(word, index) in compare.words" :key="word">
-            <span :class="['font-kai font-normal text-ink whitespace-nowrap leading-tight', wordClass]">
+            <span :data-morph-word="word" :class="['font-kai font-normal text-ink whitespace-nowrap leading-tight', wordClass]">
               {{ word }}
             </span>
             <span

@@ -2,12 +2,16 @@
 import { ref } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
-import ModelSettings from '../components/ModelSettings.vue'
+import { useRouter } from 'vue-router'
+import { useSettingsStore } from '../stores/settings'
 import { useReviewStore } from '../stores/review'
 import {
   Sun, Moon, BookOpen, Trash2,
-  Download, Upload, Monitor, RefreshCw
+  Download, Upload, Monitor, RefreshCw, Coins, Key, ChevronRight
 } from 'lucide-vue-next'
+
+const router = useRouter()
+const settings = useSettingsStore()
 
 const APP_VERSION = '0.2.0'
 
@@ -69,12 +73,6 @@ function handleImport() {
 
 <template>
   <div class="min-h-screen px-4 pt-8 pb-4">
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <div class="seal w-12 h-12 text-3xl mx-auto mb-3">我</div>
-      <h1 class="font-kai text-4xl text-ink leading-tight">个人设置</h1>
-    </div>
-
     <div class="mx-auto max-w-lg space-y-4">
       <!-- Stats Card -->
       <div class="card rounded-2xl p-6">
@@ -117,7 +115,11 @@ function handleImport() {
         </div>
       </div>
 
-      <ModelSettings />
+      <button @click="router.push('/profile/models')" class="card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
+        <div class="w-10 h-10 rounded-xl bg-dai-soft text-dai flex items-center justify-center shrink-0"><Key :size="20" /></div>
+        <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 配置与切换</p></div>
+        <ChevronRight :size="18" class="text-ink-mute shrink-0" />
+      </button>
 
       <!-- Theme Setting -->
       <div class="card rounded-2xl p-6 space-y-4">

@@ -363,7 +363,7 @@ function doConfirmDelete() {
             </div>
             <div class="flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
-                {{ record.word }}
+                <span class="font-kai" :data-morph-word="record.word">{{ record.word }}</span>
                 <Heart
                   v-if="idiomStore.isFavorite(record.word)"
                   :size="14"
@@ -434,7 +434,7 @@ function doConfirmDelete() {
             </div>
             <div class="flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-dai transition-colors">
-                {{ record.words.join(' vs ') }}
+                <template v-for="(word, index) in record.words" :key="word"><span v-if="index"> vs </span><span class="font-kai" :data-morph-word="word">{{ word }}</span></template>
               </p>
               <div class="flex items-center gap-1 mt-0.5">
                 <Clock :size="12" class="text-ink-mute" />

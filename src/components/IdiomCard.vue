@@ -67,7 +67,7 @@ function getSectionContent(key: string): string {
 
         <!-- Word -->
         <h1 class="font-kai text-5xl md:text-6xl font-bold text-ink tracking-widest leading-tight">
-          {{ idiom.word }}
+          <span :data-morph-word="idiom.word">{{ idiom.word }}</span>
         </h1>
       </div>
 

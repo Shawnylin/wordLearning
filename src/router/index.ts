@@ -33,6 +33,11 @@ const router = createRouter({
       component: () => import('../views/ReviewView.vue')
     },
     {
+      path: '/profile/models',
+      name: 'models',
+      component: () => import('../views/ModelSettingsView.vue')
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('../views/ProfileView.vue')

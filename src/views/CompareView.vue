@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
+import GenerationStage from '../components/GenerationStage.vue'
 import CompareCard from '../components/CompareCard.vue'
 import { Plus, X, AlertCircle, Settings, GitCompare, Loader2 } from 'lucide-vue-next'
 
@@ -101,18 +102,18 @@ function goToSettings() {
         <span class="text-xs text-ink-mute">
           {{ words.length }}/5
         </span>
-      </div>
 
       <!-- Compare button -->
       <button
         @click="handleCompare"
         :disabled="idiomStore.compareLoading"
-        class="w-full mt-4 py-3 rounded-2xl text-base font-medium btn-dai transition-colors flex items-center justify-center gap-2"
+        class="ml-auto w-32 shrink-0 py-2 rounded-xl text-sm font-medium btn-dai transition-colors flex items-center justify-center gap-2"
       >
         <Loader2 v-if="idiomStore.compareLoading" :size="18" class="animate-spin" />
         <GitCompare v-else :size="18" />
         <span>{{ idiomStore.compareLoading ? '生成中…' : '开始对比' }}</span>
       </button>
+      </div>
     </div>
 
     <!-- No API Key Warning -->
@@ -161,38 +162,8 @@ function goToSettings() {
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="idiomStore.compareLoading" class="mx-auto max-w-lg">
-      <div class="rounded-3xl card p-8">
-        <div class="animate-pulse space-y-6">
-          <div class="h-5 bg-soft rounded-full w-24 mx-auto"></div>
-          <div class="h-10 bg-soft rounded-xl w-64 mx-auto"></div>
-          <div class="space-y-3">
-            <div class="h-4 bg-soft rounded-full"></div>
-            <div class="h-4 bg-soft rounded-full w-5/6"></div>
-            <div class="h-4 bg-soft rounded-full w-4/6"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Compare Card -->
-    <div v-else-if="idiomStore.currentCompare" class="mx-auto max-w-lg">
-      <CompareCard
-        :compare="idiomStore.currentCompare"
-        :loading="idiomStore.compareLoading"
-        @regenerate="handleRegenerate"
-      />
-    </div>
-
-    <!-- Empty State -->
-    <div v-else class="mx-auto max-w-lg text-center py-16">
-      <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
-        <GitCompare :size="32" class="text-ink-mute" />
-      </div>
-      <p class="text-ink-mute text-sm">
-        输入两个或多个词语，开始对比学习
-      </p>
-    </div>
+    <GenerationStage :loading="idiomStore.compareLoading" :has-content="!!idiomStore.currentCompare" kind="compare">
+      <CompareCard v-if="idiomStore.currentCompare" :compare="idiomStore.currentCompare" :loading="idiomStore.compareLoading" @regenerate="handleRegenerate" />
+    </GenerationStage>
   </div>
 </template>

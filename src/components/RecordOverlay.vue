@@ -4,37 +4,132 @@ const props = defineProps<{ source: HTMLElement | null }>()
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement>()
 const panel = ref<HTMLElement>()
-let animation: Animation | undefined
+const content = ref<HTMLElement>()
+const animations: Animation[] = []
 let closing = false
+let disposed = false
 let oldOverflow = ''
-function origin() {
-  const target = panel.value!.getBoundingClientRect()
-  const source = props.source?.getBoundingClientRect() || target
-  return { transform: `translate(${source.x - target.x}px, ${source.y - target.y}px)`, width: `${source.width}px`, height: `${source.height}px`, borderRadius: '16px' }
+let oldVisibility = ''
+let targetRect: DOMRect
+let rowGhost: HTMLElement | undefined
+let hiddenTitles: HTMLElement[] = []
+let opening: Promise<unknown> = Promise.resolve()
+const duration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 680
+const easing = 'cubic-bezier(.22,1,.36,1)'
+function animate(element: HTMLElement, frames: Keyframe[], ms = duration(), curve = easing) {
+  const animation = element.animate(frames, { duration: ms, easing: curve, fill: 'forwards' })
+  animations.push(animation)
+  return animation.finished.catch(() => {})
 }
-const duration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 460
+function frame(rect: DOMRect, radius: number): Keyframe {
+  return { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: `${radius}px` }
+}
+function textFrame(element: HTMLElement): Keyframe {
+  const range = document.createRange()
+  range.selectNodeContents(element)
+  const rect = range.getBoundingClientRect()
+  const style = getComputedStyle(element)
+  return { left: `${rect.left}px`, top: `${rect.top}px`, fontSize: style.fontSize, fontWeight: style.fontWeight, letterSpacing: style.letterSpacing, color: style.color }
+}
+async function moveTitles(reverse: boolean) {
+  const sourceTitles = [...(props.source?.querySelectorAll<HTMLElement>('[data-morph-word]') || [])]
+  const targetTitles = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')]
+  const tasks = sourceTitles.map(async source => {
+    const target = targetTitles.find(t => t.dataset.morphWord === source.dataset.morphWord)
+    if (!target) return
+    const from = textFrame(reverse ? target : source)
+    const to = textFrame(reverse ? source : target)
+    const floating = document.createElement('span')
+    floating.className = 'record-shared-title'
+    floating.setAttribute('aria-hidden', 'true')
+    floating.textContent = source.textContent
+    floating.style.fontFamily = getComputedStyle(target).fontFamily
+    dialog.value!.append(floating)
+    // Range rectangles describe glyphs, not line boxes. Align both endpoints
+    // after applying their typography so there is no baseline jump at handoff.
+    const align = (keyframe: Keyframe): Keyframe => {
+      Object.assign(floating.style, keyframe)
+      const range = document.createRange()
+      range.selectNodeContents(floating)
+      const glyph = range.getBoundingClientRect()
+      return { ...keyframe, left: `${2 * parseFloat(String(keyframe.left)) - glyph.left}px`, top: `${2 * parseFloat(String(keyframe.top)) - glyph.top}px` }
+    }
+    const alignedFrom = align(from)
+    const alignedTo = align(to)
+    Object.assign(floating.style, alignedFrom)
+    target.style.visibility = 'hidden'
+    hiddenTitles.push(target)
+    await animate(floating, [alignedFrom, alignedTo])
+    if (!disposed && !reverse) target.style.visibility = ''
+    floating.remove()
+  })
+  await Promise.all(tasks)
+}
 onMounted(() => {
-  oldOverflow = document.getElementById('app')!.style.overflowY
-  document.getElementById('app')!.style.overflowY = 'hidden'
+  const app = document.getElementById('app')!
+  oldOverflow = app.style.overflowY
+  app.style.overflowY = 'hidden'
   dialog.value!.showModal()
-  const target = panel.value!.getBoundingClientRect()
-  animation = panel.value!.animate([origin(), { transform: 'translate(0, 0)', width: `${target.width}px`, height: `${target.height}px`, borderRadius: '24px' }], { duration: duration(), easing: 'cubic-bezier(.22,1,.36,1)' })
+  targetRect = panel.value!.getBoundingClientRect()
+  const sourceRect = props.source?.getBoundingClientRect() || targetRect
+  // Pin geometry before animating so changing width cannot recenter the panel.
+  Object.assign(panel.value!.style, frame(targetRect, 24))
+  if (props.source) {
+    oldVisibility = props.source.style.visibility
+    rowGhost = props.source.cloneNode(true) as HTMLElement
+    rowGhost.inert = true
+    rowGhost.removeAttribute('tabindex')
+    rowGhost.removeAttribute('role')
+    rowGhost.setAttribute('aria-hidden', 'true')
+    rowGhost.classList.add('record-row-ghost')
+    Object.assign(rowGhost.style, frame(sourceRect, 16), { margin: '0', visibility: 'visible', background: 'transparent', borderColor: 'transparent', boxShadow: 'none' })
+    rowGhost.querySelectorAll<HTMLElement>('[data-morph-word]').forEach(t => { t.style.visibility = 'hidden' })
+    dialog.value!.append(rowGhost)
+    props.source.style.visibility = 'hidden'
+  }
+  // Measure the actual title before the panel starts moving.
+  const titles = moveTitles(false)
+  opening = Promise.all([
+    titles,
+    animate(panel.value!, [frame(sourceRect, 16), frame(targetRect, 24)]),
+    animate(content.value!, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear'),
+    rowGhost ? animate(rowGhost, [{ opacity: 1 }, { opacity: 0, offset: .28 }, { opacity: 0 }], duration(), 'linear') : Promise.resolve()
+  ])
 })
 async function close() {
   if (closing) return
   closing = true
-  animation?.cancel()
+  // Let a quick back tap finish the shared motion before reversing it.
+  await opening
+  if (disposed) return
   dialog.value!.classList.add('closing')
-  const rect = panel.value!.getBoundingClientRect()
-  animation = panel.value!.animate([{ transform: 'translate(0, 0)', width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: '24px' }, origin()], { duration: duration(), easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
-  await animation.finished.catch(() => {})
-  emit('close')
+  const sourceRect = props.source?.getBoundingClientRect() || targetRect
+  if (rowGhost) {
+    Object.assign(rowGhost.style, frame(sourceRect, 16))
+    const currentWords = [...panel.value!.querySelectorAll<HTMLElement>('[data-morph-word]')].map(t => t.dataset.morphWord)
+    rowGhost.querySelectorAll<HTMLElement>('[data-morph-word]').forEach(t => {
+      t.style.visibility = currentWords.includes(t.dataset.morphWord) ? 'hidden' : 'visible'
+    })
+  }
+  const titles = moveTitles(true)
+  await Promise.all([
+    titles,
+    animate(panel.value!, [frame(targetRect, 24), frame(sourceRect, 16)]),
+    animate(content.value!, [{ opacity: 1 }, { opacity: 0, offset: .35 }, { opacity: 0 }]),
+    rowGhost ? animate(rowGhost, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear') : Promise.resolve()
+  ])
+  if (!disposed) emit('close')
 }
 onBeforeUnmount(() => {
-  animation?.cancel()
+  disposed = true
+  animations.forEach(animation => animation.cancel())
+  hiddenTitles.forEach(title => { title.style.visibility = '' })
+  rowGhost?.remove()
+  if (props.source) props.source.style.visibility = oldVisibility
   dialog.value?.close()
   document.getElementById('app')!.style.overflowY = oldOverflow
-  props.source?.focus({ preventScroll: true })
+  // The row becomes interactive again on the following Vue update.
+  requestAnimationFrame(() => props.source?.focus({ preventScroll: true }))
 })
 </script>
 
@@ -42,7 +137,7 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <dialog ref="dialog" class="record-dialog" aria-label="记录详情" @cancel.prevent="close" @click.self="close">
       <section ref="panel" class="record-panel">
-        <div class="record-content">
+        <div ref="content" class="record-content">
           <button autofocus class="record-back" @click="close">← 返回记录</button>
           <slot />
         </div>
@@ -52,17 +147,18 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-.record-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); border: 0; background: transparent; color: var(--ink); overflow: hidden; }
-.record-dialog::backdrop { background: rgb(20 19 17 / .25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: record-backdrop 460ms ease both; }
-.record-dialog.closing::backdrop { animation: record-backdrop-out 460ms ease both; }
-.record-panel { width: min(100%, 512px); height: 100%; margin: 0 auto; border-radius: 24px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 24px 80px rgb(0 0 0 / .22); overflow: hidden; transform-origin: top left; transition: none; }
-.record-content { height: 100%; overflow-y: auto; overscroll-behavior: contain; animation: record-content-in 460ms ease both; }
-.closing .record-content { opacity: 0; transition: opacity 160ms ease; }
-.record-back { display: block; position: sticky; top: 0; z-index: 2; padding: 16px 20px; width: 100%; text-align: left; background: var(--card); border-bottom: 1px solid var(--line); }
+.record-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); border: 0; outline: none; background: transparent; color: var(--ink); overflow: hidden; }
+.record-dialog::backdrop { background: rgb(20 19 17 / .25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: record-backdrop 680ms ease both; }
+.record-dialog.closing::backdrop { animation: record-backdrop-out 680ms ease both; }
+.record-panel { position: fixed; left: max(16px, calc((100vw - 512px) / 2)); top: max(16px, env(safe-area-inset-top)); width: min(calc(100% - 32px), 512px); height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); border-radius: 24px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 24px 80px rgb(0 0 0 / .22); overflow: hidden; transition: none; }
+.record-content { height: 100%; overflow-y: auto; overscroll-behavior: contain; transition: none; }
+.record-back { display: block; position: sticky; top: 0; z-index: 2; padding: 16px 20px; width: 100%; text-align: left; color: var(--ink-soft); background: var(--card); border: 0; outline: none; box-shadow: none; -webkit-tap-highlight-color: transparent; }
+.record-back:focus-visible { outline: 2px solid var(--ink-mute); outline-offset: -6px; border-radius: 12px; }
 .record-panel .animate-card-enter, .record-panel .stagger > * { animation: none; }
 .record-panel .card { border: 0; box-shadow: none; }
+.record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
+.record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
 @keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }
 @keyframes record-backdrop-out { to { backdrop-filter: blur(0); background: transparent; } }
-@keyframes record-content-in { from { opacity: .1; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .record-dialog::backdrop, .record-content { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .record-dialog::backdrop { animation: none !important; } }
 </style>
