@@ -46,8 +46,8 @@ function navigateTo(item: NavItem) {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 z-50" style="padding-bottom: 34px">
-    <div class="mx-auto max-w-md px-4 pt-1" style="padding-bottom: 4px">
+  <nav class="fixed bottom-0 left-0 right-0 z-50" style="padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px))">
+    <div class="mx-auto max-w-md px-4 pt-1">
       <div class="relative flex items-center rounded-full bg-card/95 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(42,36,28,0.4)] border border-line p-1.5">
         <!-- 印章滑动指示器 -->
         <div

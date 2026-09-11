@@ -87,3 +87,12 @@ src/
 ## 许可证
 
 MIT
+
+
+## 模型配置与移动端修复
+
+个人页支持保存多套 OpenAI Chat Completions 兼容配置：填写 API URL 和 Key，获取模型后选择（或手动填写），测试并保存启用。URL 可以包含 `/v1` 或完整 `/chat/completions` 路径。服务商需允许浏览器跨域访问。密钥保存在本机浏览器，并发送到所填 API 地址，不包含在学习数据导出中。
+
+页面采用 hash 路由，避免静态托管访问 `/learn` 时返回 404。学习和对比的请求由 Pinia 管理，切换应用内页面继续生成，输入状态保留；关闭浏览器或刷新页面不在此保障范围内。PWA 更新在下次打开时生效，避免更新强制刷新中断请求。
+
+浏览器回归脚本：`tests/browser.mjs`。先启动 Vite，再设置 `CODEX_NODE_MODULES` 为含 Playwright 的 node_modules 目录并运行 `node tests/browser.mjs`；使用 Edge 与模拟 API，不需要真实密钥，验证 393×852 视口、跨页生成、配置保存切换、接口错误及记录展开动画。

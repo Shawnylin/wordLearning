@@ -20,7 +20,7 @@ function handleSearch() {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Enter') {
+  if (event.key === 'Enter' && !event.isComposing) {
     handleSearch()
   }
 }
@@ -43,9 +43,9 @@ function handleKeydown(event: KeyboardEvent) {
       <button
         @click="handleSearch"
         :disabled="!inputValue.trim() || loading"
-        class="px-5 py-2 mr-1.5 rounded-xl btn-primary text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed flex items-center gap-1.5"
+        class="w-[100px] h-10 shrink-0 justify-center px-2 py-2 mr-1.5 rounded-xl btn-primary text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
-        <Loader2 v-if="loading" :size="16" class="animate-spin" />
+        <span class="w-4 h-4 shrink-0"><Loader2 v-if="loading" :size="16" class="animate-spin" /><Search v-else :size="16" /></span>
         <span>{{ loading ? '生成中' : '搜索' }}</span>
       </button>
     </div>

@@ -39,7 +39,7 @@ function removeWord(index: number) {
 async function handleCompare() {
   const validWords = words.value.filter(w => w.trim().length > 0)
   if (validWords.length < 2) {
-    idiomStore.errorMessage = '请至少输入两个词语'
+    idiomStore.compareError = '请至少输入两个词语'
     return
   }
 
@@ -48,12 +48,12 @@ async function handleCompare() {
     return
   }
   showNoApiKeyWarning.value = false
-  await idiomStore.compareIdioms(validWords, settingsStore.apiKey)
+  await idiomStore.compareIdioms(validWords, settingsStore.apiConfig)
 }
 
 async function handleRegenerate() {
   if (!idiomStore.currentCompare || !settingsStore.hasApiKey()) return
-  await idiomStore.regenerateComparison(idiomStore.currentCompare.words, settingsStore.apiKey)
+  await idiomStore.regenerateComparison(idiomStore.currentCompare.words, settingsStore.apiConfig)
 }
 
 function goToSettings() {
@@ -106,12 +106,12 @@ function goToSettings() {
       <!-- Compare button -->
       <button
         @click="handleCompare"
-        :disabled="idiomStore.isLoading"
+        :disabled="idiomStore.compareLoading"
         class="w-full mt-4 py-3 rounded-2xl text-base font-medium btn-dai transition-colors flex items-center justify-center gap-2"
       >
-        <Loader2 v-if="idiomStore.isLoading" :size="18" class="animate-spin" />
+        <Loader2 v-if="idiomStore.compareLoading" :size="18" class="animate-spin" />
         <GitCompare v-else :size="18" />
-        <span>{{ idiomStore.isLoading ? '生成中…' : '开始对比' }}</span>
+        <span>{{ idiomStore.compareLoading ? '生成中…' : '开始对比' }}</span>
       </button>
     </div>
 
@@ -127,7 +127,7 @@ function goToSettings() {
             请先设置 API Key
           </p>
           <p class="text-xs text-ink-soft mt-1">
-            使用本功能需要设置 DeepSeek API Key
+            使用本功能需要设置 模型 API Key
           </p>
           <button
             @click="goToSettings"
@@ -142,14 +142,14 @@ function goToSettings() {
 
     <!-- Error Message -->
     <div
-      v-if="idiomStore.errorMessage"
+      v-if="idiomStore.compareError"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
     >
       <div class="flex items-start gap-3">
         <AlertCircle :size="20" class="text-zhuhong shrink-0 mt-0.5" />
         <div>
           <p class="text-sm text-ink">
-            {{ idiomStore.errorMessage }}
+            {{ idiomStore.compareError }}
           </p>
           <button
             @click="idiomStore.clearError()"
@@ -162,7 +162,7 @@ function goToSettings() {
     </div>
 
     <!-- Loading State -->
-    <div v-if="idiomStore.isLoading" class="mx-auto max-w-lg">
+    <div v-if="idiomStore.compareLoading" class="mx-auto max-w-lg">
       <div class="rounded-3xl card p-8">
         <div class="animate-pulse space-y-6">
           <div class="h-5 bg-soft rounded-full w-24 mx-auto"></div>
@@ -180,7 +180,7 @@ function goToSettings() {
     <div v-else-if="idiomStore.currentCompare" class="mx-auto max-w-lg">
       <CompareCard
         :compare="idiomStore.currentCompare"
-        :loading="idiomStore.isLoading"
+        :loading="idiomStore.compareLoading"
         @regenerate="handleRegenerate"
       />
     </div>

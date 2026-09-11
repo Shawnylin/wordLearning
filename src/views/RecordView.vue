@@ -5,11 +5,12 @@ import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import type { SearchRecord, CompareRecord } from '../types/idiom'
 import {
-  Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare, ArrowLeft,
+  Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare,
   AlertCircle, Heart, ListChecks, Check, X
 } from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareCard from '../components/CompareCard.vue'
+import RecordOverlay from '../components/RecordOverlay.vue'
 
 const router = useRouter()
 const idiomStore = useIdiomStore()
@@ -17,6 +18,10 @@ const settingsStore = useSettingsStore()
 
 const searchQuery = ref('')
 const activeTab = ref<'idiom' | 'compare'>('idiom')
+const detailError = computed(() => idiomStore.errorMessage || (detailMode.value === 'idiom' ? idiomStore.idiomError : idiomStore.compareError))
+const sourceRow = ref<HTMLElement | null>(null)
+const detailIdiom = computed(() => detailWord.value ? idiomStore.idiomCache[detailWord.value] : null)
+const detailCompare = computed(() => idiomStore.compareHistory.find(r => r.id === detailCompareId.value))
 const detailMode = ref<'idiom' | 'compare' | null>(null)
 const detailWord = ref<string | null>(null)
 const detailCompareId = ref<string | null>(null)
@@ -84,13 +89,11 @@ function switchTab(tab: 'idiom' | 'compare') {
 }
 
 function viewIdiom(word: string) {
-  idiomStore.setCurrentIdiom(word)
   detailWord.value = word
   detailMode.value = 'idiom'
 }
 
 function viewCompare(id: string) {
-  idiomStore.setCurrentCompare(id)
   detailCompareId.value = id
   detailMode.value = 'compare'
 }
@@ -103,16 +106,21 @@ function backToList() {
 
 async function handleRegenerateIdiom() {
   if (!detailWord.value || !settingsStore.hasApiKey()) return
-  await idiomStore.regenerateIdiom(detailWord.value, settingsStore.apiKey)
+  await idiomStore.regenerateIdiom(detailWord.value, settingsStore.apiConfig)
 }
 
 async function handleRegenerateCompare() {
-  if (!idiomStore.currentCompare || !settingsStore.hasApiKey()) return
-  await idiomStore.regenerateComparison(idiomStore.currentCompare.words, settingsStore.apiKey)
+  if (!detailCompare.value || !settingsStore.hasApiKey()) return
+  const result = await idiomStore.regenerateComparison(detailCompare.value.words, settingsStore.apiConfig)
+  if (result) detailCompareId.value = result.id
 }
 
-function handleRelatedClick(word: string) {
-  idiomStore.setCurrentIdiom(word)
+async function handleRelatedClick(word: string) {
+  if (!idiomStore.idiomCache[word]) {
+    if (!settingsStore.hasApiKey()) { idiomStore.errorMessage = '请先在个人页面配置 API'; return }
+    const result = await idiomStore.searchIdiom(word, settingsStore.apiConfig)
+    if (!result) return
+  }
   detailWord.value = word
 }
 
@@ -145,18 +153,20 @@ function clearSelection() {
   selectedIds.value = []
 }
 
-function onIdiomRowClick(record: SearchRecord) {
+function onIdiomRowClick(record: SearchRecord, event: Event) {
   if (editMode.value) {
     toggleSelect(record.id)
   } else {
+    sourceRow.value = event.currentTarget as HTMLElement
     viewIdiom(record.word)
   }
 }
 
-function onCompareRowClick(record: CompareRecord) {
+function onCompareRowClick(record: CompareRecord, event: Event) {
   if (editMode.value) {
     toggleSelect(record.id)
   } else {
+    sourceRow.value = event.currentTarget as HTMLElement
     viewCompare(record.id)
   }
 }
@@ -197,26 +207,15 @@ function doConfirmDelete() {
 
 <template>
   <div class="min-h-screen px-4 pt-8 pb-4">
-    <!-- Detail mode -->
-    <template v-if="detailMode">
-      <div class="mx-auto max-w-lg mb-4">
-        <button
-          @click="backToList"
-          class="flex items-center gap-2 text-ink-soft hover:text-ink transition-colors"
-        >
-          <ArrowLeft :size="20" />
-          <span class="text-sm font-medium">返回记录</span>
-        </button>
-      </div>
-
+    <RecordOverlay v-if="detailMode" :source="sourceRow" @close="backToList">
       <div
-        v-if="idiomStore.errorMessage"
+        v-if="detailError"
         class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
       >
         <div class="flex items-start gap-3">
           <AlertCircle :size="20" class="text-zhuhong shrink-0 mt-0.5" />
           <div>
-            <p class="text-sm text-ink">{{ idiomStore.errorMessage }}</p>
+            <p class="text-sm text-ink">{{ detailError }}</p>
             <button
               @click="idiomStore.clearError()"
               class="mt-1 text-xs text-zhuhong hover:underline"
@@ -227,26 +226,26 @@ function doConfirmDelete() {
         </div>
       </div>
 
-      <div v-if="detailMode === 'idiom' && idiomStore.currentIdiom" class="mx-auto max-w-lg">
+      <div v-if="detailMode === 'idiom' && detailIdiom" class="mx-auto max-w-lg">
         <IdiomCard
-          :idiom="idiomStore.currentIdiom"
+          :idiom="detailIdiom"
           :loading="idiomStore.isLoading"
           @regenerate="handleRegenerateIdiom"
           @related-click="handleRelatedClick"
         />
       </div>
 
-      <div v-if="detailMode === 'compare' && idiomStore.currentCompare" class="mx-auto max-w-lg">
+      <div v-if="detailMode === 'compare' && detailCompare" class="mx-auto max-w-lg">
         <CompareCard
-          :compare="idiomStore.currentCompare"
+          :compare="detailCompare"
           :loading="idiomStore.isLoading"
           @regenerate="handleRegenerateCompare"
         />
       </div>
-    </template>
+    </RecordOverlay>
 
-    <!-- List mode -->
-    <template v-else>
+    <!-- List stays mounted beneath the detail card. -->
+    <div :inert="!!detailMode">
       <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
         <h1 class="font-kai text-3xl text-ink leading-tight">学习记录</h1>
         <button
@@ -342,12 +341,12 @@ function doConfirmDelete() {
           <div
             v-for="record in filteredHistory"
             :key="record.id"
-            @click="onIdiomRowClick(record)"
+            @click="onIdiomRowClick(record, $event)"
             class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-zhuhong/50 transition-all duration-200 group cursor-pointer"
             :class="{ 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
-            @keydown.enter="onIdiomRowClick(record)"
+            @keydown.enter="onIdiomRowClick(record, $event)"
           >
             <div
               v-if="editMode"
@@ -413,12 +412,12 @@ function doConfirmDelete() {
           <div
             v-for="record in filteredCompareHistory"
             :key="record.id"
-            @click="onCompareRowClick(record)"
+            @click="onCompareRowClick(record, $event)"
             class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-dai/50 transition-all duration-200 group cursor-pointer"
             :class="{ 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
-            @keydown.enter="onCompareRowClick(record)"
+            @keydown.enter="onCompareRowClick(record, $event)"
           >
             <div
               v-if="editMode"
@@ -471,7 +470,7 @@ function doConfirmDelete() {
           </button>
         </div>
       </div>
-    </template>
+    </div>
 
     <!-- Delete Confirm Modal -->
     <Teleport to="body">

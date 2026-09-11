@@ -1,7 +1,49 @@
 import type { DeepSeekResponse } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
+export interface ApiConfig { apiKey: string; baseUrl: string; model: string }
+export function apiEndpoint(baseUrl: string, resource: 'models' | 'chat/completions'): string {
+  let url: URL
+  try { url = new URL(baseUrl.trim()) } catch { throw new Error('请输入完整的 API URL') }
+  if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('API URL 格式不正确')
+  return url.href.replace(/\/+$/, '').replace(/\/(chat\/completions|models)$/, '') + '/' + resource
+}
+async function request(config: ApiConfig, resource: 'models' | 'chat/completions', body?: object) {
+  if (!config.apiKey.trim()) throw new Error('请先填写 API Key')
+  const endpoint = apiEndpoint(config.baseUrl, resource)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 180000)
+  try {
+    const response = await fetch(endpoint, {
+      method: body ? 'POST' : 'GET', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey.trim()}` },
+      ...(body ? { body: JSON.stringify(body) } : {})
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      const hints: Record<number, string> = {401: 'API Key 无效或已过期', 402: '账户余额不足', 403: '无权访问接口或模型', 404: '接口路径或模型不存在，请核对 API URL 并重新获取模型', 429: '请求过于频繁或额度不足'}
+      throw new Error(`HTTP ${response.status}：${hints[response.status] || 'API 请求失败'}${data?.error?.message ? '（' + String(data.error.message).split(config.apiKey).join('***') + '）' : ''}`)
+    }
+    if (!data) throw new Error('接口未返回 JSON，请检查是否填入了网页地址')
+    return data
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('请求超时，请稍后重试')
+    if (error instanceof TypeError) throw new Error('无法连接 API，请检查网络、URL 及服务商是否允许浏览器跨域访问')
+    throw error
+  } finally { clearTimeout(timeout) }
+}
+export async function fetchModels(config: ApiConfig): Promise<string[]> {
+  const data = await request(config, 'models')
+  if (!Array.isArray(data.data)) throw new Error('接口未返回模型列表，可手动填写模型名称')
+  const models = [...new Set<string>(data.data.map((item: { id: string }) => item.id).filter((id: unknown) => typeof id === 'string' && id))].sort()
+  if (!models.length) throw new Error('没有可选模型，可手动填写模型名称')
+  return models
+}
+export async function testConnection(config: ApiConfig): Promise<string> {
+  const started = performance.now()
+  await callApi('Reply briefly.', 'Reply OK.', config, 128)
+  return `连接成功 · ${config.model} · ${((performance.now() - started) / 1000).toFixed(1)} 秒`
+}
 
 /**
  * 构建系统提示词 - 严格约束输出格式
@@ -79,43 +121,20 @@ interface ApiResult {
 async function callApi(
   systemPrompt: string,
   userPrompt: string,
-  apiKey: string,
+  config: ApiConfig,
   maxTokens: number = 1000
 ): Promise<ApiResult> {
-  const response = await fetch(DEEPSEEK_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'deepseek-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.7,
-      max_tokens: maxTokens,
-      response_format: { type: 'json_object' }
-    })
+  if (!config.model.trim()) throw new Error('请选择或填写模型名称')
+  const data = await request(config, 'chat/completions', {
+    model: config.model.trim(),
+    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+    max_tokens: maxTokens
   })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    if (response.status === 401) {
-      throw new Error('API Key 无效，请在个人页面重新设置')
-    }
-    if (response.status === 429) {
-      throw new Error('API 调用频率过高，请稍后再试')
-    }
-    throw new Error(errorData.error?.message || 'API 调用失败，请稍后再试')
-  }
-
-  const data = await response.json()
+  if (data.choices?.[0]?.finish_reason === 'length') throw new Error('模型输出达到长度上限，请尝试其他模型或重新生成')
   const content = data.choices?.[0]?.message?.content
   const tokenUsage = data.usage?.total_tokens || 0
 
-  if (!content) {
+  if (typeof content !== 'string' || !content.trim()) {
     throw new Error('API 返回内容为空')
   }
 
@@ -127,7 +146,7 @@ async function callApi(
  */
 export async function generateIdiomContent(
   word: string,
-  apiKey: string
+  config: ApiConfig
 ): Promise<DeepSeekResponse> {
   const { sanitized, isSuspicious, reason } = sanitizeInput(word)
 
@@ -139,20 +158,20 @@ export async function generateIdiomContent(
     throw new Error(reason || '输入包含可疑内容，请重新输入')
   }
 
-  if (!apiKey) {
+  if (!config.apiKey) {
     throw new Error('请先在个人页面设置 API Key')
   }
 
   const { content } = await callApi(
     buildSystemPrompt(),
     buildUserPrompt(sanitized),
-    apiKey,
+    config,
     1000
   )
 
   let parsed: DeepSeekResponse
   try {
-    parsed = JSON.parse(content)
+    parsed = JSON.parse(content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''))
   } catch {
     throw new Error('API 返回格式错误，请点击重新生成')
   }
@@ -177,7 +196,7 @@ export interface CompareResponse {
  */
 export async function generateComparison(
   words: string[],
-  apiKey: string
+  config: ApiConfig
 ): Promise<CompareResponse> {
   if (words.length < 2) {
     throw new Error('至少需要两个词语进行对比')
@@ -193,20 +212,20 @@ export async function generateComparison(
     }
   }
 
-  if (!apiKey) {
+  if (!config.apiKey) {
     throw new Error('请先在个人页面设置 API Key')
   }
 
   const { content, tokenUsage } = await callApi(
     buildCompareSystemPrompt(),
     buildCompareUserPrompt(words),
-    apiKey,
+    config,
     2000
   )
 
   let parsed: { meaningDiff: string; usageDiff: string; scenarios: string; confusionPoints: string }
   try {
-    parsed = JSON.parse(content)
+    parsed = JSON.parse(content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''))
   } catch {
     throw new Error('API 返回格式错误，请点击重新生成')
   }

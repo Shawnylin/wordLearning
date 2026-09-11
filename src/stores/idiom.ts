@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { IdiomData, SearchRecord, CompareRecord, TokenStats } from '../types/idiom'
-import { generateIdiomContent, generateComparison } from '../api/deepseek'
+import { type ApiConfig, generateIdiomContent, generateComparison } from '../api/deepseek'
 
 export const useIdiomStore = defineStore('idiom', () => {
   // 已缓存的成语数据
@@ -39,9 +39,13 @@ export const useIdiomStore = defineStore('idiom', () => {
   const currentCompare = ref<CompareRecord | null>(null)
 
   // 加载状态
-  const isLoading = ref(false)
+  const idiomLoading = ref(false)
+  const compareLoading = ref(false)
+  const isLoading = computed(() => idiomLoading.value || compareLoading.value)
 
   // 错误信息
+  const idiomError = ref('')
+  const compareError = ref('')
   const errorMessage = ref('')
 
   // 已学习成语数量
@@ -71,7 +75,8 @@ export const useIdiomStore = defineStore('idiom', () => {
   /**
    * 搜索成语
    */
-  async function searchIdiom(word: string, apiKey: string): Promise<IdiomData | null> {
+  async function searchIdiom(word: string, config: ApiConfig): Promise<IdiomData | null> {
+    if (idiomLoading.value) return null
     const trimmedWord = word.trim()
     if (!trimmedWord) return null
 
@@ -85,11 +90,11 @@ export const useIdiomStore = defineStore('idiom', () => {
       return cached
     }
 
-    isLoading.value = true
-    errorMessage.value = ''
+    idiomLoading.value = true
+    idiomError.value = ''
 
     try {
-      const result = await generateIdiomContent(trimmedWord, apiKey)
+      const result = await generateIdiomContent(trimmedWord, { ...config })
 
       const idiomData: IdiomData = {
         id: `idiom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -109,25 +114,26 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return idiomData
     } catch (error: any) {
-      errorMessage.value = error.message || '生成失败，请重试'
+      idiomError.value = error.message || '生成失败，请重试'
       return null
     } finally {
-      isLoading.value = false
+      idiomLoading.value = false
     }
   }
 
   /**
    * 重新生成成语内容
    */
-  async function regenerateIdiom(word: string, apiKey: string): Promise<IdiomData | null> {
+  async function regenerateIdiom(word: string, config: ApiConfig): Promise<IdiomData | null> {
+    if (idiomLoading.value) return null
     const trimmedWord = word.trim()
     if (!trimmedWord) return null
 
-    isLoading.value = true
-    errorMessage.value = ''
+    idiomLoading.value = true
+    idiomError.value = ''
 
     try {
-      const result = await generateIdiomContent(trimmedWord, apiKey)
+      const result = await generateIdiomContent(trimmedWord, { ...config })
 
       const idiomData: IdiomData = {
         id: `idiom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -146,20 +152,21 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return idiomData
     } catch (error: any) {
-      errorMessage.value = error.message || '重新生成失败，请重试'
+      idiomError.value = error.message || '重新生成失败，请重试'
       return null
     } finally {
-      isLoading.value = false
+      idiomLoading.value = false
     }
   }
 
   /**
    * 生成词语对比
    */
-  async function compareIdioms(words: string[], apiKey: string): Promise<CompareRecord | null> {
+  async function compareIdioms(words: string[], config: ApiConfig): Promise<CompareRecord | null> {
+    if (compareLoading.value) return null
     const trimmedWords = words.map(w => w.trim()).filter(w => w.length > 0)
     if (trimmedWords.length < 2) {
-      errorMessage.value = '至少需要两个词语进行对比'
+      compareError.value = '至少需要两个词语进行对比'
       return null
     }
 
@@ -172,11 +179,11 @@ export const useIdiomStore = defineStore('idiom', () => {
       return cached
     }
 
-    isLoading.value = true
-    errorMessage.value = ''
+    compareLoading.value = true
+    compareError.value = ''
 
     try {
-      const result = await generateComparison(trimmedWords, apiKey)
+      const result = await generateComparison(trimmedWords, { ...config })
       addTokenUsage(result.tokenUsage)
 
       const compareRecord: CompareRecord = {
@@ -198,25 +205,26 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return compareRecord
     } catch (error: any) {
-      errorMessage.value = error.message || '对比生成失败，请重试'
+      compareError.value = error.message || '对比生成失败，请重试'
       return null
     } finally {
-      isLoading.value = false
+      compareLoading.value = false
     }
   }
 
   /**
    * 重新生成对比
    */
-  async function regenerateComparison(words: string[], apiKey: string): Promise<CompareRecord | null> {
+  async function regenerateComparison(words: string[], config: ApiConfig): Promise<CompareRecord | null> {
+    if (compareLoading.value) return null
     const trimmedWords = words.map(w => w.trim()).filter(w => w.length > 0)
     if (trimmedWords.length < 2) return null
 
-    isLoading.value = true
-    errorMessage.value = ''
+    compareLoading.value = true
+    compareError.value = ''
 
     try {
-      const result = await generateComparison(trimmedWords, apiKey)
+      const result = await generateComparison(trimmedWords, { ...config })
       addTokenUsage(result.tokenUsage)
 
       const compareRecord: CompareRecord = {
@@ -234,14 +242,15 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       const key = getCompareKey(trimmedWords)
       compareCache.value[key] = compareRecord
+      addCompareRecord(compareRecord)
       currentCompare.value = compareRecord
 
       return compareRecord
     } catch (error: any) {
-      errorMessage.value = error.message || '重新生成失败，请重试'
+      compareError.value = error.message || '重新生成失败，请重试'
       return null
     } finally {
-      isLoading.value = false
+      compareLoading.value = false
     }
   }
 
@@ -343,6 +352,8 @@ export const useIdiomStore = defineStore('idiom', () => {
   }
 
   function clearError() {
+    idiomError.value = ''
+    compareError.value = ''
     errorMessage.value = ''
   }
 
@@ -451,8 +462,8 @@ export const useIdiomStore = defineStore('idiom', () => {
     queryRanking,
     currentIdiom,
     currentCompare,
-    isLoading,
-    errorMessage,
+    isLoading, idiomLoading, compareLoading,
+    errorMessage, idiomError, compareError,
     learnedCount,
     sortedHistory,
     sortedCompareHistory,

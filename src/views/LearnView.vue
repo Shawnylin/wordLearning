@@ -25,12 +25,12 @@ async function handleSearch(word: string) {
     return
   }
   showNoApiKeyWarning.value = false
-  await idiomStore.searchIdiom(word, settingsStore.apiKey)
+  await idiomStore.searchIdiom(word, settingsStore.apiConfig)
 }
 
 async function handleRegenerate() {
   if (!idiomStore.currentIdiom || !settingsStore.hasApiKey()) return
-  await idiomStore.regenerateIdiom(idiomStore.currentIdiom.word, settingsStore.apiKey)
+  await idiomStore.regenerateIdiom(idiomStore.currentIdiom.word, settingsStore.apiConfig)
 }
 
 function handleRelatedClick(word: string) {
@@ -47,7 +47,7 @@ function goToSettings() {
     <!-- Search Input -->
     <div class="mb-6">
       <SearchInput
-        :loading="idiomStore.isLoading"
+        :loading="idiomStore.idiomLoading"
         @search="handleSearch"
       />
     </div>
@@ -64,7 +64,7 @@ function goToSettings() {
             请先设置 API Key
           </p>
           <p class="text-xs text-ink-soft mt-1">
-            使用本功能需要设置 DeepSeek API Key
+            使用本功能需要设置 模型 API Key
           </p>
           <button
             @click="goToSettings"
@@ -79,14 +79,14 @@ function goToSettings() {
 
     <!-- Error Message -->
     <div
-      v-if="idiomStore.errorMessage"
+      v-if="idiomStore.idiomError"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
     >
       <div class="flex items-start gap-3">
         <AlertCircle :size="20" class="text-zhuhong shrink-0 mt-0.5" />
         <div>
           <p class="text-sm text-ink">
-            {{ idiomStore.errorMessage }}
+            {{ idiomStore.idiomError }}
           </p>
           <button
             @click="idiomStore.clearError()"
@@ -99,7 +99,7 @@ function goToSettings() {
     </div>
 
     <!-- Loading State -->
-    <div v-if="idiomStore.isLoading" class="mx-auto max-w-lg">
+    <div v-if="idiomStore.idiomLoading" class="mx-auto max-w-lg">
       <div class="rounded-3xl card p-8">
         <div class="animate-pulse-custom space-y-6">
           <div class="h-6 bg-soft rounded-full w-32 mx-auto"></div>
@@ -117,7 +117,7 @@ function goToSettings() {
     <div v-else-if="idiomStore.currentIdiom" class="mx-auto max-w-lg">
       <IdiomCard
         :idiom="idiomStore.currentIdiom"
-        :loading="idiomStore.isLoading"
+        :loading="idiomStore.idiomLoading"
         @regenerate="handleRegenerate"
         @related-click="handleRelatedClick"
       />

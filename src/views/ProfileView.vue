@@ -1,58 +1,23 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
-import { useSettingsStore } from '../stores/settings'
+import ModelSettings from '../components/ModelSettings.vue'
 import { useReviewStore } from '../stores/review'
 import {
-  Sun, Moon, Key, BookOpen, Trash2, Eye, EyeOff, Check, Info,
-  Download, Upload, Monitor, Coins, RefreshCw
+  Sun, Moon, BookOpen, Trash2,
+  Download, Upload, Monitor, RefreshCw
 } from 'lucide-vue-next'
 
 const APP_VERSION = '0.2.0'
 
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
-const settingsStore = useSettingsStore()
 const reviewStore = useReviewStore()
 
-const showApiKey = ref(false)
-const editingApiKey = ref(false)
-const tempApiKey = ref(settingsStore.apiKey)
 const showClearConfirm = ref(false)
 const showClearCacheConfirm = ref(false)
-const apiKeySaved = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)
-
-const maskedApiKey = computed(() => {
-  if (!settingsStore.apiKey) return '未设置'
-  if (settingsStore.apiKey.length <= 8) return '********'
-  return settingsStore.apiKey.substring(0, 4) + '****' + settingsStore.apiKey.substring(settingsStore.apiKey.length - 4)
-})
-
-function startEditApiKey() {
-  tempApiKey.value = settingsStore.apiKey
-  editingApiKey.value = true
-  apiKeySaved.value = false
-}
-
-function saveApiKey() {
-  settingsStore.setApiKey(tempApiKey.value)
-  editingApiKey.value = false
-  apiKeySaved.value = true
-  setTimeout(() => { apiKeySaved.value = false }, 2000)
-}
-
-function cancelEditApiKey() {
-  editingApiKey.value = false
-  tempApiKey.value = settingsStore.apiKey
-}
-
-function clearApiKey() {
-  settingsStore.clearApiKey()
-  tempApiKey.value = ''
-  editingApiKey.value = false
-}
 
 function handleClearHistory() {
   idiomStore.clearHistory()
@@ -152,83 +117,7 @@ function handleImport() {
         </div>
       </div>
 
-      <!-- API Key Setting -->
-      <div class="card rounded-2xl p-6">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai">
-            <Key :size="20" />
-          </div>
-          <div class="flex-1">
-            <h3 class="font-semibold text-ink">DeepSeek API Key</h3>
-            <p class="text-xs text-ink-mute">用于生成成语学习内容</p>
-          </div>
-          <div v-if="apiKeySaved" class="flex items-center gap-1 text-bamboo">
-            <Check :size="14" />
-            <span class="text-xs">已保存</span>
-          </div>
-        </div>
-
-        <div v-if="!editingApiKey">
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-soft">
-            <div class="flex-1">
-              <p class="text-sm text-ink-soft font-mono">
-                {{ showApiKey ? settingsStore.apiKey || '未设置' : maskedApiKey }}
-              </p>
-            </div>
-            <button
-              v-if="settingsStore.apiKey"
-              @click="showApiKey = !showApiKey"
-              class="p-1.5 rounded-lg text-ink-mute hover:text-ink transition-colors"
-            >
-              <component :is="showApiKey ? EyeOff : Eye" :size="16" />
-            </button>
-          </div>
-          <div class="flex gap-2 mt-3">
-            <button
-              @click="startEditApiKey"
-              class="flex-1 py-2 rounded-xl text-sm font-medium btn-primary transition-colors"
-            >
-              {{ settingsStore.apiKey ? '修改' : '设置 API Key' }}
-            </button>
-            <button
-              v-if="settingsStore.apiKey"
-              @click="clearApiKey"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-zhuhong bg-zhuhong-soft hover:opacity-85 transition-colors"
-            >
-              清除
-            </button>
-          </div>
-        </div>
-
-        <div v-else class="space-y-3">
-          <input
-            v-model="tempApiKey"
-            type="password"
-            placeholder="输入 DeepSeek API Key"
-            class="w-full px-4 py-3 rounded-xl bg-soft text-sm text-ink placeholder-ink-mute outline-none border border-line focus:border-zhuhong focus:ring-2 focus:ring-zhuhong/15"
-          />
-          <div class="flex gap-2">
-            <button
-              @click="saveApiKey"
-              class="flex-1 py-2 rounded-xl text-sm font-medium btn-primary transition-colors"
-            >
-              保存
-            </button>
-            <button
-              @click="cancelEditApiKey"
-              class="px-4 py-2 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
-            >
-              取消
-            </button>
-          </div>
-          <div class="flex items-start gap-2 p-3 rounded-xl bg-dai-soft">
-            <Info :size="14" class="text-dai shrink-0 mt-0.5" />
-            <p class="text-xs text-ink-soft">
-              API Key 仅保存在本地浏览器中，不会上传到任何服务器。
-            </p>
-          </div>
-        </div>
-      </div>
+      <ModelSettings />
 
       <!-- Theme Setting -->
       <div class="card rounded-2xl p-6 space-y-4">

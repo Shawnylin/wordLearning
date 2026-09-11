@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons/*.svg'],
       manifest: {
         name: '成语学习 - 公考必备',
@@ -38,19 +38,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\.deepseek\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'deepseek-api',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7
-              }
-            }
-          }
-        ]
+
       }
     })
   ],
