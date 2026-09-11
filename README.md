@@ -20,7 +20,7 @@
 - **状态管理**：Pinia + pinia-plugin-persistedstate
 - **图标库**：Lucide Icons
 - **PWA**：vite-plugin-pwa
-- **AI 模型**：DeepSeek v4.0-flash
+- **AI 模型**：deepseek-flash
 
 ## 快速开始
 
