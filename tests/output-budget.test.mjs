@@ -131,3 +131,22 @@ test('connection test remains a single small request', async () => {
   assert.equal(calls[0].body.max_tokens, 128)
   assert.equal(calls.length, 1)
 })
+
+test('streaming generation emits progressive drafts and thinking controls', async () => {
+  let requestBody
+  const json = JSON.stringify(idiom)
+  const pieces = [json.slice(0, 80), json.slice(80, 260), json.slice(260)]
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body)
+    const events = pieces.map((content, index) => `data: ${JSON.stringify({ choices: [{ delta: { content }, finish_reason: index === 2 ? 'stop' : null }], usage: index === 2 ? { total_tokens: 321 } : null })}\n\n`).join('') + 'data: [DONE]\n\n'
+    return new Response(events, { headers: { 'Content-Type': 'text/event-stream' } })
+  }
+  const drafts = []
+  const result = await generateIdiomContent('画龙点睛', { ...config, thinkingEnabled: true, reasoningEffort: 'max' }, draft => drafts.push(draft))
+  assert(drafts.length >= 3)
+  assert.equal(result.tokenUsage, 321)
+  assert.deepEqual(requestBody.thinking, { type: 'enabled' })
+  assert.equal(requestBody.reasoning_effort, 'max')
+  assert.equal(requestBody.stream, true)
+  assert.equal(requestBody.stream_options.include_usage, true)
+})

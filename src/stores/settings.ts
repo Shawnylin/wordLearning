@@ -1,14 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { ApiConfig } from '../api/deepseek'
+import type { ApiConfig, ReasoningEffort } from '../api/deepseek'
 
 export const useSettingsStore = defineStore('settings', () => {
   const apiKey = ref('')
   const baseUrl = ref('https://api.deepseek.com')
   const model = ref('deepseek-flash')
+  const thinkingEnabled = ref(false)
+  const reasoningEffort = ref<ReasoningEffort>('high')
   const profiles = ref<(ApiConfig & { id: string; name: string; models: string[] })[]>([])
   const activeProfileId = ref('')
-  const apiConfig = computed<ApiConfig>(() => ({ apiKey: apiKey.value, baseUrl: baseUrl.value, model: model.value }))
+  const apiConfig = computed<ApiConfig>(() => ({ apiKey: apiKey.value, baseUrl: baseUrl.value, model: model.value, thinkingEnabled: thinkingEnabled.value, reasoningEffort: reasoningEffort.value }))
   function saveProfile(profile: ApiConfig & { id: string; name: string; models: string[] }) {
     const index = profiles.value.findIndex(p => p.id === profile.id)
     if (index < 0) profiles.value.push({ ...profile })
@@ -51,7 +53,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    apiKey, baseUrl, model, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile,
+    apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile,
     reviewTarget,
     setApiKey,
     clearApiKey,
@@ -61,6 +63,6 @@ export const useSettingsStore = defineStore('settings', () => {
 }, {
   persist: {
     key: 'settings-store',
-    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'profiles', 'activeProfileId']
+    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId']
   }
 })

@@ -142,6 +142,29 @@ function handleImport() {
               <p class="text-xs text-ink-mute">API 调用次数</p>
             </div>
           </div>
+          <div class="mt-3 pt-3 border-t border-gold/20">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="text-sm font-medium text-ink-soft">深度思考</p>
+                <p class="text-xs text-ink-mute mt-0.5">关闭后响应更快，开启后分析更充分</p>
+              </div>
+              <button
+                @click="settings.thinkingEnabled = !settings.thinkingEnabled"
+                class="relative w-11 h-6 rounded-full transition-colors duration-300 border shrink-0"
+                :class="settings.thinkingEnabled ? 'bg-gold border-gold' : 'bg-soft border-line'"
+                role="switch"
+                :aria-checked="settings.thinkingEnabled"
+                aria-label="深度思考"
+              >
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-all duration-300" :style="{ transform: settings.thinkingEnabled ? 'translateX(20px)' : 'translateX(0)' }" />
+              </button>
+            </div>
+            <div v-if="settings.thinkingEnabled" class="grid grid-cols-3 gap-2 mt-3">
+              <button v-for="effort in ['low', 'high', 'max']" :key="effort" @click="settings.reasoningEffort = effort as any" class="py-2 rounded-lg text-xs font-medium transition-colors" :class="settings.reasoningEffort === effort ? 'bg-gold text-paper-ink' : 'bg-soft text-ink-soft'">
+                {{ effort === 'low' ? '低' : effort === 'high' ? '高' : '最高' }}
+              </button>
+            </div>
+          </div>
           <div class="mt-3 pt-3 border-t border-gold/20 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-xs text-ink-mute mb-1">当前 API 余额</p>

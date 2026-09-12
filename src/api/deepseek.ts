@@ -1,7 +1,8 @@
 import type { DeepSeekResponse, GeneratedIdiomContent } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
 
-export interface ApiConfig { apiKey: string; baseUrl: string; model: string }
+export type ReasoningEffort = 'low' | 'high' | 'max'
+export interface ApiConfig { apiKey: string; baseUrl: string; model: string; thinkingEnabled?: boolean; reasoningEffort?: ReasoningEffort }
 export interface ApiBalance { currency: string; totalBalance: string }
 class OutputBudgetError extends Error {}
 type ApiResource = 'models' | 'chat/completions' | 'user/balance'
@@ -129,6 +130,71 @@ interface ApiResult {
   content: string
   tokenUsage: number
 }
+
+interface StreamResult extends ApiResult { finishReason?: string }
+
+async function requestStream(config: ApiConfig, body: object, onContent: (content: string) => void): Promise<StreamResult> {
+  const endpoint = apiEndpoint(config.baseUrl, 'chat/completions')
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 180000)
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', Authorization: `Bearer ${config.apiKey.trim()}` },
+      body: JSON.stringify({ ...body, stream: true, stream_options: { include_usage: true } })
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      const detail = data?.error?.message ? String(data.error.message).split(config.apiKey).join('***') : ''
+      const hints: Record<number, string> = {401: 'API Key 无效或已过期', 402: '账户余额不足', 403: '无权访问接口或模型', 404: '接口路径或模型不存在，请核对 API URL 并重新获取模型', 429: '请求过于频繁或额度不足'}
+      throw new Error(`HTTP ${response.status}：${hints[response.status] || 'API 请求失败'}${detail ? '（' + detail + '）' : ''}`)
+    }
+    if (!response.body) throw new Error('当前 API 不支持流式响应')
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = '', content = '', tokenUsage = 0, finishReason: string | undefined
+    const consume = (block: string) => {
+      for (const line of block.split(/\r?\n/)) {
+        if (!line.startsWith('data:')) continue
+        const payload = line.slice(5).trim()
+        if (!payload || payload === '[DONE]') continue
+        let chunk: any
+        try { chunk = JSON.parse(payload) } catch { continue }
+        const delta = chunk.choices?.[0]?.delta?.content
+        if (typeof delta === 'string') { content += delta; onContent(content) }
+        if (chunk.choices?.[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason
+        if (typeof chunk.usage?.total_tokens === 'number') tokenUsage = chunk.usage.total_tokens
+      }
+    }
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
+      const blocks = buffer.split(/\r?\n\r?\n/)
+      buffer = blocks.pop() || ''
+      blocks.forEach(consume)
+      if (done) break
+    }
+    if (buffer.trim()) consume(buffer)
+    return { content, tokenUsage, finishReason }
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('请求超时，请稍后重试')
+    if (error instanceof TypeError) throw new Error('无法连接 API，请检查网络、URL 及服务商是否允许浏览器跨域访问')
+    throw error
+  } finally { clearTimeout(timeout) }
+}
+
+function partialString(content: string, key: string): string {
+  const match = content.match(new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)`))
+  if (!match) return ''
+  try { return JSON.parse(`"${match[1].replace(/\\$/, '')}"`) } catch { return match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') }
+}
+
+function partialArray(content: string, key: string): string[] {
+  const tail = content.match(new RegExp(`"${key}"\\s*:\\s*\\[([\\s\\S]*)`))?.[1] || ''
+  return [...tail.matchAll(/"((?:\\.|[^"\\])*)"/g)].map(match => {
+    try { return JSON.parse(`"${match[1]}"`) } catch { return match[1] }
+  }).slice(0, 3)
+}
 export async function fetchBalance(config: ApiConfig): Promise<ApiBalance[]> {
   try {
     const data = await request(config, 'user/balance')
@@ -157,7 +223,8 @@ async function callApi(
   userPrompt: string,
   config: ApiConfig,
   maxTokens: number,
-  recoverLength = false
+  recoverLength = false,
+  onProgress?: (content: string) => void
 ): Promise<ApiResult> {
   if (!config.model.trim()) throw new Error('请选择或填写模型名称')
   // Snapshot the request so settings changes cannot switch provider/model mid-retry.
@@ -169,11 +236,25 @@ async function callApi(
   // At most two generations, plus one rejected-parameter compatibility request.
   for (let attempt = 0; attempt < 3; attempt++) {
     let data
+    const requestBody = {
+      model: snapshot.model.trim(), messages,
+      ...(snapshot.thinkingEnabled === undefined ? {} : { thinking: { type: snapshot.thinkingEnabled ? 'enabled' : 'disabled' } }),
+      ...(snapshot.thinkingEnabled && snapshot.reasoningEffort ? { reasoning_effort: snapshot.reasoningEffort } : {}),
+      ...(budget === undefined ? {} : { max_tokens: budget })
+    }
     try {
-      data = await request(snapshot, 'chat/completions', {
-        model: snapshot.model.trim(), messages,
-        ...(budget === undefined ? {} : { max_tokens: budget })
-      })
+      if (onProgress) {
+        const streamed = await requestStream(snapshot, requestBody, onProgress)
+        tokenUsage += streamed.tokenUsage
+        if (streamed.finishReason === 'length') {
+          if (recoverLength && !expanded && budget !== undefined) { expanded = true; budget = Math.min(65536, budget * 2); onProgress(''); continue }
+          throw new Error('模型输出仍达到长度上限，未保存不完整内容。请选用输出额度更大的模型后重试')
+        }
+        if (streamed.finishReason && streamed.finishReason !== 'stop') throw new Error('模型未完成正常输出，请重新生成')
+        if (!streamed.content.trim()) throw new Error('API 返回内容为空')
+        return { content: streamed.content, tokenUsage }
+      }
+      data = await request(snapshot, 'chat/completions', requestBody)
     } catch (error) {
       if (recoverLength && budget !== undefined && error instanceof OutputBudgetError) {
         budget = undefined
@@ -208,7 +289,8 @@ async function callApi(
  */
 export async function generateIdiomContent(
   word: string,
-  config: ApiConfig
+  config: ApiConfig,
+  onProgress?: (draft: Partial<DeepSeekResponse>) => void
 ): Promise<GeneratedIdiomContent> {
   const { sanitized, isSuspicious, reason } = sanitizeInput(word)
 
@@ -229,7 +311,12 @@ export async function generateIdiomContent(
     buildUserPrompt(sanitized),
     config,
     generationBudget(config),
-    true
+    true,
+    onProgress ? content => onProgress({
+      pinyin: partialString(content, 'pinyin'), explanation: partialString(content, 'explanation'),
+      origin: partialString(content, 'origin'), example: partialString(content, 'example'),
+      usage: partialString(content, 'usage'), relatedIdioms: partialArray(content, 'relatedIdioms')
+    }) : undefined
   )
 
   let parsed: DeepSeekResponse
@@ -259,7 +346,8 @@ export interface CompareResponse {
  */
 export async function generateComparison(
   words: string[],
-  config: ApiConfig
+  config: ApiConfig,
+  onProgress?: (draft: Partial<Omit<CompareResponse, 'tokenUsage'>>) => void
 ): Promise<CompareResponse> {
   if (words.length < 2) {
     throw new Error('至少需要两个词语进行对比')
@@ -284,7 +372,11 @@ export async function generateComparison(
     buildCompareUserPrompt(words),
     config,
     generationBudget(config, words.length),
-    true
+    true,
+    onProgress ? content => onProgress({
+      meaningDiff: partialString(content, 'meaningDiff'), usageDiff: partialString(content, 'usageDiff'),
+      scenarios: partialString(content, 'scenarios'), confusionPoints: partialString(content, 'confusionPoints')
+    }) : undefined
   )
 
   let parsed: { meaningDiff: string; usageDiff: string; scenarios: string; confusionPoints: string }

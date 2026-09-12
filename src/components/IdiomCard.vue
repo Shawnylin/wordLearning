@@ -62,7 +62,7 @@ function getSectionContent(key: string): string {
 
         <!-- Pinyin -->
         <p class="text-lg tracking-widest mb-2 text-zhuhong">
-          {{ idiom.pinyin }}
+          {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
         </p>
 
         <!-- Word -->
@@ -83,6 +83,7 @@ function getSectionContent(key: string): string {
         <div
           v-for="section in sections"
           :key="section.key"
+          v-show="getSectionContent(section.key) || loading"
         >
           <div class="flex items-center gap-2 mb-2">
             <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-zhuhong-soft text-zhuhong">
@@ -93,7 +94,7 @@ function getSectionContent(key: string): string {
             </h3>
           </div>
           <p class="text-base leading-relaxed text-ink-soft pl-9">
-            {{ getSectionContent(section.key) }}
+            {{ getSectionContent(section.key) || '正在生成…' }}
           </p>
         </div>
 

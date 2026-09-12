@@ -92,9 +92,16 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     idiomLoading.value = true
     idiomError.value = ''
+    const previousIdiom = currentIdiom.value
 
     try {
-      const result = await generateIdiomContent(trimmedWord, { ...config })
+      const result = await generateIdiomContent(trimmedWord, { ...config }, draft => {
+        currentIdiom.value = {
+          id: 'streaming', word: trimmedWord, pinyin: draft.pinyin || '', explanation: draft.explanation || '',
+          origin: draft.origin || '', example: draft.example || '', usage: draft.usage || '',
+          relatedIdioms: draft.relatedIdioms || [], createdAt: Date.now()
+        }
+      })
 
       const idiomData: IdiomData = {
         id: `idiom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -116,6 +123,7 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return idiomData
     } catch (error: any) {
+      currentIdiom.value = previousIdiom
       idiomError.value = error.message || '生成失败，请重试'
       return null
     } finally {
@@ -133,9 +141,16 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     idiomLoading.value = true
     idiomError.value = ''
+    const previousIdiom = currentIdiom.value
 
     try {
-      const result = await generateIdiomContent(trimmedWord, { ...config })
+      const result = await generateIdiomContent(trimmedWord, { ...config }, draft => {
+        currentIdiom.value = {
+          id: 'streaming', word: trimmedWord, pinyin: draft.pinyin || '', explanation: draft.explanation || '',
+          origin: draft.origin || '', example: draft.example || '', usage: draft.usage || '',
+          relatedIdioms: draft.relatedIdioms || [], createdAt: Date.now()
+        }
+      })
 
       const idiomData: IdiomData = {
         id: `idiom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -156,6 +171,7 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return idiomData
     } catch (error: any) {
+      currentIdiom.value = previousIdiom
       idiomError.value = error.message || '重新生成失败，请重试'
       return null
     } finally {
@@ -185,9 +201,16 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     compareLoading.value = true
     compareError.value = ''
+    const previousCompare = currentCompare.value
 
     try {
-      const result = await generateComparison(trimmedWords, { ...config })
+      const result = await generateComparison(trimmedWords, { ...config }, draft => {
+        currentCompare.value = {
+          id: 'streaming', words: trimmedWords,
+          content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
+          tokenUsage: 0, createdAt: Date.now()
+        }
+      })
       addTokenUsage(result.tokenUsage)
 
       const compareRecord: CompareRecord = {
@@ -209,6 +232,7 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return compareRecord
     } catch (error: any) {
+      currentCompare.value = previousCompare
       compareError.value = error.message || '对比生成失败，请重试'
       return null
     } finally {
@@ -226,9 +250,16 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     compareLoading.value = true
     compareError.value = ''
+    const previousCompare = currentCompare.value
 
     try {
-      const result = await generateComparison(trimmedWords, { ...config })
+      const result = await generateComparison(trimmedWords, { ...config }, draft => {
+        currentCompare.value = {
+          id: 'streaming', words: trimmedWords,
+          content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
+          tokenUsage: 0, createdAt: Date.now()
+        }
+      })
       addTokenUsage(result.tokenUsage)
 
       const compareRecord: CompareRecord = {
@@ -251,6 +282,7 @@ export const useIdiomStore = defineStore('idiom', () => {
 
       return compareRecord
     } catch (error: any) {
+      currentCompare.value = previousCompare
       compareError.value = error.message || '重新生成失败，请重试'
       return null
     } finally {

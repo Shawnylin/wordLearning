@@ -45,7 +45,7 @@ const sections = [
         <CompareWords :words="compare.words" />
 
         <!-- Token usage -->
-        <div class="flex items-center justify-center gap-1 mt-3">
+        <div v-if="compare.tokenUsage > 0" class="flex items-center justify-center gap-1 mt-3">
           <Coins :size="12" class="text-gold" />
           <span class="text-xs text-gold">
             消耗 {{ compare.tokenUsage }} tokens
@@ -58,6 +58,7 @@ const sections = [
         <div
           v-for="section in sections"
           :key="section.key"
+          v-show="compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'] || loading"
         >
           <div class="flex items-center gap-2 mb-2">
             <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-dai-soft text-dai">
@@ -75,6 +76,7 @@ const sections = [
             >
               {{ line }}
             </p>
+            <p v-if="!compare.content[section.key as 'meaningDiff' | 'usageDiff' | 'scenarios' | 'confusionPoints'] && loading" class="text-ink-mute">正在生成…</p>
           </div>
         </div>
       </div>

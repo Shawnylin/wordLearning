@@ -17,6 +17,13 @@ await page.route('https://api.deepseek.com/**', async route => {
   const body = route.request().postDataJSON(); requests.push(body)
   await new Promise(r => setTimeout(r, delay))
   if (status !== 200) return route.fulfill({ status, json: { error: { message: 'Model unavailable' } } })
+  if (body.stream) {
+    const output = body.messages[0].content.includes('对比') ? compare : idiom
+    const json = JSON.stringify(output)
+    const pieces = [json.slice(0, Math.ceil(json.length / 3)), json.slice(Math.ceil(json.length / 3), Math.ceil(json.length * 2 / 3)), json.slice(Math.ceil(json.length * 2 / 3))]
+    const events = pieces.map((content, index) => `data: ${JSON.stringify({ choices: [{ delta: { content }, finish_reason: index === pieces.length - 1 ? 'stop' : null }], usage: index === pieces.length - 1 ? { total_tokens: 80 } : null })}\n\n`).join('') + 'data: [DONE]\n\n'
+    return route.fulfill({ contentType: 'text/event-stream', body: events })
+  }
   return route.fulfill({ json: { choices: [{ message: { content: body.messages[0].content.includes('对比') ? JSON.stringify(compare) : body.messages[1].content === 'Reply OK.' ? 'OK' : JSON.stringify(idiom) } }], usage: { total_tokens: 80 } } })
 })
 await page.goto('http://127.0.0.1:5173/wordLearning/#/profile')
@@ -82,6 +89,7 @@ await page.getByPlaceholder('输入成语或词语…').fill('一心一意')
 await page.getByRole('button', { name: '搜索', exact: true }).click()
 await page.getByText(/HTTP 404：接口路径或模型不存在/).waitFor()
 assert(requests.every(r => r.model === 'test-model'))
+assert(requests.filter(r => r.stream).every(r => r.thinking?.type === 'disabled'))
 await page.locator('nav').getByRole('button', { name: '个人', exact: true }).click()
 await page.getByRole('button', { name: '模型与 API', exact: true }).click()
 await page.getByRole('button', { name: '新增配置' }).click()

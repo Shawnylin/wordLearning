@@ -34,7 +34,7 @@ onBeforeUnmount(() => { disposed = true; animation?.cancel() })
       <component v-if="!active" :is="kind === 'idiom' ? BookOpen : GitCompare" :size="32" class="text-ink-mute" />
       <template v-else>
         <component v-if="expanding" :is="kind === 'idiom' ? BookOpen : GitCompare" :size="32" class="generation-origin-icon text-ink-mute" />
-        <Motion><div v-if="loading || expanding" class="generation-skeleton p-8" role="status" aria-label="正在生成内容">
+        <Motion><div v-if="(loading && !hasContent) || expanding" class="generation-skeleton p-8" role="status" aria-label="正在生成内容">
           <div class="animate-pulse-custom space-y-6">
             <div class="h-6 bg-soft rounded-full w-32 mx-auto"></div>
             <div class="h-12 bg-soft rounded-xl w-48 max-w-full mx-auto"></div>
