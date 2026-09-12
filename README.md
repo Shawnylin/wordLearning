@@ -96,3 +96,11 @@ MIT
 页面采用 hash 路由，避免静态托管访问 `/learn` 时返回 404。学习和对比的请求由 Pinia 管理，切换应用内页面继续生成，输入状态保留；关闭浏览器或刷新页面不在此保障范围内。PWA 更新在下次打开时生效，避免更新强制刷新中断请求。
 
 浏览器回归脚本：`tests/browser.mjs`。先启动 Vite，再设置 `CODEX_NODE_MODULES` 为含 Playwright 的 node_modules 目录并运行 `node tests/browser.mjs`；使用 Edge 与模拟 API，不需要真实密钥，验证 393×852 视口、跨页生成、配置保存切换、接口错误及记录展开动画。
+
+## 生成长度与完整性
+
+单词查询的基础输出额度为 4096 tokens；2–5 词对比按词数从 4096 增至 7168。当前官方 DeepSeek 思考模型另预留 32768 tokens，避免推理过程挤占正文额度，不关闭思考或降低思考强度。额度是上限，并不要求模型写满；原有详细解释、出处、例句、用法及辨析要求保持不变。
+
+当接口明确返回 `finish_reason: length`，保留原模型与提示词，自动扩大额度完整重生成一次（最高 65536 tokens）。不拼接截断 JSON、不删减内容，也不缓存未完成输出。仅在服务商明确拒绝 `max_tokens` 参数或额度时，额外尝试一次服务商默认额度；认证、限流和上下文超限等错误不自动重试。自动重生成可能增加等待时间和实际 token 消耗；服务商自身的输出限制仍可能导致失败。
+
+运行 `node --test tests/output-budget.test.mjs` 可验证额度、有限重试、兼容处理和完整性校验，使用模拟 API，不需要真实密钥。浏览器缓存保护检查：`node tests/output-budget-browser.mjs`（先启动 Vite 并设置上述 `CODEX_NODE_MODULES`）。

@@ -2,6 +2,7 @@ import type { DeepSeekResponse } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
 
 export interface ApiConfig { apiKey: string; baseUrl: string; model: string }
+class OutputBudgetError extends Error {}
 export function apiEndpoint(baseUrl: string, resource: 'models' | 'chat/completions'): string {
   let url: URL
   try { url = new URL(baseUrl.trim()) } catch { throw new Error('请输入完整的 API URL') }
@@ -22,7 +23,14 @@ async function request(config: ApiConfig, resource: 'models' | 'chat/completions
     const data = await response.json().catch(() => null)
     if (!response.ok) {
       const hints: Record<number, string> = {401: 'API Key 无效或已过期', 402: '账户余额不足', 403: '无权访问接口或模型', 404: '接口路径或模型不存在，请核对 API URL 并重新获取模型', 429: '请求过于频繁或额度不足'}
-      throw new Error(`HTTP ${response.status}：${hints[response.status] || 'API 请求失败'}${data?.error?.message ? '（' + String(data.error.message).split(config.apiKey).join('***') + '）' : ''}`)
+      const detail = data?.error?.message ? String(data.error.message).split(config.apiKey).join('***') : ''
+      const message = `HTTP ${response.status}：${hints[response.status] || 'API 请求失败'}${detail ? '（' + detail + '）' : ''}`
+      // Only an explicit output-budget rejection may use the provider default.
+      // Authentication, rate limits, context overflow and unrelated 400s must not retry.
+      if ([400, 422].includes(response.status) && /\bmax_tokens\b/i.test(detail)
+        && /at most|less than|between|range|maximum|unsupported|not supported|not permitted|上限|不能超过/i.test(detail)
+        && !/context|上下文/i.test(detail)) throw new OutputBudgetError(message)
+      throw new Error(message)
     }
     if (!data) throw new Error('接口未返回 JSON，请检查是否填入了网页地址')
     return data
@@ -118,27 +126,64 @@ interface ApiResult {
   tokenUsage: number
 }
 
+function generationBudget(config: ApiConfig, wordCount = 1): number {
+  const contentBudget = wordCount === 1 ? 4096 : Math.min(8192, 4096 + Math.max(0, wordCount - 2) * 1024)
+  // Current official DeepSeek thinking models share reasoning and answer tokens.
+  // Do not infer capabilities from a model name on an arbitrary compatible host.
+  const officialThinking = new URL(apiEndpoint(config.baseUrl, 'chat/completions')).hostname === 'api.deepseek.com'
+    && /^(deepseek-flash|deepseek-v4-(?:flash|pro)(?:-\d+)?|deepseek-reasoner)$/.test(config.model.trim())
+  return officialThinking ? 32768 + contentBudget : contentBudget
+}
+
 async function callApi(
   systemPrompt: string,
   userPrompt: string,
   config: ApiConfig,
-  maxTokens: number = 1000
+  maxTokens: number,
+  recoverLength = false
 ): Promise<ApiResult> {
   if (!config.model.trim()) throw new Error('请选择或填写模型名称')
-  const data = await request(config, 'chat/completions', {
-    model: config.model.trim(),
-    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-    max_tokens: maxTokens
-  })
-  if (data.choices?.[0]?.finish_reason === 'length') throw new Error('模型输出达到长度上限，请尝试其他模型或重新生成')
-  const content = data.choices?.[0]?.message?.content
-  const tokenUsage = data.usage?.total_tokens || 0
-
-  if (typeof content !== 'string' || !content.trim()) {
-    throw new Error('API 返回内容为空')
+  // Snapshot the request so settings changes cannot switch provider/model mid-retry.
+  const snapshot = { ...config }
+  const messages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+  let budget: number | undefined = maxTokens
+  let expanded = false
+  let tokenUsage = 0
+  // At most two generations, plus one rejected-parameter compatibility request.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let data
+    try {
+      data = await request(snapshot, 'chat/completions', {
+        model: snapshot.model.trim(), messages,
+        ...(budget === undefined ? {} : { max_tokens: budget })
+      })
+    } catch (error) {
+      if (recoverLength && budget !== undefined && error instanceof OutputBudgetError) {
+        budget = undefined
+        continue
+      }
+      throw error
+    }
+    const usage = data.usage?.total_tokens
+    if (typeof usage === 'number' && Number.isFinite(usage) && usage >= 0) tokenUsage += usage
+    const choice = data.choices?.[0]
+    if (choice?.finish_reason === 'length') {
+      if (recoverLength && !expanded && budget !== undefined) {
+        expanded = true
+        const reasoning = choice.message?.reasoning_content || data.usage?.completion_tokens_details?.reasoning_tokens
+        budget = Math.min(65536, Math.max(budget * 2, reasoning ? 32768 : 0))
+        continue
+      }
+      throw new Error('模型输出仍达到长度上限，未保存不完整内容。请选用输出额度更大的模型后重试')
+    }
+    if (choice?.finish_reason && choice.finish_reason !== 'stop') {
+      throw new Error('模型未完成正常输出，请重新生成')
+    }
+    const content = choice?.message?.content
+    if (typeof content !== 'string' || !content.trim()) throw new Error('API 返回内容为空')
+    return { content, tokenUsage }
   }
-
-  return { content, tokenUsage }
+  throw new Error('模型输出仍达到长度上限，未保存不完整内容。请选用输出额度更大的模型后重试')
 }
 
 /**
@@ -166,7 +211,8 @@ export async function generateIdiomContent(
     buildSystemPrompt(),
     buildUserPrompt(sanitized),
     config,
-    1000
+    generationBudget(config),
+    true
   )
 
   let parsed: DeepSeekResponse
@@ -220,7 +266,8 @@ export async function generateComparison(
     buildCompareSystemPrompt(),
     buildCompareUserPrompt(words),
     config,
-    2000
+    generationBudget(config, words.length),
+    true
   )
 
   let parsed: { meaningDiff: string; usageDiff: string; scenarios: string; confusionPoints: string }
@@ -232,7 +279,7 @@ export async function generateComparison(
 
   const required = ['meaningDiff', 'usageDiff', 'scenarios', 'confusionPoints']
   for (const key of required) {
-    if (!parsed[key as keyof typeof parsed] || typeof parsed[key as keyof typeof parsed] !== 'string') {
+    if (!parsed || typeof parsed !== 'object' || typeof parsed[key as keyof typeof parsed] !== 'string' || !parsed[key as keyof typeof parsed].trim()) {
       throw new Error('API 返回数据不完整，请点击重新生成')
     }
   }
