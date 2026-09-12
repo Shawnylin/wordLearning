@@ -2,14 +2,18 @@ import type { DeepSeekResponse, GeneratedIdiomContent } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
 
 export interface ApiConfig { apiKey: string; baseUrl: string; model: string }
+export interface ApiBalance { currency: string; totalBalance: string }
 class OutputBudgetError extends Error {}
-export function apiEndpoint(baseUrl: string, resource: 'models' | 'chat/completions'): string {
+type ApiResource = 'models' | 'chat/completions' | 'user/balance'
+export function apiEndpoint(baseUrl: string, resource: ApiResource): string {
   let url: URL
   try { url = new URL(baseUrl.trim()) } catch { throw new Error('请输入完整的 API URL') }
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('API URL 格式不正确')
-  return url.href.replace(/\/+$/, '').replace(/\/(chat\/completions|models)$/, '') + '/' + resource
+  let root = url.href.replace(/\/+$/, '').replace(/\/(chat\/completions|models)$/, '')
+  if (resource === 'user/balance' && url.hostname === 'api.deepseek.com') root = root.replace(/\/v1$/, '')
+  return root + '/' + resource
 }
-async function request(config: ApiConfig, resource: 'models' | 'chat/completions', body?: object) {
+async function request(config: ApiConfig, resource: ApiResource, body?: object) {
   if (!config.apiKey.trim()) throw new Error('请先填写 API Key')
   const endpoint = apiEndpoint(config.baseUrl, resource)
   const controller = new AbortController()
@@ -124,6 +128,19 @@ function buildCompareUserPrompt(words: string[]): string {
 interface ApiResult {
   content: string
   tokenUsage: number
+}
+export async function fetchBalance(config: ApiConfig): Promise<ApiBalance[]> {
+  try {
+    const data = await request(config, 'user/balance')
+    if (!Array.isArray(data.balance_infos)) throw new Error('当前 API 未返回余额信息')
+    return data.balance_infos.map((item: any) => ({
+      currency: String(item.currency || '').toUpperCase(),
+      totalBalance: String(item.total_balance ?? '')
+    })).filter((item: ApiBalance) => item.currency && item.totalBalance)
+  } catch (error: any) {
+    if (/HTTP 404/.test(error?.message || '')) throw new Error('当前 API 不支持余额查询')
+    throw error
+  }
 }
 
 function generationBudget(config: ApiConfig, wordCount = 1): number {

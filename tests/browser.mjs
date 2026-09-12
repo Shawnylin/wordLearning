@@ -12,6 +12,7 @@ const compare = { meaningDiff: '画龙点睛：突出重点\n锦上添花：增�
 let delay = 0, status = 200
 const requests = []
 await page.route('https://api.deepseek.com/**', async route => {
+  if (route.request().url().endsWith('/user/balance')) return route.fulfill({ json: { is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '18.50', granted_balance: '0.00', topped_up_balance: '18.50' }] } })
   if (route.request().method() === 'GET') return route.fulfill({ json: { data: [{ id: 'deepseek-flash' }, { id: 'test-model' }] } })
   const body = route.request().postDataJSON(); requests.push(body)
   await new Promise(r => setTimeout(r, delay))
@@ -43,6 +44,7 @@ await page.getByPlaceholder('输入词语 1').fill('画龙点睛')
 await page.getByPlaceholder('输入词语 2').fill('锦上添花')
 await page.getByRole('button', { name: '开始对比', exact: true }).click()
 await page.locator('nav').getByRole('button', { name: '个人', exact: true }).click()
+await page.getByText('¥18.50', { exact: true }).waitFor()
 await page.waitForTimeout(2100)
 await page.locator('nav').getByRole('button', { name: '学习', exact: true }).click()
 await page.getByText(idiom.explanation, { exact: true }).waitFor()

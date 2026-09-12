@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import { useReviewStore } from '../stores/review'
+import { fetchBalance, type ApiBalance } from '../api/deepseek'
 import {
   Sun, Moon, BookOpen, Trash2,
   Download, Upload, Monitor, RefreshCw, Coins, Key, ChevronRight
@@ -23,6 +24,34 @@ const reviewStore = useReviewStore()
 const showClearConfirm = ref(false)
 const showClearCacheConfirm = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)
+const balances = ref<ApiBalance[]>([])
+const balanceLoading = ref(false)
+const balanceMessage = ref('')
+
+function formatBalance(balance: ApiBalance): string {
+  const amount = Number(balance.totalBalance)
+  const value = Number.isFinite(amount) ? amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : balance.totalBalance
+  const symbol = balance.currency === 'CNY' ? '¥' : balance.currency === 'USD' ? '$' : `${balance.currency} `
+  return `${symbol}${value}`
+}
+
+async function loadBalance() {
+  balances.value = []
+  if (!settings.hasApiKey()) { balanceMessage.value = '请先配置 API'; return }
+  balanceLoading.value = true
+  balanceMessage.value = ''
+  try {
+    balances.value = await fetchBalance({ ...settings.apiConfig })
+    if (!balances.value.length) balanceMessage.value = '暂无余额信息'
+  } catch (error: any) {
+    balanceMessage.value = error.message || '余额查询失败'
+  } finally {
+    balanceLoading.value = false
+  }
+}
+
+onMounted(loadBalance)
+watch(() => settings.activeProfileId, loadBalance)
 
 function handleClearHistory() {
   idiomStore.clearHistory()
@@ -112,6 +141,24 @@ function handleImport() {
               <p class="font-serif text-xl font-bold text-gold">{{ idiomStore.tokenStats.requestCount }}</p>
               <p class="text-xs text-ink-mute">API 调用次数</p>
             </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-gold/20 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs text-ink-mute mb-1">当前 API 余额</p>
+              <p v-if="balances.length" class="font-serif text-lg font-bold text-gold truncate">
+                {{ balances.map(formatBalance).join(' · ') }}
+              </p>
+              <p v-else class="text-sm text-ink-mute">{{ balanceLoading ? '查询中…' : balanceMessage }}</p>
+            </div>
+            <button
+              @click="loadBalance"
+              :disabled="balanceLoading"
+              class="p-2 rounded-full text-gold hover:bg-gold-soft transition-colors disabled:opacity-50 shrink-0"
+              aria-label="刷新 API 余额"
+              title="刷新余额"
+            >
+              <RefreshCw :size="16" :class="{ 'animate-spin': balanceLoading }" />
+            </button>
           </div>
         </div>
       </div>
