@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref, computed } from 'vue'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
@@ -50,7 +51,7 @@ function goToSettings() {
     </div>
 
     <!-- No API Key Warning -->
-    <div
+    <Motion><div
       v-if="showNoApiKeyWarning"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-gold-soft border border-gold/30"
     >
@@ -72,10 +73,10 @@ function goToSettings() {
           </button>
         </div>
       </div>
-    </div>
+    </div></Motion>
 
     <!-- Error Message -->
-    <div
+    <Motion><div
       v-if="idiomStore.idiomError"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
     >
@@ -93,17 +94,17 @@ function goToSettings() {
           </button>
         </div>
       </div>
-    </div>
+    </div></Motion>
 
     <GenerationStage :loading="idiomStore.idiomLoading" :has-content="!!idiomStore.currentIdiom" kind="idiom">
       <IdiomCard v-if="idiomStore.currentIdiom" :idiom="idiomStore.currentIdiom" :loading="idiomStore.idiomLoading" @regenerate="handleRegenerate" @related-click="handleRelatedClick" />
       <template #empty>
-        <div v-if="favoriteWords.length" class="mt-6 text-left">
+        <Motion><div v-if="favoriteWords.length" class="mt-6 text-left">
           <div class="flex items-center gap-2 mb-2"><Heart :size="14" class="text-zhuhong" /><h3 class="text-xs text-ink-mute">我的收藏</h3></div>
           <div class="flex flex-wrap gap-2">
             <button v-for="word in favoriteWords" :key="word" @click="handleSearch(word)" class="px-4 py-2 rounded-full text-sm bg-zhuhong-soft text-zhuhong">{{ word }}</button>
           </div>
-        </div>
+        </div></Motion>
       </template>
     </GenerationStage>
   </div>

@@ -37,24 +37,24 @@ html.dark {
   color-scheme: dark;
 
   /* 深色：更深的中性墨色（压低亮度、去除黄调） */
-  --paper: #141311;
-  --card: #1d1b18;
-  --soft: #272420;
-  --line: #36322b;
-  --ink: #e8e4db;
-  --ink-soft: #a9a497;
-  --ink-mute: #706a5f;
+  --paper: #141618;
+  --card: #1d2023;
+  --soft: #272b2f;
+  --line: #383e44;
+  --ink: #e7eaed;
+  --ink-soft: #adb5bd;
+  --ink-mute: #89939d;
 
   --zhuhong: #d98a7c;
-  --zhuhong-soft: #2e1d18;
+  --zhuhong-soft: #302428;
   --zhuhong-solid: #c14a36;
 
   --dai: #8aa6c0;
   --dai-soft: #1f2a35;
   --dai-solid: #3a5873;
 
-  --gold: #cfa95b;
-  --gold-soft: #2b2517;
+  --gold: #c4b58e;
+  --gold-soft: #292c30;
 
   --bamboo: #83ad8f;
   --bamboo-soft: #1d2921;
@@ -141,7 +141,7 @@ html.dark body::before {
 
 /* 主题切换的柔和过渡（只作用于颜色类属性，避免布局抖动） */
 * {
-  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.2s ease, opacity 0.2s ease;
+  transition: background-color 320ms ease, border-color 320ms ease, color 240ms ease, box-shadow 240ms ease, opacity 200ms ease, filter 200ms ease;
 }
 
 /* ============ 通用组件 ============ */
@@ -295,4 +295,14 @@ html.dark {
 }
 .glass-card-header {
   background: linear-gradient(160deg, var(--glass-header-light), transparent 62%), linear-gradient(180deg, var(--glass-header-shade), transparent);
+}
+
+/* Shared movement rhythm; direct manipulation retains its own timing. */
+.list-move, .list-enter-active, .list-leave-active { transition: transform 260ms cubic-bezier(.22,1,.36,1), opacity 220ms ease; }
+.list-enter-from, .list-leave-to { opacity: 0; transform: translateY(8px); }
+.list-leave-active { position: absolute; width: 100%; pointer-events: none; }
+html.dark .card { box-shadow: 0 1px 0 rgb(0 0 0 / .12), 0 8px 24px -16px rgb(0 0 0 / .45); }
+html.dark .glass-card { box-shadow: var(--glass-shadow); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

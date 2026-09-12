@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
@@ -154,7 +155,7 @@ function handleImport() {
         </div>
 
         <!-- Manual theme selector -->
-        <div v-if="!themeStore.followSystem" class="flex gap-2">
+        <Motion><div v-if="!themeStore.followSystem" class="flex gap-2">
           <button
             @click="themeStore.setTheme('light')"
             class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
@@ -175,7 +176,7 @@ function handleImport() {
             <Moon :size="16" />
             深色
           </button>
-        </div>
+        </div></Motion>
       </div>
 
       <!-- Data Management -->
@@ -208,13 +209,13 @@ function handleImport() {
             </button>
           </div>
 
-          <div
+          <Motion><div
             v-if="importResult"
             class="p-3 rounded-xl text-sm"
             :class="importResult.success ? 'bg-bamboo-soft text-bamboo' : 'bg-zhuhong-soft text-zhuhong'"
           >
             {{ importResult.message }}
-          </div>
+          </div></Motion>
 
           <button
             @click="handleRefresh"
@@ -241,7 +242,7 @@ function handleImport() {
 
     <!-- Clear History Confirm Modal -->
     <Teleport to="body">
-      <div
+      <Motion><div
         v-if="showClearConfirm"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="showClearConfirm = false"
@@ -266,12 +267,12 @@ function handleImport() {
             </button>
           </div>
         </div>
-      </div>
+      </div></Motion>
     </Teleport>
 
     <!-- Clear Cache Confirm Modal -->
     <Teleport to="body">
-      <div
+      <Motion><div
         v-if="showClearCacheConfirm"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="showClearCacheConfirm = false"
@@ -296,7 +297,7 @@ function handleImport() {
             </button>
           </div>
         </div>
-      </div>
+      </div></Motion>
     </Teleport>
 
     <!-- Version -->

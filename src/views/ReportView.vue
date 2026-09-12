@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
@@ -186,7 +187,7 @@ function openWord(word: string) {
     </div>
 
     <!-- Empty state -->
-    <div v-if="!hasData" class="mx-auto max-w-lg text-center py-16">
+    <Motion><div v-if="!hasData" class="mx-auto max-w-lg text-center py-16">
       <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
         <BarChart3 :size="32" class="text-ink-mute" />
       </div>
@@ -207,14 +208,14 @@ function openWord(word: string) {
             <p class="font-serif text-5xl font-bold text-ink leading-none">{{ learnedCount }}</p>
             <p class="text-xs text-ink-mute pb-0.5">已学词语</p>
           </div>
-          <button
+          <Motion><button
             v-if="learnedCount > 0"
             @click="goReview"
             class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-zhuhong-soft text-zhuhong text-xs font-medium hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"
           >
             <Shuffle :size="14" />
             {{ reviewStore.sessionActive ? `继续复习 · 剩${reviewStore.remaining}` : '开始复习' }}
-          </button>
+          </button></Motion>
         </div>
         <div class="mt-4 pt-4 border-t border-line grid grid-cols-3 gap-3 text-center">
           <div>
@@ -293,7 +294,7 @@ function openWord(word: string) {
           </div>
 
           <!-- 悬停提示 -->
-          <div
+          <Motion><div
             v-if="hoverIdx >= 0"
             class="absolute z-10 pointer-events-none px-2.5 py-1.5 rounded-lg bg-ink text-paper text-xs whitespace-nowrap shadow-lg transition-none"
             :style="{
@@ -303,7 +304,7 @@ function openWord(word: string) {
             }"
           >
             {{ weeklyTrend[hoverIdx].fullLabel }} · {{ weeklyTrend[hoverIdx].count }} 次
-          </div>
+          </div></Motion>
         </div>
 
         <!-- 横轴标签 -->
@@ -320,7 +321,7 @@ function openWord(word: string) {
       </div>
 
       <!-- 查询排行 -->
-      <div v-if="queryRanking.length > 0" class="card rounded-2xl p-4">
+      <Motion><div v-if="queryRanking.length > 0" class="card rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-3">
           <Trophy :size="16" class="text-gold" />
           <h3 class="text-sm font-semibold text-ink-soft tracking-wide">查询排行</h3>
@@ -350,7 +351,7 @@ function openWord(word: string) {
             <ChevronRight :size="14" class="text-ink-mute" />
           </button>
         </div>
-      </div>
+      </div></Motion>
 
       <!-- 最近学习 -->
       <div class="card rounded-2xl p-4">
@@ -358,7 +359,7 @@ function openWord(word: string) {
           <Clock :size="16" class="text-bamboo" />
           <h3 class="text-sm font-semibold text-ink-soft tracking-wide">最近学习</h3>
         </div>
-        <div v-if="recentWords.length > 0" class="space-y-2">
+        <Motion><div v-if="recentWords.length > 0" class="space-y-2">
           <button
             v-for="record in recentWords"
             :key="record.id"
@@ -372,8 +373,8 @@ function openWord(word: string) {
             <span class="text-xs text-ink-mute">{{ formatRelative(record.timestamp) }}</span>
           </button>
         </div>
-        <p v-else class="text-sm text-ink-mute">暂无学习记录</p>
+        <p v-else class="text-sm text-ink-mute">暂无学习记录</p></Motion>
       </div>
-    </div>
+    </div></Motion>
   </div>
 </template>

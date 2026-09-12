@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { reactive, ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
@@ -56,24 +57,24 @@ function remove() { settings.deleteProfile(draft.id); load() }
   <section class="card rounded-2xl p-6 space-y-4 model-settings">
     <div><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1">兼容 OpenAI Chat Completions 接口</p></div>
     <p class="text-sm text-ink-soft break-all">当前模型：{{ settings.model }}</p>
-    <label v-if="settings.profiles.length" class="block text-sm">切换已保存配置
+    <Motion><label v-if="settings.profiles.length" class="block text-sm">切换已保存配置
       <select :value="settings.activeProfileId" @change="select" :disabled="!!busy"><option v-for="p in settings.profiles" :key="p.id" :value="p.id">{{ p.name }} · {{ p.model }}</option></select>
-    </label>
+    </label></Motion>
     <fieldset :disabled="!!busy" class="space-y-3">
       <label class="block text-sm">配置名称<input v-model="draft.name" placeholder="例如：DeepSeek 日常学习" /></label>
       <label class="block text-sm">API URL<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
       <p class="text-xs text-ink-mute">填写服务商 API 基础地址（按需包含 /v1），也支持完整 /chat/completions 地址。</p>
       <label class="block text-sm">API Key<input v-model="draft.apiKey" type="password" placeholder="输入 API Key" autocomplete="off" /></label>
       <button class="bg-soft text-ink-soft rounded-xl px-4 py-2 text-sm" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取模型' }}</button>
-      <label v-if="draft.models.length" class="block text-sm">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label>
+      <Motion><label v-if="draft.models.length" class="block text-sm">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label></Motion>
       <label class="block text-sm">模型名称<input v-model="draft.model" placeholder="也可手动输入模型名称" autocapitalize="off" spellcheck="false" /></label>
       <div class="flex gap-2">
         <button class="flex-1 btn-primary rounded-xl py-2 text-sm" @click="save">保存并启用</button>
         <button class="flex-1 bg-soft rounded-xl py-2 text-sm" @click="run('test')">{{ busy === 'test' ? '测试中…' : '测试连接' }}</button>
       </div>
-      <div class="flex justify-between text-sm"><button @click="add" class="text-dai">新增配置</button><button v-if="draft.id" @click="remove" class="text-zhuhong">删除此配置</button></div>
+      <div class="flex justify-between text-sm"><button @click="add" class="text-dai">新增配置</button><Motion><button v-if="draft.id" @click="remove" class="text-zhuhong">删除此配置</button></Motion></div>
     </fieldset>
-    <p v-if="message" role="status" class="text-sm break-words" :class="failed ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p>
+    <Motion><p v-if="message" role="status" class="text-sm break-words" :class="failed ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p></Motion>
     <p class="text-xs text-ink-mute">配置保存在此浏览器；密钥仅随请求发送到你填写的 API 地址。测试会发起一次简短请求，可能产生少量费用。</p>
   </section>
 </template>

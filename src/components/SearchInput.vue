@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref } from 'vue'
 import { Search, Loader2 } from 'lucide-vue-next'
 
@@ -45,7 +46,7 @@ function handleKeydown(event: KeyboardEvent) {
         :disabled="!inputValue.trim() || loading"
         class="w-[100px] h-10 shrink-0 justify-center px-2 py-2 mr-1.5 rounded-xl btn-primary text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
-        <span class="w-4 h-4 shrink-0"><Loader2 v-if="loading" :size="16" class="animate-spin" /><Search v-else :size="16" /></span>
+        <span class="w-4 h-4 shrink-0"><Motion><Loader2 v-if="loading" :size="16" class="animate-spin" /><Search v-else :size="16" /></Motion></span>
         <span>{{ loading ? '生成中' : '搜索' }}</span>
       </button>
     </div>

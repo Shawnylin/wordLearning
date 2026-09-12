@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useReviewStore } from '../stores/review'
@@ -194,7 +195,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
       </div>
 
       <!-- 设置页 -->
-      <div v-if="reviewStore.phase === 'idle'" class="card rounded-3xl p-6">
+      <Motion><div v-if="reviewStore.phase === 'idle'" class="card rounded-3xl p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong">
             <Shuffle :size="20" />
@@ -229,9 +230,9 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
           </div>
         </div>
 
-        <p v-if="showNoPool" class="mt-4 text-sm text-zhuhong">
+        <Motion><p v-if="showNoPool" class="mt-4 text-sm text-zhuhong">
           词库还是空的，先去学习几个成语再来复习吧。
-        </p>
+        </p></Motion>
 
         <button
           @click="startReview"
@@ -240,13 +241,13 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
           <BookOpen :size="18" />
           开始复习
         </button>
-        <button
+        <Motion><button
           v-if="poolSize === 0"
           @click="router.push('/learn')"
           class="w-full mt-2 py-2.5 rounded-2xl bg-soft text-ink-soft text-sm font-medium hover:opacity-80 transition-colors"
         >
           去学习
-        </button>
+        </button></Motion>
       </div>
 
       <!-- 复习中 -->
@@ -278,7 +279,8 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
           <div class="absolute inset-0 rounded-3xl card scale-[0.97] translate-y-2 opacity-70" />
 
           <div
-            class="absolute inset-0 will-change-transform"
+            :key="currentWord || ''"
+            class="absolute inset-0 will-change-transform review-card-enter"
             :style="dragStyle"
             :class="[
               { dragging: drag.active },
@@ -422,7 +424,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
             </div>
           </div>
 
-          <div v-if="reviewStore.lastResult.wrongWords.length > 0" class="mt-5 text-left">
+          <Motion><div v-if="reviewStore.lastResult.wrongWords.length > 0" class="mt-5 text-left">
             <p class="text-xs text-ink-mute mb-2">需要巩固的词语（点击可查看）</p>
             <div class="flex flex-wrap gap-2">
               <button
@@ -434,7 +436,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
                 {{ word }}
               </button>
             </div>
-          </div>
+          </div></Motion>
 
           <div class="mt-7 space-y-2">
             <button
@@ -452,12 +454,14 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
             </button>
           </div>
         </div>
-      </div>
+      </div></Motion>
     </div>
   </div>
 </template>
 
 <style scoped>
+.review-card-enter { animation: review-arrive 220ms ease-out; }
+@keyframes review-arrive { from { opacity: 0; } to { opacity: 1; } }
 /* 卡片翻转 */
 .flip {
   position: relative;

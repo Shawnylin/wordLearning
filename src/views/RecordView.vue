@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
@@ -209,7 +210,7 @@ function doConfirmDelete() {
 <template>
   <div class="min-h-screen px-4 pt-8 pb-4">
     <RecordOverlay v-if="detailMode" :source="sourceRow" @close="backToList">
-      <div
+      <Motion><div
         v-if="detailError"
         class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
       >
@@ -225,31 +226,31 @@ function doConfirmDelete() {
             </button>
           </div>
         </div>
-      </div>
+      </div></Motion>
 
-      <div v-if="detailMode === 'idiom' && detailIdiom" class="mx-auto max-w-lg">
+      <Motion><div v-if="detailMode === 'idiom' && detailIdiom" class="mx-auto max-w-lg">
         <IdiomCard
           :idiom="detailIdiom"
           :loading="idiomStore.isLoading"
           @regenerate="handleRegenerateIdiom"
           @related-click="handleRelatedClick"
         />
-      </div>
+      </div></Motion>
 
-      <div v-if="detailMode === 'compare' && detailCompare" class="mx-auto max-w-lg">
+      <Motion><div v-if="detailMode === 'compare' && detailCompare" class="mx-auto max-w-lg">
         <CompareCard
           :compare="detailCompare"
           :loading="idiomStore.isLoading"
           @regenerate="handleRegenerateCompare"
         />
-      </div>
+      </div></Motion>
     </RecordOverlay>
 
     <!-- List stays mounted beneath the detail card. -->
     <div :inert="!!detailMode">
       <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
         <h1 class="font-kai text-3xl text-ink leading-tight">学习记录</h1>
-        <button
+        <Motion><button
           v-if="hasAnyRecord"
           @click="toggleEditMode"
           class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
@@ -259,7 +260,7 @@ function doConfirmDelete() {
         >
           <component :is="editMode ? X : ListChecks" :size="16" />
           {{ editMode ? '完成' : '管理' }}
-        </button>
+        </button></Motion>
       </div>
 
       <!-- Tab switcher -->
@@ -303,7 +304,7 @@ function doConfirmDelete() {
             class="flex-1 px-3 py-3 text-sm bg-transparent text-ink placeholder-ink-mute outline-none"
           />
         </div>
-        <button
+        <Motion><button
           v-if="activeTab === 'idiom'"
           @click="showFavoritesOnly = !showFavoritesOnly"
           class="shrink-0 p-3 rounded-2xl shadow-sm border transition-colors duration-200"
@@ -313,11 +314,11 @@ function doConfirmDelete() {
           :title="showFavoritesOnly ? '显示全部' : '仅显示收藏'"
         >
           <Heart :size="18" :fill="showFavoritesOnly ? 'currentColor' : 'none'" />
-        </button>
+        </button></Motion>
       </div>
 
       <!-- Batch action bar -->
-      <div v-if="editMode" class="mx-auto max-w-lg mb-4 flex items-center gap-3">
+      <Motion><div v-if="editMode" class="mx-auto max-w-lg mb-4 flex items-center gap-3">
         <button
           @click="isAllSelected ? clearSelection() : selectAll()"
           class="flex items-center gap-1.5 text-sm font-medium text-ink-soft"
@@ -334,11 +335,12 @@ function doConfirmDelete() {
           <Trash2 :size="16" />
           删除
         </button>
-      </div>
+      </div></Motion>
 
       <!-- 词语记录 -->
-      <div v-if="activeTab === 'idiom'" class="mx-auto max-w-lg">
-        <div v-if="filteredHistory.length > 0" class="space-y-2">
+      <Motion><div v-if="activeTab === 'idiom'" class="mx-auto max-w-lg">
+        <Motion><div v-if="filteredHistory.length > 0">
+          <TransitionGroup name="list" tag="div" class="space-y-2 relative">
           <div
             v-for="record in filteredHistory"
             :key="record.id"
@@ -349,7 +351,7 @@ function doConfirmDelete() {
             tabindex="0"
             @keydown.enter="onIdiomRowClick(record, $event)"
           >
-            <div
+            <Motion><div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
               :class="isSelected(record.id)
@@ -357,7 +359,7 @@ function doConfirmDelete() {
                 : 'border-line text-transparent'"
             >
               <Check :size="12" :stroke-width="3" />
-            </div>
+            </div></Motion>
 
             <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong shrink-0">
               <BookOpen :size="18" />
@@ -365,12 +367,12 @@ function doConfirmDelete() {
             <div class="min-w-0 flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
                 <span class="font-kai" :data-morph-word="record.word">{{ record.word }}</span>
-                <Heart data-row-aux
+                <Motion><Heart data-row-aux
                   v-if="idiomStore.isFavorite(record.word)"
                   :size="14"
                   class="text-zhuhong shrink-0"
                   fill="currentColor"
-                />
+                /></Motion>
               </p>
               <div data-row-time class="flex items-center gap-1 mt-0.5">
                 <Clock :size="12" class="text-ink-mute" />
@@ -388,6 +390,7 @@ function doConfirmDelete() {
               <ChevronRight :size="18" class="text-ink-mute group-hover:text-zhuhong transition-colors" />
             </template>
           </div>
+          </TransitionGroup>
         </div>
 
         <div v-else class="text-center py-16">
@@ -397,19 +400,20 @@ function doConfirmDelete() {
           <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的成语' : '还没有学习记录' }}
           </p>
-          <button
+          <Motion><button
             v-if="!searchQuery"
             @click="router.push('/learn')"
             class="mt-4 px-6 py-2 rounded-full btn-primary text-sm font-medium transition-colors"
           >
             开始学习
-          </button>
-        </div>
-      </div>
+          </button></Motion>
+        </div></Motion>
+      </div></Motion>
 
       <!-- 对比记录 -->
-      <div v-if="activeTab === 'compare'" class="mx-auto max-w-lg">
-        <div v-if="filteredCompareHistory.length > 0" class="space-y-2">
+      <Motion><div v-if="activeTab === 'compare'" class="mx-auto max-w-lg">
+        <Motion><div v-if="filteredCompareHistory.length > 0">
+          <TransitionGroup name="list" tag="div" class="space-y-2 relative">
           <div
             v-for="record in filteredCompareHistory"
             :key="record.id"
@@ -420,7 +424,7 @@ function doConfirmDelete() {
             tabindex="0"
             @keydown.enter="onCompareRowClick(record, $event)"
           >
-            <div
+            <Motion><div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
               :class="isSelected(record.id)
@@ -428,7 +432,7 @@ function doConfirmDelete() {
                 : 'border-line text-transparent'"
             >
               <Check :size="12" :stroke-width="3" />
-            </div>
+            </div></Motion>
 
             <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0">
               <GitCompare :size="18" />
@@ -451,6 +455,7 @@ function doConfirmDelete() {
               <ChevronRight :size="18" class="shrink-0 text-ink-mute group-hover:text-dai transition-colors" />
             </template>
           </div>
+          </TransitionGroup>
         </div>
 
         <div v-else class="text-center py-16">
@@ -460,20 +465,20 @@ function doConfirmDelete() {
           <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的对比记录' : '还没有对比记录' }}
           </p>
-          <button
+          <Motion><button
             v-if="!searchQuery"
             @click="router.push('/compare')"
             class="mt-4 px-6 py-2 rounded-full btn-dai text-sm font-medium transition-colors"
           >
             开始对比
-          </button>
-        </div>
-      </div>
+          </button></Motion>
+        </div></Motion>
+      </div></Motion>
     </div>
 
     <!-- Delete Confirm Modal -->
     <Teleport to="body">
-      <div
+      <Motion><div
         v-if="confirmDelete"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="confirmDelete = null"
@@ -498,7 +503,7 @@ function doConfirmDelete() {
             </button>
           </div>
         </div>
-      </div>
+      </div></Motion>
     </Teleport>
   </div>
 </template>

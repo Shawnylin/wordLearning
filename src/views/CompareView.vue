@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Motion from '../components/Motion.vue'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
@@ -13,6 +14,8 @@ const idiomStore = useIdiomStore()
 const settingsStore = useSettingsStore()
 
 const words = ref<string[]>(['', ''])
+let nextWordId = 2
+const wordIds = ref([0, 1])
 const showNoApiKeyWarning = ref(false)
 
 // 从路由 query 中加载对比记录
@@ -21,6 +24,7 @@ watch(() => route.query.loadId, (id) => {
     idiomStore.setCurrentCompare(id)
     if (idiomStore.currentCompare) {
       words.value = [...idiomStore.currentCompare.words]
+      wordIds.value = words.value.map(() => nextWordId++)
     }
   }
 }, { immediate: true })
@@ -28,12 +32,14 @@ watch(() => route.query.loadId, (id) => {
 function addWord() {
   if (words.value.length < 5) {
     words.value.push('')
+    wordIds.value.push(nextWordId++)
   }
 }
 
 function removeWord(index: number) {
   if (words.value.length > 2) {
     words.value.splice(index, 1)
+    wordIds.value.splice(index, 1)
   }
 }
 
@@ -66,10 +72,10 @@ function goToSettings() {
   <div class="min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
     <div class="mx-auto max-w-lg mb-6">
-      <div class="space-y-3">
+      <TransitionGroup name="list" tag="div" class="space-y-3 relative">
         <div
           v-for="(_word, index) in words"
-          :key="index"
+          :key="wordIds[index]"
           class="flex items-center gap-2"
         >
           <input
@@ -78,27 +84,27 @@ function goToSettings() {
             :placeholder="`输入词语 ${index + 1}`"
             class="min-w-0 flex-1 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
           />
-          <button
+          <Motion><button
             v-if="words.length > 2"
             @click="removeWord(index)"
             class="p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors shrink-0"
             title="移除"
           >
             <X :size="18" />
-          </button>
+          </button></Motion>
         </div>
-      </div>
+      </TransitionGroup>
 
       <!-- Add button -->
       <div class="flex items-center gap-3 mt-3">
-        <button
+        <Motion><button
           v-if="words.length < 5"
           @click="addWord"
           class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-dai bg-dai-soft hover:opacity-85 transition-colors"
         >
           <Plus :size="16" />
           添加词语
-        </button>
+        </button></Motion>
         <span class="text-xs text-ink-mute">
           {{ words.length }}/5
         </span>
@@ -109,15 +115,15 @@ function goToSettings() {
         :disabled="idiomStore.compareLoading"
         class="ml-auto w-32 shrink-0 py-2 rounded-xl text-sm font-medium btn-dai transition-colors flex items-center justify-center gap-2"
       >
-        <Loader2 v-if="idiomStore.compareLoading" :size="18" class="animate-spin" />
-        <GitCompare v-else :size="18" />
+        <Motion><Loader2 v-if="idiomStore.compareLoading" :size="18" class="animate-spin" />
+        <GitCompare v-else :size="18" /></Motion>
         <span>{{ idiomStore.compareLoading ? '生成中…' : '开始对比' }}</span>
       </button>
       </div>
     </div>
 
     <!-- No API Key Warning -->
-    <div
+    <Motion><div
       v-if="showNoApiKeyWarning"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-gold-soft border border-gold/30"
     >
@@ -139,10 +145,10 @@ function goToSettings() {
           </button>
         </div>
       </div>
-    </div>
+    </div></Motion>
 
     <!-- Error Message -->
-    <div
+    <Motion><div
       v-if="idiomStore.compareError"
       class="mx-auto max-w-lg mb-6 p-4 rounded-2xl bg-zhuhong-soft border border-zhuhong/30"
     >
@@ -160,7 +166,7 @@ function goToSettings() {
           </button>
         </div>
       </div>
-    </div>
+    </div></Motion>
 
     <GenerationStage :loading="idiomStore.compareLoading" :has-content="!!idiomStore.currentCompare" kind="compare">
       <CompareCard v-if="idiomStore.currentCompare" :compare="idiomStore.currentCompare" :loading="idiomStore.compareLoading" @regenerate="handleRegenerate" />
