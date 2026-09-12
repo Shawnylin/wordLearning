@@ -8,7 +8,7 @@ try {
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
   await page.addInitScript(() => localStorage.setItem('settings-store', JSON.stringify({ apiKey: 'test-only', model: 'mock-model', baseUrl: 'https://example.test/v1' })))
-  const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '完整解释，保留关键含义和考试用法。', origin: '出处说明', example: '这句话画龙点睛。', usage: '作谓语，强调点明要旨。', relatedIdioms: ['锦上添花', '恰到好处'] }
+  const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '完整解释，保留关键含义和考试用法。', origin: '出处说明', example: '这句话画龙点睛。', usage: '作谓语，强调点明要旨。', relatedIdioms: ['锦上添花', '恰到好处', '点石成金'] }
   let fail = false
   let count = 0
   const budgets = []

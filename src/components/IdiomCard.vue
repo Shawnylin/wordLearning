@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2, Heart } from 'lucide-vue-next'
+import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2, Heart, Coins } from 'lucide-vue-next'
 import type { IdiomData } from '../types/idiom'
 import { useIdiomStore } from '../stores/idiom'
 
@@ -69,6 +69,13 @@ function getSectionContent(key: string): string {
         <h1 class="font-kai text-5xl md:text-6xl font-bold text-ink tracking-widest leading-tight">
           <span :data-morph-word="idiom.word">{{ idiom.word }}</span>
         </h1>
+
+        <div v-if="typeof idiom.tokenUsage === 'number'" class="flex items-center justify-center gap-1 mt-3">
+          <Coins :size="12" class="text-gold" />
+          <span class="text-xs text-gold">
+            消耗 {{ idiom.tokenUsage }} tokens
+          </span>
+        </div>
       </div>
 
       <!-- Content sections -->
@@ -102,7 +109,7 @@ function getSectionContent(key: string): string {
           </div>
           <div class="grid grid-cols-3 gap-2 pl-9">
             <button
-              v-for="related in idiom.relatedIdioms"
+              v-for="related in idiom.relatedIdioms.slice(0, 3)"
               :key="related"
               @click="emit('relatedClick', related)"
               class="min-w-0 px-2 py-2 rounded-full text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis bg-soft text-ink-soft hover:bg-zhuhong-solid hover:text-paper-ink transition-colors duration-200"

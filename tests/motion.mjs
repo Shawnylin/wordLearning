@@ -18,7 +18,7 @@ await page.addInitScript(() => localStorage.setItem('settings-store', JSON.strin
 await page.route('https://api.deepseek.com/**', async route => {
   await new Promise(r => setTimeout(r, 1300))
   const comparison = route.request().postDataJSON().messages[0].content.includes('对比')
-  const data = comparison ? { meaningDiff:'词义不同', usageDiff:'用法不同', scenarios:'文章语境', confusionPoints:'注意语境' } : { pinyin:'huà lóng diǎn jīng', explanation:'比喻在关键处点明要旨。', origin:'历代名画记', example:'这句话画龙点睛。', usage:'作谓语', relatedIdioms:['锦上添花','恰到好处'] }
+  const data = comparison ? { meaningDiff:'词义不同', usageDiff:'用法不同', scenarios:'文章语境', confusionPoints:'注意语境' } : { pinyin:'huà lóng diǎn jīng', explanation:'比喻在关键处点明要旨。', origin:'历代名画记', example:'这句话画龙点睛。', usage:'作谓语', relatedIdioms:['锦上添花','恰到好处','点石成金'] }
   await route.fulfill({ json: { choices:[{message:{content:JSON.stringify(data)}}] } })
 })
 const nav = async name => { await page.locator('nav').getByRole('button', { name, exact:true }).click(); await page.waitForTimeout(450) }

@@ -7,6 +7,7 @@ export interface IdiomData {
   example: string
   usage: string
   relatedIdioms: string[]
+  tokenUsage?: number
   createdAt: number
 }
 
@@ -23,6 +24,10 @@ export interface DeepSeekResponse {
   example: string
   usage: string
   relatedIdioms: string[]
+}
+
+export interface GeneratedIdiomContent extends DeepSeekResponse {
+  tokenUsage: number
 }
 
 export interface CompareContent {

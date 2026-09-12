@@ -7,7 +7,7 @@ const context = await browser.newContext({ viewport: { width: 393, height: 852 }
 const page = await context.newPage()
 const errors = []
 page.on('pageerror', error => errors.push(error.message))
-const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '比喻在关键处点明要旨。', origin: '历代名画记', example: '这句话画龙点睛。', usage: '作谓语', relatedIdioms: ['锦上添花', '恰到好处'] }
+const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '比喻在关键处点明要旨。', origin: '历代名画记', example: '这句话画龙点睛。', usage: '作谓语', relatedIdioms: ['锦上添花', '恰到好处', '点石成金'] }
 const compare = { meaningDiff: '画龙点睛：突出重点\n锦上添花：增加美好', usageDiff: '画龙点睛：关键处\n锦上添花：已有成果', scenarios: '画龙点睛：文章\n锦上添花：成果', confusionPoints: '画龙点睛：必要\n锦上添花：额外' }
 let delay = 0, status = 200
 const requests = []
@@ -46,6 +46,8 @@ await page.locator('nav').getByRole('button', { name: '个人', exact: true }).c
 await page.waitForTimeout(2100)
 await page.locator('nav').getByRole('button', { name: '学习', exact: true }).click()
 await page.getByText(idiom.explanation, { exact: true }).waitFor()
+await page.getByText('消耗 80 tokens', { exact: true }).waitFor()
+assert.equal(await page.locator('text=相关成语').locator('..').locator('..').locator('button').count(), 3)
 assert.equal(await page.getByPlaceholder('输入成语或词语…').inputValue(), '画龙点睛')
 await page.locator('nav').getByRole('button', { name: '对比', exact: true }).click()
 assert.equal(await page.getByPlaceholder('输入词语 1').inputValue(), '画龙点睛')

@@ -105,9 +105,11 @@ export const useIdiomStore = defineStore('idiom', () => {
         example: result.example,
         usage: result.usage,
         relatedIdioms: result.relatedIdioms,
+        tokenUsage: result.tokenUsage,
         createdAt: Date.now()
       }
 
+      addTokenUsage(result.tokenUsage)
       idiomCache.value[trimmedWord] = idiomData
       addSearchRecord(trimmedWord)
       currentIdiom.value = idiomData
@@ -144,9 +146,11 @@ export const useIdiomStore = defineStore('idiom', () => {
         example: result.example,
         usage: result.usage,
         relatedIdioms: result.relatedIdioms,
+        tokenUsage: result.tokenUsage,
         createdAt: Date.now()
       }
 
+      addTokenUsage(result.tokenUsage)
       idiomCache.value[trimmedWord] = idiomData
       currentIdiom.value = idiomData
 

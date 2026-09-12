@@ -8,7 +8,7 @@ const { generateIdiomContent, generateComparison, testConnection } = await impor
 const originalFetch = globalThis.fetch
 after(() => { globalThis.fetch = originalFetch })
 const config = { apiKey: 'mock-key', baseUrl: 'https://example.test/v1', model: 'custom-model' }
-const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '详细释义。'.repeat(300), origin: '出处说明', example: '这句话起到了画龙点睛的作用。', usage: '常用作谓语，强调点明关键。', relatedIdioms: ['锦上添花', '恰到好处'] }
+const idiom = { pinyin: 'huà lóng diǎn jīng', explanation: '详细释义。'.repeat(300), origin: '出处说明', example: '这句话起到了画龙点睛的作用。', usage: '常用作谓语，强调点明关键。', relatedIdioms: ['锦上添花', '恰到好处', '点石成金'] }
 const compare = { meaningDiff: '甲：含义\n乙：含义', usageDiff: '甲：用法\n乙：用法', scenarios: '甲：场景\n乙：场景', confusionPoints: '甲：辨析\n乙：辨析' }
 function reply(content, reason = 'stop', tokens = 100, extra = {}) {
   return { choices: [{ finish_reason: reason, message: { content, ...extra } }], usage: { total_tokens: tokens } }
@@ -28,7 +28,7 @@ function mock(responses, onRequest) {
 
 test('long complete explanation is retained verbatim with a larger initial budget', async () => {
   const calls = mock([reply(JSON.stringify(idiom))])
-  assert.deepEqual(await generateIdiomContent('画龙点睛', config), idiom)
+  assert.deepEqual(await generateIdiomContent('画龙点睛', config), { ...idiom, tokenUsage: 100 })
   assert.equal(calls.length, 1)
   assert.equal(calls[0].body.max_tokens, 4096)
   assert(!('thinking' in calls[0].body))
@@ -37,7 +37,7 @@ test('long complete explanation is retained verbatim with a larger initial budge
 
 test('truncation regenerates once with unchanged prompt/model and doubled budget', async () => {
   const calls = mock([reply('{"explanation":"截断', 'length', 4096), reply(JSON.stringify(idiom))])
-  assert.deepEqual(await generateIdiomContent('画龙点睛', config), idiom)
+  assert.deepEqual(await generateIdiomContent('画龙点睛', config), { ...idiom, tokenUsage: 4196 })
   assert.deepEqual(calls.map(c => c.body.max_tokens), [4096, 8192])
   assert.deepEqual(calls[0].body.messages, calls[1].body.messages)
   assert.equal(calls[0].body.model, calls[1].body.model)

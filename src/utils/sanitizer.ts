@@ -102,7 +102,7 @@ export function validateIdiomData(data: any): boolean {
   for (const field of requiredFields) {
     if (!(field in data)) return false
     if (field === 'relatedIdioms') {
-      if (!Array.isArray(data[field]) || data[field].length < 2 || data[field].length > 4
+      if (!Array.isArray(data[field]) || data[field].length !== 3
         || !data[field].every((word: unknown) => typeof word === 'string' && word.trim().length > 0)) return false
     } else {
       if (typeof data[field] !== 'string' || !data[field].trim()) return false

@@ -1,4 +1,4 @@
-import type { DeepSeekResponse } from '../types/idiom'
+import type { DeepSeekResponse, GeneratedIdiomContent } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
 
 export interface ApiConfig { apiKey: string; baseUrl: string; model: string }
@@ -78,7 +78,7 @@ function buildSystemPrompt(): string {
 }
 
 【注意】
-- relatedIdioms 必须是数组，包含 2-4 个相关成语
+- relatedIdioms 必须是数组，且恰好包含 3 个相关成语
 - 所有文本字段必须是字符串
 - 不要在 JSON 外添加任何文字、代码块标记或解释`
 }
@@ -192,7 +192,7 @@ async function callApi(
 export async function generateIdiomContent(
   word: string,
   config: ApiConfig
-): Promise<DeepSeekResponse> {
+): Promise<GeneratedIdiomContent> {
   const { sanitized, isSuspicious, reason } = sanitizeInput(word)
 
   if (sanitized.length === 0) {
@@ -207,7 +207,7 @@ export async function generateIdiomContent(
     throw new Error('请先在个人页面设置 API Key')
   }
 
-  const { content } = await callApi(
+  const { content, tokenUsage } = await callApi(
     buildSystemPrompt(),
     buildUserPrompt(sanitized),
     config,
@@ -226,7 +226,7 @@ export async function generateIdiomContent(
     throw new Error('API 返回数据不完整，请点击重新生成')
   }
 
-  return parsed
+  return { ...parsed, tokenUsage }
 }
 
 export interface CompareResponse {
