@@ -19,9 +19,10 @@ export function extractArticleHtml(html: string, url: string): string {
 // Reader protocol: https://github.com/jina-ai/reader
 async function readArticle(url: string, signal: AbortSignal): Promise<string> {
   const host = new URL(url).hostname
-  if (sourceDomains.some(domain => host === domain || host.endsWith('.' + domain))) {
+  const configuredReader = import.meta.env?.VITE_ARTICLE_READER_URL
+  if (configuredReader || sourceDomains.some(domain => host === domain || host.endsWith('.' + domain))) {
     const base = import.meta.env?.BASE_URL || '/wordLearning/'
-    const endpoint = (import.meta.env?.VITE_ARTICLE_READER_URL || base + 'api/article-reader') + '?url=' + encodeURIComponent(url)
+    const endpoint = (configuredReader || base + 'api/article-reader') + '?url=' + encodeURIComponent(url)
     let response: Response
     try { response = await fetch(endpoint, { signal, credentials: 'omit', headers: { Accept: 'application/json' } }) }
     catch (error) {

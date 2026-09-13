@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vue-tsc && vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "preview": "vite preview",
-    "serve": "node server/serve.mjs"
+    "serve": "node server/serve.mjs",
+    "worker:dev": "npx --yes wrangler@4.37.1 dev",
+    "worker:deploy": "npx --yes wrangler@4.37.1 deploy"
   },
   "dependencies": {
     "lucide-vue-next": "^0.462.0",

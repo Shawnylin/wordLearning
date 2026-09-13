@@ -126,6 +126,6 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 - 本机开发：`npm run dev` 自动提供读取接口。
 - 本机生产预览：`npm run build` 后执行 `npm run serve`，打开 `http://127.0.0.1:4173/wordLearning/`。`npm run preview` 也已接入读取接口。
 - 服务器部署：部署 `dist/`、`server/`、`package.json`，使用 Node.js 20+ 执行 `npm run serve`，由 HTTPS 反向代理转发应用与 API。可用 `HOST`、`PORT` 修改监听地址。
-- GitHub Pages 只托管静态文件，**不会运行此服务**。必须另行部署读取服务，并在构建前设置 `VITE_ARTICLE_READER_URL=https://你的服务/api/article-reader`；服务端设置 `ARTICLE_READER_ORIGIN=https://你的用户名.github.io`，允许该前端访问。未部署时会明确提示缺少读取接口，不会误报模型连接失败。
+- GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 只允许 `https://shawnylin.github.io` 调用，不接收或保存模型 API Key。
 
-读取服务只接受上述媒体域名，每次重定向再次校验，不转发 API Key 或浏览器 Cookie；请求限时 15 秒、限制 2 MB，并限制并发和短时缓存。网页读取失败不会调用模型。
+读取服务接受公开文章域名，每次重定向都会重新校验；本机、内网、测试域名、IP 地址以及带账号密码或非标准端口的链接会被拒绝。它不转发 API Key 或浏览器 Cookie，并限制读取大小和短时缓存。网页读取失败不会调用模型。

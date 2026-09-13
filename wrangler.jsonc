@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "word-learning-article-reader",
+  "main": "worker/article-reader.mjs",
+  "compatibility_date": "2026-09-13",
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}
