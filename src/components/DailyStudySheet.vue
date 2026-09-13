@@ -12,6 +12,7 @@ const visible = ref(false), word = ref(''), panel = ref<HTMLElement>(), error = 
 const content = computed(() => store.currentIdiom?.word === word.value ? store.currentIdiom : null)
 let origin: DOMRect | undefined, trigger: HTMLElement | null = null, previousOverflow = ''
 let background: HTMLElement | null = null, nav: HTMLElement | null = null
+let backgroundReveal: Animation | undefined
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 async function lookup(value: string, regenerate = false) {
   if (store.idiomLoading) { error.value = '另一个词语正在生成，请稍后重试'; return }
@@ -37,7 +38,17 @@ function unlock() {
   if (background) background.inert = false
   if (nav) nav.inert = false
 }
-function close() { visible.value = false }
+function close() {
+  if (!visible.value) return
+  backgroundReveal?.cancel()
+  if (background) {
+    backgroundReveal = background.animate(
+      [{ opacity: .35 }, { opacity: 1 }],
+      { duration: reduced() ? 1 : 760, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' }
+    )
+  }
+  visible.value = false
+}
 function afterLeave() { unlock(); trigger?.focus() }
 function morph(el: Element, done: () => void, leaving = false) {
   const element = el as HTMLElement, end = element.getBoundingClientRect()
@@ -57,7 +68,7 @@ function keydown(event: KeyboardEvent) {
   if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.value)) { event.preventDefault(); last?.focus() }
   else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panel.value)) { event.preventDefault(); first?.focus() }
 }
-onBeforeUnmount(() => { if (visible.value || background) unlock() })
+onBeforeUnmount(() => { backgroundReveal?.cancel(); if (visible.value || background) unlock() })
 defineExpose({ open })
 </script>
 
