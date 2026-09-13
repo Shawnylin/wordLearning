@@ -92,9 +92,11 @@ MIT
 
 底栏“日报”按需生成 1–3 篇权威媒体原文节选，标注标题、发布媒体、发布日期、来源链接与独立的 AI 学习提示。提示词位于 `src/api/daily.ts`：优先近 7 天、最多近 30 天，从人民网、光明网和半月谈筛选适合逻辑填空的连续文段。搜索引用只能证明该链接出现在本次搜索结果中，正文与日期的逐字核对仍依赖模型执行提示词，可点击来源自行复核。
 
-在“个人 → 右上角设置 → 模型与 API”配置支持 **Responses API + web_search** 的模型和 API 基础地址（如 `https://api.openai.com/v1`）。日报复用当前 API 配置；普通 Chat Completions 连通测试不代表联网能力可用。不支持此协议的服务商会明确报错，不会退回无联网生成。请求与引用解析依据 [Web search 官方文档](https://developers.openai.com/api/docs/guides/tools-web-search)。目前未实现其他服务商专有搜索协议，也不进行后台定时通知。
+在“个人 → 右上角设置 → 模型与 API”配置模型。DeepSeek 官方地址 `https://api.deepseek.com` 自动使用 `/anthropic/v1/messages` 与 `web_search_20250305` 服务端搜索工具，复用已保存的模型和 Key；其他服务商仍使用 Responses API + web_search。普通 Chat Completions 连通测试不代表联网能力可用。
 
 点按划线词语，学习卡片从底栏日报选中框展开至半屏，背景渐变模糊；关闭时沿原路径收回。查询调用原学习模块，优先复用缓存并更新记录，支持收藏、相关词查询和主动重新生成。支持减少动态效果的系统偏好。
+
+DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deepseek.com/zh-cn/guides/anthropic_api)和[官方 Harness 搜索实现](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-search-deepseek/src/provider.ts)。Responses 文档中的内置工具限制不能直接等同于所有接口均无搜索能力。日报解析 `web_search_tool_result` 中的结果链接，仍校验媒体域名、日期与划线词；没有真实搜索结果时不保存，也不从模型正文中提取链接冒充搜索证据。搜索暂停可携带完整上下文续推，最多三次请求；保留当前模型与深度思考设置。实际可用性以当前模型的服务端响应为准，模拟测试不代表账户联调成功。
 
 日报自动保存到当前浏览器，历史可重复学习，切换页面不中断生成。刷新或关闭应用会中断尚未完成的请求。设置里的备份导入导出包含日报，清空所有缓存也会清空日报；历史查询清理不会删除日报。
 

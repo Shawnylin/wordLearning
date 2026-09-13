@@ -5,6 +5,7 @@ import Motion from '../components/Motion.vue'
 import DailyStudySheet from '../components/DailyStudySheet.vue'
 import { useDailyStore } from '../stores/daily'
 import { useSettingsStore } from '../stores/settings'
+import { deepSeekSearchNotice, isOfficialDeepSeek } from '../api/daily'
 const daily = useDailyStore(), settings = useSettingsStore()
 const sheet = ref<InstanceType<typeof DailyStudySheet>>()
 const selected = computed(() => daily.issues.find(i => i.id === daily.selectedId) || daily.issues[0])
@@ -29,7 +30,8 @@ function segments(content: string, words: string[]) {
     <section class="card rounded-3xl p-5 space-y-4">
       <p class="text-sm leading-7 text-ink-soft">从人民日报、光明日报、半月谈中，精选适合逻辑填空的时事文段。点按划线词语，即可随文学习。</p>
       <div class="flex items-center gap-2"><button @click="daily.generate(settings.apiConfig)" :disabled="daily.loading" class="btn-primary rounded-full px-5 py-3 text-sm flex items-center gap-2 disabled:opacity-50"><Sparkles :size="16" />{{ daily.loading ? '正在联网选文…' : '生成今日日报' }}</button><button v-if="daily.loading" @click="daily.cancel" class="text-sm px-3 py-2 text-ink-mute">取消</button></div>
-      <p class="text-xs text-ink-mute leading-5">当前：{{ settings.model }} · 需要支持 Responses 联网搜索的 API。<RouterLink to="/profile/models" class="underline underline-offset-4">配置模型</RouterLink></p>
+      <p class="text-xs text-ink-mute leading-5">当前：{{ settings.model }} · {{ isOfficialDeepSeek(settings.baseUrl) ? '已选择 DeepSeek 官方搜索接口。' : '需要支持 Responses 联网搜索的 API。' }}<RouterLink to="/profile/models" class="underline underline-offset-4">配置模型</RouterLink></p>
+      <Motion><p v-if="isOfficialDeepSeek(settings.baseUrl)" class="text-xs text-ink-soft leading-6">{{ deepSeekSearchNotice }}<a href="https://api-docs.deepseek.com/zh-cn/guides/anthropic_api" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4 ml-1">官方兼容说明</a></p></Motion>
     </section>
     <Motion><div v-if="daily.loading" class="rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status">正在检索近 7 天热点、核对原文与发布日期，必要时扩大至近 30 天。完成后自动保存，可离开此页。</div></Motion>
     <Motion><p v-if="daily.error" role="alert" class="rounded-2xl bg-zhuhong-soft p-4 text-sm text-zhuhong">{{ daily.error }}</p></Motion>
