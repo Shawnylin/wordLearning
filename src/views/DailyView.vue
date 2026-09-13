@@ -68,7 +68,7 @@ function segments(content: string, words: string[]) {
         <button @click="history?.showModal()" class="w-10 h-10 rounded-full card flex items-center justify-center text-zhuhong" aria-label="查看历史日报"><Clock :size="18" /></button>
       </div>
     </header>
-    <Motion><div v-if="daily.loading" class="rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status">正在检索近 7 天热点、核对原文与发布日期，必要时扩大至近 30 天。完成后自动保存，可离开此页。</div></Motion>
+    <Motion><div v-if="daily.loading" class="rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status">正在精选近三年的优质文段，以成语、词语和表达的学习价值为先，并核对原文与发布日期。完成后自动保存，可离开此页。</div></Motion>
     <Motion><p v-if="daily.error" role="alert" class="rounded-2xl bg-zhuhong-soft p-4 text-sm text-zhuhong">{{ daily.error }}</p></Motion>
     <Motion><div v-if="selected" :key="selected.id" class="space-y-5">
       <article v-for="(article, index) in selected.articles" :key="article.url" class="card rounded-3xl p-5 sm:p-6">

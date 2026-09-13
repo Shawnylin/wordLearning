@@ -156,3 +156,17 @@ test('repeated invalid content stops after one repair with actionable error', as
   await assert.rejects(generateDaily(deepseek, []), /逐字匹配/)
   assert.equal(calls, 2)
 })
+test('three-year publication window accepts useful older material and exact boundaries', () => {
+  const now = Date.parse('2026-09-13T10:00:00+08:00')
+  for (const publishedAt of ['2023-09-13', '2024-02-29', '2025-01-01', '2026-09-13']) {
+    assert.equal(validateArticles([{ ...article, publishedAt }], [article.url], now)[0].publishedAt, publishedAt)
+  }
+  for (const publishedAt of ['2023-09-12', '2026-09-14']) {
+    assert.throws(() => validateArticles([{ ...article, publishedAt }], [article.url], now), /发布日期/)
+  }
+  const leapNow = Date.parse('2024-02-29T10:00:00+08:00')
+  assert.equal(validateArticles([{ ...article, publishedAt: '2021-02-28' }], [article.url], leapNow).length, 1)
+  assert.throws(() => validateArticles([{ ...article, publishedAt: '2021-02-27' }], [article.url], leapNow))
+  // Previously saved issues remain importable after they age out of the generation window.
+  assert.equal(validateArticles([{ ...article, publishedAt: '2020-01-01' }], undefined, now).length, 1)
+})
