@@ -1,8 +1,8 @@
 import { apiEndpoint, type ApiConfig } from './deepseek'
 
-export interface DailyArticle { title: string; source: string; url: string; publishedAt: string; content: string; words: string[]; analysis: string }
+export interface DailyArticle { title: string; source: string; url: string; publishedAt: string; content: string; words: string[]; analysis: string; origin?: 'link' }
 export interface DailyIssue { id: string; createdAt: number; articles: DailyArticle[]; tokenUsage: number }
-export type DailyProgressPhase = 'searching' | 'generating' | 'validating'
+export type DailyProgressPhase = 'searching' | 'reading' | 'generating' | 'validating'
 export interface DailyProgress { phase: DailyProgressPhase; text?: string }
 export const sourceDomains = ['people.com.cn', 'gmw.cn', 'banyuetan.org']
 export const deepSeekSearchNotice = '使用 DeepSeek 官方联网搜索入口，复用当前模型与 API Key。只有返回真实搜索结果的文段才会保存。'
@@ -12,6 +12,13 @@ export function isOfficialDeepSeek(baseUrl: string): boolean {
 export function sourceUrl(value: string): string {
   const url = new URL(value)
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || !sourceDomains.some(d => url.hostname === d || url.hostname.endsWith('.' + d)) || url.pathname === '/') throw new Error('日报来源必须是指定媒体的文章链接')
+  url.hash = ''
+  return url.href
+}
+export function articleLink(value: string): string {
+  let url: URL
+  try { url = new URL(value.trim()) } catch { throw new Error('请输入完整的文章网址（https://…）') }
+  if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port || !/^(?:[a-z0-9-]+\.)+[a-z]{2,}$/i.test(url.hostname) || /\.(local|localhost|internal|test|invalid)$/i.test(url.hostname)) throw new Error('请输入可公开访问的文章网址')
   url.hash = ''
   return url.href
 }
@@ -75,20 +82,21 @@ export function validateArticles(value: unknown, citations?: string[], now = Dat
   if (!Array.isArray(value) || !value.length || value.length > 3) throw new Error('没有检索到合适的日报文段，请重试')
   const verified = citations && new Set(citations.flatMap(url => { try { return [sourceUrl(url)] } catch { return [] } }))
   return value.map(a => {
-    if (!a || ['title', 'source', 'url', 'publishedAt', 'content', 'analysis'].some(k => typeof a[k] !== 'string' || !a[k].trim())) throw new Error('日报内容不完整，未保存')
-    const url = sourceUrl(a.url)
+    const linked = !citations && a?.origin === 'link'
+    if (!a || ['title', 'source', 'url', 'content', 'analysis'].some(k => typeof a[k] !== 'string' || !a[k].trim()) || typeof a.publishedAt !== 'string' || (!linked && !a.publishedAt.trim())) throw new Error('日报内容不完整，未保存')
+    const url = linked ? articleLink(a.url) : sourceUrl(a.url)
     const host = new URL(url).hostname
     const names = host.endsWith('people.com.cn') ? ['人民日报', '人民网', '人民日报海外版'] : host.endsWith('gmw.cn') ? ['光明日报', '光明网'] : ['半月谈', '半月谈网']
     // A syndicated publisher name can differ from the hosting website.
-    const source = names.includes(a.source.trim()) ? a.source.trim() : names[1] || names[0]
+    const source = linked ? host : names.includes(a.source.trim()) ? a.source.trim() : names[1] || names[0]
     if (verified && !verified.has(url)) throw new Error('文章链接不在联网搜索引用中，未保存')
     const date = Date.parse(a.publishedAt + 'T00:00:00+08:00')
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(a.publishedAt) || !Number.isFinite(date) || new Date(date + 28800000).toISOString().slice(0, 10) !== a.publishedAt || date > now || (verified && a.publishedAt < earliestPublication(now))) throw new Error('发布日期无效或超过近三年范围，未保存')
+    if (!(linked && a.publishedAt === '') && (!/^\d{4}-\d{2}-\d{2}$/.test(a.publishedAt) || !Number.isFinite(date) || new Date(date + 28800000).toISOString().slice(0, 10) !== a.publishedAt || date > now || (verified && a.publishedAt < earliestPublication(now)))) throw new Error('发布日期无效或超过近三年范围，未保存')
     const length = a.content.trim().length
     if (length < 80 || length > 1800) throw new ArticleContentError(`「${a.title}」文段长度为 ${length} 字，须为 80–1800 字的完整原文；未保存，不会自动补写新闻`)
     const words = normalizeWords(a.words, a.content)
     if (!words.length) throw new ArticleContentError(`「${a.title}」没有能在原文中逐字匹配的考查词语，未保存`)
-    return { title: a.title, source, url, publishedAt: a.publishedAt, content: a.content, words, analysis: a.analysis }
+    return { title: a.title, source, url, publishedAt: a.publishedAt, content: a.content, words, analysis: a.analysis, ...(linked ? { origin: 'link' as const } : {}) }
   })
 }
 
@@ -111,7 +119,7 @@ export function dailyPrompt(now: number, excluded: string[]) {
 最多进行2次搜索；已有足够证据就直接输出，不重复检索或多轮自检。不重复已收录链接：${JSON.stringify(excluded.slice(0, 20))}。
 只输出完整JSON：{"articles":[{"title":"原文标题","source":"链接所属网站","url":"搜索引用中的完整文章链接","publishedAt":"YYYY-MM-DD","content":"连续原文节选","words":["原文词语"],"analysis":"学习提示"}]}。无合格素材返回{"articles":[]}。`
 }
-async function readSse(response: Response, onEvent: (event: any) => void): Promise<void> {
+export async function readSse(response: Response, onEvent: (event: any) => void): Promise<void> {
   if (!response.body) throw new Error('当前 API 未返回可读取的流式响应')
   const reader = response.body.getReader(), decoder = new TextDecoder()
   let buffer = ''

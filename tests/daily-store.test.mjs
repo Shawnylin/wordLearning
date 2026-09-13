@@ -47,3 +47,24 @@ test('failed daily generation records paid usage once without saving an issue', 
   assert.equal(idioms.tokenStats.requestCount, 1)
   assert.equal(daily.loading, false)
 })
+
+test('link generation saves the card through the same history and usage path', async () => {
+  setActivePinia(createPinia())
+  const daily = useDailyStore(), idioms = useIdiomStore()
+  const url = 'https://news.example.com/article'
+  const content = '因地制宜，推动协同发展。'.repeat(15)
+  let calls = 0, saved
+  globalThis.localStorage = { setItem: (_, value) => { saved = JSON.parse(value) } }
+  globalThis.fetch = async target => {
+    if (target === url) throw new TypeError('CORS')
+    calls++
+    if (String(target).startsWith('https://r.jina.ai/')) return new Response(`Title: 链接精读\nMarkdown Content:\n${content}`)
+    return Response.json({ choices: [{ message: { content: JSON.stringify({ articles: [{ title: '链接精读', publishedAt: '', content, words: ['因地制宜'], analysis: '关注搭配。' }] }) }, finish_reason: 'stop' }], usage: { total_tokens: 123 } })
+  }
+  await daily.generate({ ...config, apiKey: 'test' }, url)
+  assert.equal(daily.error, ''); assert.equal(daily.issues.length, 1)
+  assert.equal(saved.issues[0].articles[0].origin, 'link')
+  assert.equal(daily.selectedId, saved.selectedId); assert.equal(idioms.tokenStats.totalTokens, 123)
+  await daily.generate({ ...config, apiKey: 'test' }, url)
+  assert.match(daily.error, /已收录/); assert.equal(calls, 2); assert.equal(idioms.tokenStats.totalTokens, 123)
+})

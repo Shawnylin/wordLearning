@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { Newspaper, Sparkles, ExternalLink, Clock, X } from 'lucide-vue-next'
+import { Newspaper, ExternalLink, Clock, X } from 'lucide-vue-next'
 import Motion from '../components/Motion.vue'
+import DailyGenerateMenu from '../components/DailyGenerateMenu.vue'
 import DailyStudySheet from '../components/DailyStudySheet.vue'
 import { useDailyStore } from '../stores/daily'
 import { useSettingsStore } from '../stores/settings'
@@ -12,6 +13,7 @@ const history = ref<HTMLDialogElement>()
 const selectedText = ref('')
 const progressLabel = computed(() => ({
   searching: '联网搜索中',
+  reading: '正在读取文章',
   generating: '正在生成日报内容',
   validating: '正在校验原文并保存'
 }[daily.progressPhase]))
@@ -69,13 +71,14 @@ function segments(content: string, words: string[]) {
     <header class="flex items-center justify-between gap-2">
       <h1 class="font-kai text-2xl text-ink whitespace-nowrap">每日精读</h1>
       <div class="flex items-center gap-2 shrink-0">
-        <button @click="daily.loading ? daily.cancel() : daily.generate(settings.apiConfig)" class="btn-primary h-10 rounded-full px-4 text-xs flex items-center justify-center gap-1.5" :aria-label="daily.loading ? '取消生成日报' : '生成今日日报'"><Sparkles :size="16" />{{ daily.loading ? '取消生成' : '生成日报' }}</button>
+        <DailyGenerateMenu :loading="daily.loading" @generate="link => daily.generate(settings.apiConfig, link)" @cancel="daily.cancel" />
         <button @click="history?.showModal()" class="w-10 h-10 rounded-full card flex items-center justify-center text-zhuhong" aria-label="查看历史日报"><Clock :size="18" /></button>
       </div>
     </header>
     <Motion><div v-if="daily.loading" class="daily-progress rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status" aria-live="polite">
       <div class="flex items-center gap-2 text-ink"><span class="daily-progress-dot" aria-hidden="true" /><span class="font-medium">{{ progressLabel }}</span></div>
       <p v-if="daily.progressPhase === 'searching'" class="mt-2 text-xs leading-6">正在从人民网、光明网和半月谈检索并核对近三年的优质文段。</p>
+      <p v-if="daily.progressPhase === 'reading'" class="mt-2 text-xs leading-6">正在读取指定网页正文，随后生成精读卡片。</p>
       <pre v-if="daily.streamedText" class="daily-stream mt-3">{{ daily.streamedText }}</pre>
     </div></Motion>
     <Motion><p v-if="daily.error" role="alert" class="rounded-2xl bg-zhuhong-soft p-4 text-sm text-zhuhong">{{ daily.error }}</p></Motion>
@@ -83,7 +86,7 @@ function segments(content: string, words: string[]) {
       <article v-for="article in selected.articles" :key="article.url" class="card rounded-3xl p-5 sm:p-6">
         <div class="text-right text-xs text-ink-mute mb-4">原文节选</div>
         <h2 class="font-serif text-xl font-semibold leading-relaxed text-ink">{{ article.title }}</h2>
-        <a :href="article.url" target="_blank" rel="noopener noreferrer" class="inline-flex flex-wrap items-center gap-1.5 text-xs text-ink-mute mt-3 underline underline-offset-4">{{ article.source }} · 发布于 {{ article.publishedAt }}<ExternalLink :size="12" /></a>
+        <a :href="article.url" target="_blank" rel="noopener noreferrer" class="inline-flex flex-wrap items-center gap-1.5 text-xs text-ink-mute mt-3 underline underline-offset-4">{{ article.source }}<template v-if="article.publishedAt"> · 发布于 {{ article.publishedAt }}</template><template v-else> · 未标注发布日期</template><ExternalLink :size="12" /></a>
         <p class="daily-prose mt-5"><template v-for="(segment, i) in segments(article.content, article.words)" :key="i"><button v-if="segment.word" @click="queryWord(segment.word)" class="daily-word" :aria-label="`学习${segment.word}`">{{ segment.text }}</button><template v-else>{{ segment.text }}</template></template></p>
         <div class="mt-5 pt-4 border-t border-line"><p class="text-xs text-zhuhong mb-2">逻辑与表达 · AI 学习提示</p><p class="text-sm leading-7 text-ink-soft">{{ article.analysis }}</p></div>
       </article>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { generateDaily, type DailyIssue, type DailyProgressPhase } from '../api/daily'
+import { generateDailyFromLink } from '../api/dailyLink'
 import type { ApiConfig } from '../api/deepseek'
 import { useIdiomStore } from './idiom'
 
@@ -9,12 +10,13 @@ export const useDailyStore = defineStore('daily', () => {
   const loading = ref(false), error = ref(''), selectedId = ref('')
   const progressPhase = ref<DailyProgressPhase>('searching'), streamedText = ref('')
   let controller: AbortController | undefined
-  async function generate(config: ApiConfig) {
+  async function generate(config: ApiConfig, link?: string) {
     if (loading.value) return
-    loading.value = true; error.value = ''; progressPhase.value = 'searching'; streamedText.value = ''; controller = new AbortController()
+    loading.value = true; error.value = ''; progressPhase.value = link ? 'reading' : 'searching'; streamedText.value = ''; controller = new AbortController()
     let consumedTokens = 0
     try {
-      const issue = await generateDaily(
+      const runner: typeof generateDaily = link ? (config, ...args) => generateDailyFromLink(config, link, ...args) : generateDaily
+      const issue = await runner(
         { ...config }, issues.value.flatMap(i => i.articles.map(a => a.url)), controller.signal,
         tokens => { consumedTokens += tokens },
         progress => { progressPhase.value = progress.phase; if (progress.text !== undefined) streamedText.value = progress.text }

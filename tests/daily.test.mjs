@@ -286,3 +286,11 @@ test('DeepSeek daily reconstructs streamed message blocks and exposes progress',
   assert(progress.some(value => value.phase === 'generating' && value.text === json))
   assert.equal(progress.at(-1).phase, 'validating')
 })
+
+test('linked cards preserve public URLs and unknown publication dates through backup validation', () => {
+  const linked = { ...article, url: 'https://news.example.com/a', source: 'news.example.com', publishedAt: '', origin: 'link' }
+  assert.deepEqual(validateArticles([linked]), [linked])
+  assert.throws(() => validateArticles([{ ...linked, url: 'javascript:alert(1)' }]))
+  // Search generation must still enforce its media allowlist, even if a model adds origin.
+  assert.throws(() => validateArticles([linked], [linked.url]))
+})
