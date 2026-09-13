@@ -13,6 +13,7 @@ const router = useRouter()
 const idiomStore = useIdiomStore()
 const settingsStore = useSettingsStore()
 
+const MAX_COMPARE_WORDS = 4
 const words = ref<string[]>(['', ''])
 let nextWordId = 2
 const wordIds = ref([0, 1])
@@ -23,14 +24,15 @@ watch(() => route.query.loadId, (id) => {
   if (id && typeof id === 'string') {
     idiomStore.setCurrentCompare(id)
     if (idiomStore.currentCompare) {
-      words.value = [...idiomStore.currentCompare.words]
+      words.value = [...idiomStore.currentCompare.words].slice(0, MAX_COMPARE_WORDS)
+      while (words.value.length < 2) words.value.push('')
       wordIds.value = words.value.map(() => nextWordId++)
     }
   }
 }, { immediate: true })
 
 function addWord() {
-  if (words.value.length < 5) {
+  if (words.value.length < MAX_COMPARE_WORDS) {
     words.value.push('')
     wordIds.value.push(nextWordId++)
   }
@@ -72,22 +74,24 @@ function goToSettings() {
   <div class="min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
     <div class="mx-auto max-w-lg mb-6">
-      <TransitionGroup name="list" tag="div" class="space-y-3 relative">
+      <TransitionGroup name="list" tag="div" class="grid grid-cols-2 gap-3 relative">
         <div
           v-for="(_word, index) in words"
           :key="wordIds[index]"
-          class="flex items-center gap-2"
+          class="relative min-w-0"
         >
           <input
             v-model="words[index]"
             type="text"
             :placeholder="`输入词语 ${index + 1}`"
-            class="min-w-0 flex-1 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
+            class="w-full min-w-0 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
+            :class="words.length > 2 ? 'pr-10' : ''"
           />
           <Motion><button
             v-if="words.length > 2"
             @click="removeWord(index)"
-            class="p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors shrink-0"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+            :aria-label="`移除词语 ${index + 1}`"
             title="移除"
           >
             <X :size="18" />
@@ -98,7 +102,7 @@ function goToSettings() {
       <!-- Add button -->
       <div class="flex items-center gap-3 mt-3">
         <Motion><button
-          v-if="words.length < 5"
+          v-if="words.length < MAX_COMPARE_WORDS"
           @click="addWord"
           class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-dai bg-dai-soft hover:opacity-85 transition-colors"
         >
@@ -106,7 +110,7 @@ function goToSettings() {
           添加词语
         </button></Motion>
         <span class="text-xs text-ink-mute">
-          {{ words.length }}/5
+          {{ words.length }}/{{ MAX_COMPARE_WORDS }}
         </span>
 
       <!-- Compare button -->

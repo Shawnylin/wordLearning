@@ -56,7 +56,7 @@ onBeforeUnmount(() => { disposed = true; animation?.cancel() })
 </template>
 
 <style>
-.generation-stage { padding-top: 16px; }
+.generation-stage { padding-top: 48px; }
 .generation-stage.is-active { padding-top: 0; }
 .generation-surface { position: relative; width: 80px; height: 80px; margin: 0 auto; display: grid; place-items: center; border: 1px solid var(--line); background: var(--glass-fill); border-radius: 40px; overflow: hidden; transform-origin: top left; transition: none; }
 .is-active .generation-surface { display: block; width: 100%; height: auto; margin: 0; border-radius: 24px; }
