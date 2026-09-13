@@ -118,3 +118,14 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 当接口明确返回 `finish_reason: length`，保留原模型与提示词，自动扩大额度完整重生成一次（最高 65536 tokens）。不拼接截断 JSON、不删减内容，也不缓存未完成输出。仅在服务商明确拒绝 `max_tokens` 参数或额度时，额外尝试一次服务商默认额度；认证、限流和上下文超限等错误不自动重试。自动重生成可能增加等待时间和实际 token 消耗；服务商自身的输出限制仍可能导致失败。
 
 运行 `node --test tests/output-budget.test.mjs` 可验证额度、有限重试、兼容处理和完整性校验，使用模拟 API，不需要真实密钥。浏览器缓存保护检查：`node tests/output-budget-browser.mjs`（先启动 Vite 并设置上述 `CODEX_NODE_MODULES`）。
+
+## 日报文章读取服务
+
+人民日报等媒体未开放浏览器跨域读取，Jina Reader 也可能拒绝相关域名。日报链接解析对人民网、光明网、半月谈使用同源 `api/article-reader` 接口读取正文，再用现有模型解析，不调用搜索工具。其他公开网址保留原站直读及 Reader 回退。
+
+- 本机开发：`npm run dev` 自动提供读取接口。
+- 本机生产预览：`npm run build` 后执行 `npm run serve`，打开 `http://127.0.0.1:4173/wordLearning/`。`npm run preview` 也已接入读取接口。
+- 服务器部署：部署 `dist/`、`server/`、`package.json`，使用 Node.js 20+ 执行 `npm run serve`，由 HTTPS 反向代理转发应用与 API。可用 `HOST`、`PORT` 修改监听地址。
+- GitHub Pages 只托管静态文件，**不会运行此服务**。必须另行部署读取服务，并在构建前设置 `VITE_ARTICLE_READER_URL=https://你的服务/api/article-reader`；服务端设置 `ARTICLE_READER_ORIGIN=https://你的用户名.github.io`，允许该前端访问。未部署时会明确提示缺少读取接口，不会误报模型连接失败。
+
+读取服务只接受上述媒体域名，每次重定向再次校验，不转发 API Key 或浏览器 Cookie；请求限时 15 秒、限制 2 MB，并限制并发和短时缓存。网页读取失败不会调用模型。

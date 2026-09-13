@@ -62,3 +62,24 @@ test('cancelled read makes no model call', async () => {
   globalThis.fetch = async (_, options) => { calls++; assert(options.signal.aborted); throw new DOMException('aborted', 'AbortError') }
   await assert.rejects(generateDailyFromLink(config, url, [], controller.signal), /已取消/); assert.equal(calls, 1)
 })
+
+test('People paper uses the same-origin reader and never the blocked Jina route', async () => {
+  const paper = 'https://paper.people.com.cn/rmrb/pc/content/202609/13/content_30180713.html'
+  let calls = 0
+  globalThis.fetch = async target => {
+    calls++
+    assert.equal(target, '/wordLearning/api/article-reader?url=' + encodeURIComponent(paper))
+    return Response.json({ error: '原站读取超时' }, {status:502})
+  }
+  await assert.rejects(generateDailyFromLink(config, paper, []), /原站读取超时.*未调用模型/)
+  assert.equal(calls, 1)
+})
+test('missing deployed reader and model network failure have separate actionable errors', async () => {
+  globalThis.fetch = async () => new Response('<html>static fallback</html>', {headers:{'content-type':'text/html'}})
+  await assert.rejects(generateDailyFromLink(config, 'https://paper.people.com.cn/a.html', []), /尚未部署文章读取接口/)
+  globalThis.fetch = async target => {
+    if (String(target).startsWith('https://r.jina.ai/')) return new Response(pageText)
+    throw new TypeError('network')
+  }
+  await assert.rejects(generateDailyFromLink(config, url, []), /网页已读取，但模型接口连接失败/)
+})

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve": "node server/serve.mjs"
   },
   "dependencies": {
     "lucide-vue-next": "^0.462.0",
