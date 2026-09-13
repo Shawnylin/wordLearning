@@ -55,7 +55,7 @@ function startReview() {
 }
 
 function goReport() {
-  router.push('/report')
+  router.push('/profile')
 }
 
 function openWord(word: string) {
@@ -186,7 +186,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
           class="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors"
         >
           <ArrowLeft :size="18" />
-          <span class="text-sm font-medium">报告</span>
+          <span class="text-sm font-medium">个人</span>
         </button>
         <h1 class="font-kai text-3xl text-ink leading-tight">今日复习</h1>
         <span class="w-16 text-right text-xs text-ink-mute">
@@ -450,7 +450,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
               @click="goReport"
               class="w-full py-2.5 rounded-2xl bg-soft text-ink-soft text-sm font-medium hover:opacity-80 transition-colors"
             >
-              返回报告
+              返回个人
             </button>
           </div>
         </div>

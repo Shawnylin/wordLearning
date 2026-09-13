@@ -36,7 +36,7 @@ function handleRelatedClick(word: string) {
 }
 
 function goToSettings() {
-  router.push('/profile')
+  router.push('/profile/models')
 }
 </script>
 

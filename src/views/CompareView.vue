@@ -66,7 +66,7 @@ async function handleRegenerate() {
 }
 
 function goToSettings() {
-  router.push('/profile')
+  router.push('/profile/models')
 }
 </script>
 

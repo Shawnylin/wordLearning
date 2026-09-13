@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BookOpen, GitCompare, History, BarChart3, User } from 'lucide-vue-next'
+import { BookOpen, GitCompare, History, Newspaper, User } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,15 +16,15 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: 'learn', label: '学习', icon: BookOpen, path: '/learn' },
   { name: 'compare', label: '对比', icon: GitCompare, path: '/compare' },
-  { name: 'report', label: '报告', icon: BarChart3, path: '/report' },
+  { name: 'report', label: '日报', icon: Newspaper, path: '/report' },
   { name: 'record', label: '记录', icon: History, path: '/record' },
   { name: 'profile', label: '个人', icon: User, path: '/profile' }
 ]
 
 const activeIndex = computed(() => {
-  if (route.name === 'models') return navItems.findIndex(item => item.name === 'profile')
-  // 复习页归属「报告」分组，保持高亮
-  if (route.name === 'review') return navItems.findIndex(item => item.name === 'report')
+  if (route.path.startsWith('/profile')) return navItems.findIndex(item => item.name === 'profile')
+  // 复习页归属「个人」分组，保持高亮
+  if (route.name === 'review') return navItems.findIndex(item => item.name === 'profile')
   const index = navItems.findIndex(item => item.name === route.name)
   return index >= 0 ? index : 0
 })
@@ -52,6 +52,7 @@ function navigateTo(item: NavItem) {
       <div class="relative flex items-center rounded-full bg-card/95 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(42,36,28,0.4)] border border-line p-1.5">
         <!-- 印章滑动指示器 -->
         <div
+          id="bottom-nav-indicator"
           class="absolute top-1 bottom-1 rounded-full bg-zhuhong-solid shadow-[0_2px_8px_-2px_rgba(178,58,44,0.6)]"
           :style="indicatorStyle"
         />

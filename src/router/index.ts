@@ -25,7 +25,7 @@ const router = createRouter({
     {
       path: '/report',
       name: 'report',
-      component: () => import('../views/ReportView.vue')
+      component: () => import('../views/DailyView.vue')
     },
     {
       path: '/review',
@@ -37,6 +37,7 @@ const router = createRouter({
       name: 'models',
       component: () => import('../views/ModelSettingsView.vue')
     },
+    { path: '/profile/settings', name: 'profile-settings', component: () => import('../views/ProfileSettingsView.vue') },
     {
       path: '/profile',
       name: 'profile',

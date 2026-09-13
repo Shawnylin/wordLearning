@@ -86,7 +86,8 @@ export const useIdiomStore = defineStore('idiom', () => {
     const cached = idiomCache.value[trimmedWord]
     if (cached) {
       currentIdiom.value = cached
-      updateSearchTimestamp(trimmedWord)
+      idiomError.value = ''
+      addSearchRecord(trimmedWord)
       return cached
     }
 
@@ -488,6 +489,7 @@ export const useIdiomStore = defineStore('idiom', () => {
   }
 
   return {
+    addTokenUsage,
     idiomCache,
     searchHistory,
     compareCache,

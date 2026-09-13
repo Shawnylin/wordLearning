@@ -179,7 +179,7 @@ function openWord(word: string) {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-4">
+  <div class="pb-4">
     <!-- 单行标题，无 logo 占位 -->
     <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
       <h1 class="font-kai text-3xl text-ink leading-tight">学习报告</h1>
