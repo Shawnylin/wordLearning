@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test, after } from 'node:test'
 import { build } from 'esbuild'
 const compiled = await build({ entryPoints: ['src/api/daily.ts'], bundle: true, write: false, platform: 'node', format: 'esm' })
-const { generateDaily, validateArticles, sourceUrl } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`)
+const { generateDaily, validateArticles, sourceUrl, parseDailyOutput } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`)
 const originalFetch = globalThis.fetch
 after(() => { globalThis.fetch = originalFetch })
 const article = { title: '测试文段', source: '人民日报', url: 'https://opinion.people.com.cn/n1/2026/test.html', publishedAt: new Date(Date.now() + 28800000).toISOString().slice(0, 10), content: '坚持因地制宜，推动协同发展。'.repeat(15), words: ['因地制宜', '协同发展'], analysis: '关注词语的搭配对象和语境照应。' }
@@ -169,4 +169,42 @@ test('three-year publication window accepts useful older material and exact boun
   assert.throws(() => validateArticles([{ ...article, publishedAt: '2021-02-27' }], [article.url], leapNow))
   // Previously saved issues remain importable after they age out of the generation window.
   assert.equal(validateArticles([{ ...article, publishedAt: '2020-01-01' }], undefined, now).length, 1)
+})
+test('daily parser handles prose wrappers, fences, split blocks, arrays and escaped braces losslessly', () => {
+  const original = { ...article, content: article.content + '\n引号"和花括号{保留}以及反斜杠\\都不改变。' }
+  const json = JSON.stringify({ articles: [original] })
+  for (const texts of [[json], ['以下是精读素材：\n```json\n' + json + '\n```\n以上供学习。'], [json.slice(0, 47), json.slice(47)], ['搜索完成。', json], [JSON.stringify([original])]]) {
+    assert.deepEqual(parseDailyOutput(texts), { articles: [original] })
+  }
+  for (const text of [json.slice(0, -1), '没有查到', '{"articles": [}', '{"title":"example"}']) assert.equal(parseDailyOutput([text]), null)
+})
+test('malformed DeepSeek output gets one format repair with retained search evidence', async () => {
+  let calls = 0
+  globalThis.fetch = async (_, options) => {
+    calls++
+    const data = anthropicReply()
+    if (calls === 1) data.content[3].text = '标题：测试文段。正文：' + article.content
+    else {
+      const body = JSON.parse(options.body)
+      assert(body.messages[2].content.includes('只修正输出格式'))
+      data.content = [{ type: 'text', text: JSON.stringify({ articles: [article] }) }]
+    }
+    return Response.json(data)
+  }
+  const result = await generateDaily(deepseek, [])
+  assert.deepEqual(result.articles, [article]); assert.equal(result.tokenUsage, 240); assert.equal(calls, 2)
+})
+test('format repair remains bounded and cannot invent a source or accept a truncated response', async () => {
+  for (const mode of ['malformed', 'fake-source', 'truncated']) {
+    let calls = 0
+    globalThis.fetch = async () => {
+      calls++
+      const data = anthropicReply()
+      data.content[3].text = '格式错误的正文'
+      if (calls === 2 && mode === 'fake-source') data.content[3].text = JSON.stringify({ articles: [{ ...article, url: 'https://people.com.cn/not-searched.html' }] })
+      if (calls === 2 && mode === 'truncated') { data.content[3].text = JSON.stringify({ articles: [article] }); data.stop_reason = 'max_tokens' }
+      return Response.json(data)
+    }
+    await assert.rejects(generateDaily(deepseek, [])); assert.equal(calls, 2)
+  }
 })

@@ -14,6 +14,45 @@ export function sourceUrl(value: string): string {
   return url.href
 }
 class ArticleContentError extends Error {}
+export function parseDailyOutput(texts: string[]): { articles: unknown[] } | null {
+  const shape = (value: any): { articles: unknown[] } | null => {
+    if (value && !Array.isArray(value) && Array.isArray(value.articles)) return { articles: value.articles }
+    if (Array.isArray(value) && value.every(item => item && typeof item === 'object' && typeof item.content === 'string' && typeof item.url === 'string')) return { articles: value }
+    return null
+  }
+  // Concatenate first: an API may split one JSON string across text blocks.
+  // Scan balanced containers without changing a single character of the article text.
+  for (const text of [texts.join(''), ...texts.slice().reverse()]) {
+    try { const value = shape(JSON.parse(text.trim())); if (value) return value } catch { /* Inspect wrapped JSON below. */ }
+    let start = -1, quoted = false, escaped = false
+    const stack: string[] = []
+    const candidates: { articles: unknown[] }[] = []
+    for (let index = 0; index < text.length; index++) {
+      const char = text[index]
+      if (start < 0) {
+        if (char === '{' || char === '[') { start = index; stack.push(char); quoted = false; escaped = false }
+        continue
+      }
+      if (quoted) {
+        if (escaped) escaped = false
+        else if (char === '\\') escaped = true
+        else if (char === '"') quoted = false
+        continue
+      }
+      if (char === '"') { quoted = true; continue }
+      if (char === '{' || char === '[') stack.push(char)
+      if (char === '}' || char === ']') {
+        if (stack.pop() !== (char === '}' ? '{' : '[')) { start = -1; stack.length = 0; continue }
+        if (!stack.length) {
+          try { const value = shape(JSON.parse(text.slice(start, index + 1))); if (value) candidates.push(value) } catch { /* Never invent missing syntax or parse with eval. */ }
+          start = -1
+        }
+      }
+    }
+    if (candidates.length) return candidates[candidates.length - 1]
+  }
+  return null
+}
 function normalizeWords(value: unknown, content: string): string[] {
   const items = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[、,，;；\n]/) : []
   return [...new Set<string>(items.flatMap(item => {
@@ -97,8 +136,8 @@ export async function generateDaily(config: ApiConfig, excluded: string[], signa
         for (const annotation of part.annotations || []) if (annotation.type === 'url_citation') citations.push(annotation.url)
       }
     }
-    let parsed
-    try { parsed = JSON.parse(texts.join('').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')) } catch { throw new Error('日报格式错误，请重试') }
+    const parsed = parseDailyOutput(texts)
+    if (!parsed) throw new Error('日报未返回完整的 articles JSON，未保存，请重试')
     const articles = generatedArticles(parsed.articles, citations, now).filter(a => !excluded.includes(a.url))
     if (!articles.length) throw new Error('本次只有已收录文章，请稍后再试')
     return { id: crypto.randomUUID(), createdAt: now, articles, tokenUsage: Number.isFinite(data.usage?.total_tokens) ? Math.max(0, data.usage.total_tokens) : 0 }
@@ -150,12 +189,16 @@ async function generateDeepSeekDaily(config: ApiConfig, excluded: string[], now:
     if (data.stop_reason !== 'end_turn') throw new Error('DeepSeek 日报输出未完整结束，未保存。请重试或调整模型输出额度')
     if (!citations.length) throw new Error('DeepSeek 官方搜索入口未返回 web_search_tool_result 中的有效结果。当前模型可能未启用搜索，未保存日报')
     const texts = data.content.filter((b: any) => b.type === 'text' && typeof b.text === 'string').map((b: any) => b.text)
-    let parsed
-    // Ignore search narration before the final answer, but never scrape URLs from model prose.
-    for (const text of [texts.join(''), ...texts.slice().reverse()]) {
-      try { const candidate = JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')); if (Array.isArray(candidate?.articles)) { parsed = candidate; break } } catch { /* Try the final text block. */ }
+    const parsed = parseDailyOutput(texts)
+    if (!parsed) {
+      if (!repaired && turn < 2) {
+        repaired = true
+        messages.push({ role: 'assistant', content: data.content })
+        messages.push({ role: 'user', content: '搜索已完成，但最后的内容未能解析为日报 JSON。现在只修正输出格式，不要重复搜索，不要新增新闻或改写已取得的原文。根据上文已核实的素材，仅输出一个完整对象：{"articles":[{"title":"原文标题","source":"媒体","url":"搜索结果中的原文URL","publishedAt":"YYYY-MM-DD","content":"完整原文节选","words":["原文中的成语或词语"],"analysis":"学习提示"}]}。不要添加前言、结语、Markdown表格或代码块；字符串中的双引号、换行和反斜杠必须使用合法 JSON 转义。无法提供合格素材时返回 {"articles":[]}。' })
+        continue
+      }
+      throw new Error(`DeepSeek ${texts.length ? '已返回文本，但未提供可解析的完整日报 JSON' : '未返回日报正文'}；${repaired ? '自动格式修正后仍未完成' : '本次续推额度已用完'}，未保存不完整内容`)
     }
-    if (!parsed) throw new Error('DeepSeek 日报格式错误，请重试')
     let articles: DailyArticle[]
     try { articles = generatedArticles(parsed.articles, citations, now).filter(a => !excluded.includes(a.url)) }
     catch (error) {
