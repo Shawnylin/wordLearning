@@ -31,13 +31,6 @@ function startOfDay(ts: number): number {
   return d.getTime()
 }
 
-// 头部日期
-const todayLabel = computed(() => {
-  const d = new Date()
-  const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
-  return `${d.getMonth() + 1}月${d.getDate()}日 · 周${week}`
-})
-
 // 活跃日期集合（搜索 + 对比）
 const activeDaySet = computed(() => {
   const days = new Set<number>()
@@ -180,12 +173,6 @@ function openWord(word: string) {
 
 <template>
   <div class="pb-4">
-    <!-- 单行标题，无 logo 占位 -->
-    <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
-      <h1 class="font-kai text-3xl text-ink leading-tight">学习报告</h1>
-      <span class="text-xs text-ink-mute">{{ todayLabel }}</span>
-    </div>
-
     <!-- Empty state -->
     <Motion><div v-if="!hasData" class="mx-auto max-w-lg text-center py-16">
       <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">

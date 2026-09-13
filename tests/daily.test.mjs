@@ -113,3 +113,46 @@ test('DeepSeek auth errors and aborted calls do not retry', async () => {
   globalThis.fetch = async (_, { signal }) => { assert(signal.aborted); throw new DOMException('aborted', 'AbortError') }
   await assert.rejects(generateDaily(deepseek, [], controller.signal), /已取消/)
 })
+test('normalizes decorated, object and delimited words without rewriting source content', () => {
+  for (const words of [[' 因地制宜 ', '“协同发展”', '不在原文'], [{ word: '因地制宜', explanation: '说明' }, { word: '协同发展' }], '因地制宜、协同发展']) {
+    const [result] = validateArticles([{ ...article, words }])
+    assert.deepEqual(result.words, ['因地制宜', '协同发展']); assert.equal(result.content, article.content)
+  }
+  assert.deepEqual(validateArticles([{ ...article, words: ['因地制宜', '因地制宜'] }])[0].words, ['因地制宜'])
+  assert.throws(() => validateArticles([{ ...article, words: ['不在文中'] }]), /逐字匹配/)
+  assert.throws(() => validateArticles([{ ...article, content: '短文' }]), /长度为 2 字/)
+})
+test('one invalid candidate does not discard a valid evidenced article', async () => {
+  const data = anthropicReply()
+  data.content[3].text = JSON.stringify({ articles: [{ ...article, words: ['不在原文'] }, article] })
+  globalThis.fetch = async () => Response.json(data)
+  const result = await generateDaily(deepseek, [])
+  assert.equal(result.articles.length, 1); assert.deepEqual(result.articles[0], article)
+})
+test('DeepSeek repairs invalid words once with previous search evidence and counts both calls', async () => {
+  let calls = 0
+  globalThis.fetch = async (_, options) => {
+    calls++
+    const data = anthropicReply()
+    if (calls === 1) data.content[3].text = JSON.stringify({ articles: [{ ...article, words: ['不在文中'] }] })
+    else {
+      const body = JSON.parse(options.body)
+      assert(body.messages[2].content.includes('保留原文'))
+      data.content = [{ type: 'text', text: JSON.stringify({ articles: [article] }) }]
+    }
+    return Response.json(data)
+  }
+  const result = await generateDaily(deepseek, [])
+  assert.equal(result.tokenUsage, 240); assert.equal(calls, 2)
+})
+test('repeated invalid content stops after one repair with actionable error', async () => {
+  let calls = 0
+  globalThis.fetch = async () => {
+    calls++
+    const data = anthropicReply()
+    data.content[3].text = JSON.stringify({ articles: [{ ...article, words: ['不在文中'] }] })
+    return Response.json(data)
+  }
+  await assert.rejects(generateDaily(deepseek, []), /逐字匹配/)
+  assert.equal(calls, 2)
+})
