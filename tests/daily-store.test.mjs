@@ -35,3 +35,15 @@ test('daily persists before success and protects existing history when storage i
   await daily.generate({ ...config, apiKey: 'test' })
   assert.equal(daily.issues.length, 1); assert.equal(daily.selectedId, previous); assert.match(daily.error, /quota/); assert.equal(daily.loading, false)
 })
+
+test('failed daily generation records paid usage once without saving an issue', async () => {
+  setActivePinia(createPinia())
+  const daily = useDailyStore(), idioms = useIdiomStore()
+  globalThis.fetch = async () => Response.json({ status: 'incomplete', usage: { total_tokens: 321 }, output: [] })
+  await daily.generate({ ...config, apiKey: 'test' })
+  assert.equal(daily.issues.length, 0)
+  assert.match(daily.error, /321 tokens/)
+  assert.equal(idioms.tokenStats.totalTokens, 321)
+  assert.equal(idioms.tokenStats.requestCount, 1)
+  assert.equal(daily.loading, false)
+})

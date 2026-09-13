@@ -1,4 +1,4 @@
-import{_ as w}from"./deepseek-BjCRmSsF.js";import{l as E,d as F,k as Z,o as l,c as a,b as c,e as C,a as e,u as f,t as i,g as N,h as D,F as v,i as _,I as ut,p as W,B as ct,j as r,r as dt}from"./index-DljUz5Yw.js";import{u as xt}from"./idiom-DBJzT7N9.js";import{u as ft}from"./review-Czf1RhtQ.js";import{S as pt}from"./shuffle-bqrAybez.js";import{C as mt}from"./chevron-right-sXnwapCy.js";import{C as ht}from"./clock-qdrbX9PU.js";import{S as vt}from"./settings-D3nMzn5e.js";/**
+import{_ as w}from"./deepseek-CbsMiTMs.js";import{l as E,d as F,k as Z,o as l,c as a,b as c,e as C,a as e,u as f,t as i,g as N,h as D,F as v,i as _,I as ut,p as W,B as ct,j as r,r as dt}from"./index-XC4KqO5J.js";import{u as xt}from"./idiom-ClukbfYK.js";import{u as ft}from"./review-0osSUG4P.js";import{S as pt}from"./shuffle-D3QUnF1n.js";import{C as mt}from"./chevron-right-Cw802XpH.js";import{C as ht}from"./clock-5_7iWOZ5.js";import{S as vt}from"./settings-BAd3giTc.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.

@@ -10,6 +10,11 @@ const sheet = ref<InstanceType<typeof DailyStudySheet>>()
 const selected = computed(() => daily.issues.find(i => i.id === daily.selectedId) || daily.issues[0])
 const history = ref<HTMLDialogElement>()
 const selectedText = ref('')
+const progressLabel = computed(() => ({
+  searching: '联网搜索中',
+  generating: '正在生成日报内容',
+  validating: '正在校验原文并保存'
+}[daily.progressPhase]))
 let closingHistory = false
 async function closeHistory() {
   if (!history.value?.open || closingHistory) return
@@ -68,7 +73,12 @@ function segments(content: string, words: string[]) {
         <button @click="history?.showModal()" class="w-10 h-10 rounded-full card flex items-center justify-center text-zhuhong" aria-label="查看历史日报"><Clock :size="18" /></button>
       </div>
     </header>
-    <Motion><div v-if="daily.loading" class="rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status">正在精选近三年的优质文段，以成语、词语和表达的学习价值为先，并核对原文与发布日期。完成后自动保存，可离开此页。</div></Motion>
+    <p class="text-xs text-ink-mute">每次精选 1–3 篇，有合适文段即可保存。DeepSeek 日报使用节省模式，关闭深度思考。</p>
+    <Motion><div v-if="daily.loading" class="daily-progress rounded-2xl bg-soft p-4 text-sm text-ink-soft" role="status" aria-live="polite">
+      <div class="flex items-center gap-2 text-ink"><span class="daily-progress-dot" aria-hidden="true" /><span class="font-medium">{{ progressLabel }}</span></div>
+      <p v-if="daily.progressPhase === 'searching'" class="mt-2 text-xs leading-6">正在从人民网、光明网和半月谈检索并核对近三年的优质文段。</p>
+      <pre v-if="daily.streamedText" class="daily-stream mt-3">{{ daily.streamedText }}</pre>
+    </div></Motion>
     <Motion><p v-if="daily.error" role="alert" class="rounded-2xl bg-zhuhong-soft p-4 text-sm text-zhuhong">{{ daily.error }}</p></Motion>
     <Motion><div v-if="selected" :key="selected.id" class="space-y-5">
       <article v-for="(article, index) in selected.articles" :key="article.url" class="card rounded-3xl p-5 sm:p-6">
@@ -97,10 +107,13 @@ function segments(content: string, words: string[]) {
 .daily-prose { -webkit-user-select: text; user-select: text; font-family: var(--font-serif, serif); font-size: 17px; line-height: 2.25; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .daily-word { -webkit-user-select: text; user-select: text; display: inline; font: inherit; color: var(--zhuhong); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; border-radius: 4px; transition: background .2s, color .2s; }
 .daily-word:hover,.daily-word:focus-visible { background: var(--zhuhong-soft); outline: 2px solid var(--zhuhong); outline-offset: 2px; }
+.daily-progress-dot { width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--zhuhong); box-shadow: 0 0 0 0 color-mix(in srgb, var(--zhuhong) 35%, transparent); animation: daily-pulse 1.4s ease-out infinite; }
+.daily-stream { max-height: 32dvh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 12px; line-height: 1.8; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 12px; }
 .selection-query { position: fixed; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 65; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 8px 8px 8px 18px; border: 1px solid var(--line); border-radius: 99px; background: var(--card); color: var(--ink); box-shadow: 0 8px 32px #0002; font-size: 14px; }
 .daily-history { margin: auto; width: min(480px, calc(100vw - 24px)); max-height: 75dvh; overflow-y: auto; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 24px; }
 .daily-history::backdrop { background: #0004; backdrop-filter: blur(8px); }
 .daily-history[open] { animation: history-enter .25s ease both; }
 @keyframes history-enter { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .daily-history[open] { animation: none; } }
+@keyframes daily-pulse { 70%,100% { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: reduce) { .daily-history[open],.daily-progress-dot { animation: none; } }
 </style>

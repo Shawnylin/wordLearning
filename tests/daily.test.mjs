@@ -63,7 +63,7 @@ test('official DeepSeek routes to native Anthropic search and accepts evidenced 
     assert.equal(url, 'https://api.deepseek.com/anthropic/v1/messages')
     const body = JSON.parse(options.body)
     assert.equal(body.model, 'deepseek-flash')
-    assert.deepEqual(body.tools, [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }])
+    assert.deepEqual(body.tools, [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }])
     assert.equal(body.thinking.type, 'disabled'); assert.equal(options.headers['x-api-key'], config.apiKey)
     assert.equal(options.headers['anthropic-version'], '2023-06-01')
     assert.equal(body.include, undefined)
@@ -92,8 +92,8 @@ test('DeepSeek pause continuation preserves result blocks, configuration and cum
   globalThis.fetch = async (_, options) => {
     calls++
     const body = JSON.parse(options.body)
-    assert.equal(body.model, 'deepseek-flash'); assert.equal(body.output_config.effort, 'max')
-    assert.equal(body.max_tokens, 40000)
+    assert.equal(body.model, 'deepseek-flash'); assert.equal(body.output_config, undefined); assert.equal(body.thinking.type, 'disabled')
+    assert.equal(body.max_tokens, 6000)
     if (calls === 1) {
       mutable.model = 'changed'
       const data = anthropicReply({ stop_reason: 'pause_turn' }); data.content.pop()
@@ -186,7 +186,7 @@ test('malformed DeepSeek output gets one format repair with retained search evid
     if (calls === 1) data.content[3].text = '标题：测试文段。正文：' + article.content
     else {
       const body = JSON.parse(options.body)
-      assert(body.messages[2].content.includes('只修正输出格式'))
+      assert(body.messages[2].content.includes('只修正输出格式')); assert.equal(body.tools, undefined); assert.equal(body.thinking.type, 'disabled'); assert.equal(typeof body.messages[1].content, 'string')
       data.content = [{ type: 'text', text: JSON.stringify({ articles: [article] }) }]
     }
     return Response.json(data)
@@ -207,4 +207,82 @@ test('format repair remains bounded and cannot invent a source or accept a trunc
     }
     await assert.rejects(generateDaily(deepseek, [])); assert.equal(calls, 2)
   }
+})
+
+test('publisher variants and syndicated sources normalize locally without another paid request', async () => {
+  for (const [url, source, expected] of [
+    [article.url, '人民网－人民日报', '人民网'],
+    ['https://news.gmw.cn/2026/test.html', '新华社', '光明网'],
+    ['https://www.banyuetan.org/test.html', '半月谈杂志', '半月谈网']
+  ]) {
+    let calls = 0
+    globalThis.fetch = async () => { calls++; return Response.json(reply({ ...article, url, source })) }
+    const issue = await generateDaily(config, [])
+    assert.equal(issue.articles[0].source, expected)
+    assert.equal(issue.articles[0].content, article.content)
+    assert.equal(calls, 1)
+  }
+})
+test('failed validations report incurred usage for both API paths', async () => {
+  for (const settings of [config, deepseek]) {
+    const data = settings === config ? reply({ ...article, publishedAt: '2099-01-01' }) : anthropicReply()
+    if (settings === deepseek) data.content[3].text = JSON.stringify({ articles: [{ ...article, publishedAt: '2099-01-01' }] })
+    globalThis.fetch = async () => Response.json(data)
+    let usage = 0
+    await assert.rejects(generateDaily(settings, [], undefined, tokens => { usage += tokens }), /发布日期/)
+    assert.equal(usage, settings === config ? 123 : 120)
+  }
+})
+test('pause continuation stops at two requests and reports all returned usage', async () => {
+  let calls = 0, usage = 0
+  globalThis.fetch = async () => { calls++; return Response.json(anthropicReply({ stop_reason: 'pause_turn' })) }
+  await assert.rejects(generateDaily(deepseek, [], undefined, tokens => { usage += tokens }), /未完整结束/)
+  assert.equal(calls, 2); assert.equal(usage, 240)
+})
+
+function sse(events) {
+  return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''), { headers: { 'Content-Type': 'text/event-stream' } })
+}
+
+test('Responses daily streams search and generated text before validation', async () => {
+  const final = reply()
+  const json = JSON.stringify({ articles: [article] })
+  globalThis.fetch = async (_, options) => {
+    assert.equal(JSON.parse(options.body).stream, true)
+    return sse([
+      { type: 'response.web_search_call.in_progress' },
+      { type: 'response.output_text.delta', delta: json.slice(0, 30) },
+      { type: 'response.output_text.delta', delta: json.slice(30) },
+      { type: 'response.completed', response: final }
+    ])
+  }
+  const progress = []
+  const issue = await generateDaily(config, [], undefined, undefined, value => progress.push({ ...value }))
+  assert.equal(issue.articles[0].title, article.title)
+  assert(progress.some(value => value.phase === 'searching'))
+  assert(progress.some(value => value.phase === 'generating' && value.text === json))
+  assert.equal(progress.at(-1).phase, 'validating')
+})
+
+test('DeepSeek daily reconstructs streamed message blocks and exposes progress', async () => {
+  const json = JSON.stringify({ articles: [article] })
+  globalThis.fetch = async (_, options) => {
+    assert.equal(JSON.parse(options.body).stream, true)
+    return sse([
+      { type: 'message_start', message: { type: 'message', usage: { input_tokens: 40 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'server_tool_use', id: 'search-1', name: 'web_search', input: { query: 'site:people.com.cn' } } },
+      { type: 'content_block_start', index: 1, content_block: { type: 'web_search_tool_result', tool_use_id: 'search-1', content: [{ type: 'web_search_result', url: article.url, title: article.title }] } },
+      { type: 'content_block_start', index: 2, content_block: { type: 'text', text: '' } },
+      { type: 'content_block_delta', index: 2, delta: { type: 'text_delta', text: json.slice(0, 25) } },
+      { type: 'content_block_delta', index: 2, delta: { type: 'text_delta', text: json.slice(25) } },
+      { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 80 } },
+      { type: 'message_stop' }
+    ])
+  }
+  const progress = []
+  const issue = await generateDaily(deepseek, [], undefined, undefined, value => progress.push({ ...value }))
+  assert.equal(issue.tokenUsage, 120)
+  assert(progress.some(value => value.phase === 'searching'))
+  assert(progress.some(value => value.phase === 'generating' && value.text === json))
+  assert.equal(progress.at(-1).phase, 'validating')
 })
