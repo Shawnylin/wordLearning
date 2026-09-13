@@ -3,9 +3,13 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { articleReaderMiddleware } from './server/article-reader.mjs'
 import { VitePWA } from 'vite-plugin-pwa'
+import packageJson from './package.json'
 
 export default defineConfig({
   base: '/wordLearning/',
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version)
+  },
   plugins: [
     { name: 'article-reader', configureServer(server) { server.middlewares.use(articleReaderMiddleware) }, configurePreviewServer(server) { server.middlewares.use(articleReaderMiddleware) } },
     vue(),

@@ -1,15 +1,27 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 import { useThemeStore } from './stores/theme'
+import { useAppUpdateStore } from './stores/appUpdate'
 import BottomNav from './components/BottomNav.vue'
+import AppUpdatePrompt from './components/AppUpdatePrompt.vue'
 
 const themeStore = useThemeStore()
+const appUpdate = useAppUpdateStore()
+const handleForeground = () => appUpdate.checkOnForeground()
 
 // 同步初始化，避免闪烁
 themeStore.initTheme()
 
 onMounted(() => {
   themeStore.watchSystemTheme()
+  appUpdate.initialize()
+  window.addEventListener('focus', handleForeground)
+  document.addEventListener('visibilitychange', handleForeground)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleForeground)
+  document.removeEventListener('visibilitychange', handleForeground)
 })
 </script>
 
@@ -25,6 +37,7 @@ onMounted(() => {
       </router-view>
     </main>
     <BottomNav />
+    <AppUpdatePrompt />
   </div>
 </template>
 

@@ -8,16 +8,16 @@ import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import { useReviewStore } from '../stores/review'
 import { useDailyStore } from '../stores/daily'
+import { useAppUpdateStore } from '../stores/appUpdate'
 import { validateArticles } from '../api/daily'
 import {
   Sun, Moon, Trash2,
-  Download, Upload, Monitor, Coins, RefreshCw, Key, ChevronRight
+  Download, Upload, Monitor, Coins, RefreshCw, Key, ChevronRight, Smartphone
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const settings = useSettingsStore()
-
-const APP_VERSION = '0.2.0'
+const appUpdate = useAppUpdateStore()
 
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
@@ -246,6 +246,30 @@ function handleImport() {
         </div></Motion>
       </div>
 
+      <!-- App Update -->
+      <div class="card rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai"><Smartphone :size="20" /></div>
+          <div class="min-w-0">
+            <h3 class="font-semibold text-ink">应用更新</h3>
+            <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
+          </div>
+        </div>
+        <p class="mb-3 text-sm" :class="appUpdate.needRefresh ? 'text-zhuhong' : 'text-ink-mute'">{{ appUpdate.statusText }}</p>
+        <button
+          v-if="appUpdate.needRefresh"
+          class="btn-primary w-full rounded-xl py-2.5 text-sm font-medium"
+          :disabled="appUpdate.applying"
+          @click="appUpdate.applyUpdate"
+        >{{ appUpdate.applying ? '正在更新…' : '发现新版本，立即更新' }}</button>
+        <button
+          v-else
+          class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft disabled:opacity-50"
+          :disabled="appUpdate.checking || !appUpdate.supported"
+          @click="appUpdate.checkForUpdate()"
+        ><RefreshCw :size="16" :class="{ 'animate-spin': appUpdate.checking }" />{{ appUpdate.checking ? '检查中…' : '检查更新' }}</button>
+      </div>
+
       <!-- Data Management -->
       <div class="card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
@@ -369,7 +393,7 @@ function handleImport() {
 
     <!-- Version -->
     <div class="text-center mt-8 mb-4">
-      <p class="text-xs text-ink-mute">v{{ APP_VERSION }}</p>
+      <p class="text-xs text-ink-mute">v{{ appUpdate.currentVersion }}</p>
     </div>
   </div>
 </template>
