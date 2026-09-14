@@ -270,7 +270,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="min-h-screen px-4 pt-6 pb-6">
-    <div class="mx-auto max-w-3xl space-y-5">
+    <div
+      class="mx-auto max-w-3xl"
+      :class="
+        selected && !daily.loading && !daily.error ? 'space-y-0' : 'space-y-5'
+      "
+    >
       <header class="flex items-center justify-between gap-2">
         <h1 class="font-kai text-2xl text-ink whitespace-nowrap">每日精读</h1>
         <div class="flex items-center gap-2 shrink-0">
@@ -338,7 +343,7 @@ onBeforeUnmount(() => {
             :key="articleIndex"
             class="daily-article"
           >
-            <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center justify-between gap-3">
               <span class="text-xs text-ink-mute"
                 >{{
                   article.origin === "pdf"
@@ -565,7 +570,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .daily-article {
-  padding: 16px 0 32px;
+  padding: 2px 0 32px;
   border-bottom: 1px solid var(--line);
 }
 .star-button {
