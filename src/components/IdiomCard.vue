@@ -37,40 +37,39 @@ function getSectionContent(key: string): string {
   <div class="animate-card-enter">
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="study-heading relative px-6 pt-8 pb-6 text-center glass-card-header">
-        <!-- Favorite button -->
-        <button
-          @click="idiomStore.toggleFavorite(idiom.word)"
-          class="absolute top-4 left-4 p-2 rounded-full transition-all duration-200"
-          :class="idiomStore.isFavorite(idiom.word)
-            ? 'text-zhuhong hover:scale-110'
-            : 'text-ink-mute hover:text-zhuhong'"
-          :title="idiomStore.isFavorite(idiom.word) ? '取消收藏' : '收藏'"
-        >
-          <Heart :size="18" :fill="idiomStore.isFavorite(idiom.word) ? 'currentColor' : 'none'" />
-        </button>
-
-        <!-- Regenerate button -->
-        <button
-          @click="emit('regenerate')"
-          :disabled="loading"
-          class="absolute top-4 right-4 p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-all duration-200 disabled:opacity-50"
-          title="重新生成"
-        >
-          <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
-        </button>
-
-        <!-- Pinyin -->
-        <p class="text-lg tracking-widest mb-2 text-zhuhong">
-          {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
-        </p>
+      <div class="study-heading px-6 pt-8 pb-6 text-center glass-card-header">
+        <div class="study-heading-row mb-2">
+          <p class="min-w-0 text-lg tracking-widest text-zhuhong">
+            {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
+          </p>
+          <div class="study-heading-actions">
+            <button
+              @click="idiomStore.toggleFavorite(idiom.word)"
+              class="p-2 rounded-full transition-all duration-200"
+              :class="idiomStore.isFavorite(idiom.word)
+                ? 'text-zhuhong hover:scale-110'
+                : 'text-ink-mute hover:text-zhuhong'"
+              :title="idiomStore.isFavorite(idiom.word) ? '取消收藏' : '收藏'"
+            >
+              <Heart :size="18" :fill="idiomStore.isFavorite(idiom.word) ? 'currentColor' : 'none'" />
+            </button>
+            <button
+              @click="emit('regenerate')"
+              :disabled="loading"
+              class="p-2 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-all duration-200 disabled:opacity-50"
+              title="重新生成"
+            >
+              <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
+            </button>
+          </div>
+        </div>
 
         <!-- Word -->
         <h1 class="font-kai text-5xl md:text-6xl font-bold text-ink tracking-widest leading-tight">
           <span :data-morph-word="idiom.word">{{ idiom.word }}</span>
         </h1>
 
-        <div v-if="typeof idiom.tokenUsage === 'number'" class="flex items-center justify-center gap-1 mt-3">
+        <div v-if="typeof idiom.tokenUsage === 'number'" class="token-usage flex items-center justify-center gap-1 mt-1.5">
           <Coins :size="12" class="text-gold" />
           <span class="text-xs text-gold">
             消耗 {{ idiom.tokenUsage }} tokens

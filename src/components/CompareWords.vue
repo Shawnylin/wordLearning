@@ -4,16 +4,15 @@ withDefaults(defineProps<{ words: string[]; variant?: 'list' | 'card' }>(), { va
 
 <template>
   <div class="compare-words" :class="`compare-words--${variant}`" aria-label="对比词语">
-    <div v-for="(word, index) in words" :key="index" class="compare-word-group">
+    <template v-for="(word, index) in words" :key="index">
       <span v-if="index" data-row-aux class="compare-word-divider" aria-hidden="true">vs</span>
       <span class="compare-word font-kai" :data-morph-word="word" :data-morph-index="index">{{ word }}</span>
-    </div>
+    </template>
   </div>
 </template>
 
 <style>
 .compare-words { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px; min-width: 0; max-width: 100%; }
-.compare-word-group { display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .compare-word { display: block; min-width: 0; max-width: 100%; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
 .compare-word-divider { flex: none; font-size: 12px; line-height: 1.5; color: var(--ink-mute); font-weight: 400; }
 .compare-words--list { font-size: 16px; font-weight: 600; row-gap: 4px; }

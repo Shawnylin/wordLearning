@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CompareWords from './CompareWords.vue'
-import { RefreshCw, GitCompare, Coins, BookOpen, Lightbulb, Map, AlertTriangle } from 'lucide-vue-next'
+import { RefreshCw, Coins, BookOpen, Lightbulb, Map, AlertTriangle } from 'lucide-vue-next'
 import type { CompareRecord } from '../types/idiom'
 
 defineProps<{
@@ -25,27 +25,21 @@ const sections = [
   <div class="animate-card-enter">
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="study-heading relative px-6 pt-8 pb-6 glass-card-header">
-        <!-- Regenerate button -->
-        <button
-          @click="emit('regenerate')"
-          :disabled="loading"
-          class="absolute top-4 right-4 p-2 rounded-full text-ink-mute hover:text-dai hover:bg-dai-soft transition-all duration-200 disabled:opacity-50"
-          title="重新生成"
-        >
-          <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
-        </button>
-
-        <!-- Title -->
-        <div class="flex items-center justify-center gap-2 mb-3">
-          <GitCompare :size="18" class="text-dai" />
-          <span class="text-sm font-medium text-dai tracking-wide">词语对比</span>
+      <div class="study-heading px-6 pt-8 pb-6 glass-card-header">
+        <div class="study-heading-row">
+          <CompareWords :words="compare.words" />
+          <div class="study-heading-actions">
+            <button
+              @click="emit('regenerate')"
+              :disabled="loading"
+              class="p-2 rounded-full text-ink-mute hover:text-dai hover:bg-dai-soft transition-all duration-200 disabled:opacity-50"
+              title="重新生成"
+            >
+              <RefreshCw :size="18" :class="{ 'animate-spin': loading }" />
+            </button>
+          </div>
         </div>
-
-        <CompareWords :words="compare.words" />
-
-        <!-- Token usage -->
-        <div v-if="compare.tokenUsage > 0" class="flex items-center justify-center gap-1 mt-3">
+        <div v-if="compare.tokenUsage > 0" class="token-usage flex items-center justify-center gap-1 mt-1.5">
           <Coins :size="12" class="text-gold" />
           <span class="text-xs text-gold">
             消耗 {{ compare.tokenUsage }} tokens
