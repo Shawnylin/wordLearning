@@ -14,10 +14,14 @@ await page.addInitScript(value => localStorage.setItem('daily-store', JSON.strin
 await page.goto(process.env.DAILY_TEST_URL || 'http://127.0.0.1:5173/wordLearning/#/report')
 await page.getByRole('heading',{name:/关于推动高质量发展/}).waitFor()
 const app = page.locator('#app')
+const indicatorBefore = await page.locator('#bottom-nav-indicator').boundingBox()
 await app.evaluate(el => el.scrollTo({top:600}))
-await page.waitForTimeout(650)
+const indicatorWidths = []
+for (let i=0;i<7;i++) { await page.waitForTimeout(80); indicatorWidths.push((await page.locator('#bottom-nav-indicator').boundingBox()).width) }
 const compact = await page.locator('.nav-frame').boundingBox()
 assert(compact.width <= 73)
+assert(Math.max(...indicatorWidths) <= indicatorBefore.width + 1)
+assert(indicatorWidths.at(-1) < indicatorBefore.width)
 assert.equal(await page.getByRole('button',{name:'返回日报顶部'}).count(),1)
 await page.getByRole('button',{name:'返回日报顶部'}).click()
 await page.waitForFunction(() => document.querySelector('#app').scrollTop < 5)

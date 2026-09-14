@@ -45,12 +45,11 @@ const count = navItems.length;
 // 因此按“100% - 12px”均分、偏移 6px，指示器才能与每个 flex-1 按钮严格同心。
 const indicatorStyle = computed(() => ({
   width: dailyCompact.value
-    ? "calc(100% - 8px)"
+    ? "48px"
     : `calc((100% - 12px) / ${count})`,
   left: dailyCompact.value
-    ? "4px"
+    ? "calc(50% - 24px)"
     : `calc((100% - 12px) * ${activeIndex.value} / ${count} + 6px)`,
-  transition: "left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
 }));
 
 function navigateTo(item: NavItem) {
@@ -108,7 +107,7 @@ onBeforeUnmount(() =>
 
         <!-- Nav items -->
         <button
-          v-for="item in navItems"
+          v-for="(item, index) in navItems"
           :key="item.name"
           @click="navigateTo(item)"
           :aria-label="dailyCompact && item.name === 'report' ? '返回日报顶部' : item.label"
@@ -117,6 +116,7 @@ onBeforeUnmount(() =>
           class="nav-item relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5"
           :class="[
             { 'report-item': item.name === 'report' },
+            { 'before-report': index < 2, 'after-report': index > 2 },
             activeIndex === navItems.findIndex((nav) => nav.name === item.name)
               ? 'text-paper-ink'
               : 'text-ink-mute',
@@ -159,6 +159,12 @@ onBeforeUnmount(() =>
 .nav-frame.compact .nav-shell {
   min-height: 52px;
 }
+#bottom-nav-indicator {
+  transition:
+    width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.42s ease;
+}
 .nav-item {
   min-width: 0;
   overflow: hidden;
@@ -166,7 +172,7 @@ onBeforeUnmount(() =>
     flex 0.48s cubic-bezier(0.22, 1, 0.36, 1),
     width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
     padding 0.38s ease,
-    opacity 0.24s ease,
+    opacity 0.42s ease,
     transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s ease;
 }
@@ -175,8 +181,14 @@ onBeforeUnmount(() =>
   width: 0;
   padding: 0;
   opacity: 0;
-  transform: scale(0.5);
+  transform: scale(0.72);
   pointer-events: none;
+}
+.nav-frame.compact .nav-item.before-report {
+  transform: translateX(24px) scale(0.72);
+}
+.nav-frame.compact .nav-item.after-report {
+  transform: translateX(-24px) scale(0.72);
 }
 .nav-label {
   max-height: 16px;
@@ -194,6 +206,7 @@ onBeforeUnmount(() =>
 @media (prefers-reduced-motion: reduce) {
   .nav-frame,
   .nav-shell,
+  #bottom-nav-indicator,
   .nav-item,
   .nav-label {
     transition-duration: 1ms;
