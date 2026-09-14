@@ -136,24 +136,44 @@ export function reconstruct(
     throw new Error("分篇结果不完整，请重试当前批次");
   const byId = new Map(batch.lines.map((line) => [line.id, line.text])),
     used = new Set<number>();
-  function take(ids: unknown, empty = false): string {
+  function availableIds(
+    ids: unknown,
+    claimed: Set<number>,
+    empty = false,
+  ): number[] {
     if (!Array.isArray(ids) || (!empty && !ids.length))
       throw new Error("分篇段落缺少原文编号");
-    return ids
-      .map((id) => {
-        if (!Number.isInteger(id) || !byId.has(id) || used.has(id))
-          throw new Error("分篇含重复或无效原文编号，未保存");
-        used.add(id);
-        return byId.get(id)!;
-      })
-      .join("");
+    const valid: number[] = [];
+    for (const id of ids) {
+      if (
+        !Number.isInteger(id) ||
+        !byId.has(id) ||
+        used.has(id) ||
+        claimed.has(id)
+      )
+        continue;
+      claimed.add(id);
+      valid.push(id);
+    }
+    return valid;
   }
-  const articles: DailyArticle[] = data.articles.map((a: any) => {
-    const title = readingText(take(a.titleIds, true));
+  const articles: DailyArticle[] = [];
+  for (const a of data.articles) {
+    const claimed = new Set<number>();
+    const titleIds = availableIds(a.titleIds, claimed, true);
     if (!Array.isArray(a.paragraphs) || !a.paragraphs.length)
       throw new Error("分篇缺少正文");
-    const content = a.paragraphs
-      .map((ids: unknown) => readingText(take(ids)))
+    const paragraphIds = a.paragraphs
+      .map((ids: unknown) => availableIds(ids, claimed))
+      .filter((ids: number[]) => ids.length);
+    // A bad model reference must not discard the whole paid batch. Lines that
+    // cannot be assigned safely remain in `remainder` for later inspection.
+    if (!paragraphIds.length || (a.titleIds.length && !titleIds.length)) continue;
+    const title = readingText(titleIds.map((id) => byId.get(id)!).join(""));
+    const content = paragraphIds
+      .map((ids: number[]) =>
+        readingText(ids.map((id) => byId.get(id)!).join("")),
+      )
       .join("\n\n");
     const continuationOf = a.continuationOf;
     if (!content.trim()) throw new Error("文章正文为空，未接受该批次");
@@ -184,7 +204,8 @@ export function reconstruct(
           ),
         ].slice(0, 6)
       : [];
-    return {
+    for (const id of claimed) used.add(id);
+    articles.push({
       title,
       shortTitle: title ? a.shortTitle.trim() : "",
       content,
@@ -196,8 +217,10 @@ export function reconstruct(
       origin: "pdf",
       page: batch.page,
       ...(!title ? { continuationOf } : {}),
-    };
-  });
+    });
+  }
+  if (!articles.length)
+    throw new Error("分篇未识别到有效文章正文，请重试当前批次");
   // Unassigned ids are deliberately retained too: the model cannot delete text.
   const remainder = batch.lines
     .filter((line) => !used.has(line.id))

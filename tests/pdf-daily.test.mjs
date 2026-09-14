@@ -122,24 +122,37 @@ test("MiMo connection test uses the official completion limit and keeps thinking
     /连接成功/,
   );
 });
-test("reconstruct preserves long body and continuation verbatim, retains unassigned lines", () => {
+test("reconstruct preserves source and safely normalizes repeated or invalid ids", () => {
   const value = reconstruct(batch(), result);
   assert.equal(value.articles[0].content, lines[1].text + lines[2].text);
   assert.deepEqual(value.articles[0].words, ["因地制宜"]);
   assert.equal(value.remainder, "图片说明");
-  assert.throws(
-    () =>
-      reconstruct(batch(), {
-        articles: [{ titleIds: [1], paragraphs: [[2, 2]] }],
-      }),
-    /重复/,
-  );
+  const normalized = reconstruct(batch(), {
+    articles: [
+      {
+        titleIds: [1, 1, 999],
+        shortTitle: "高质量发展实践",
+        paragraphs: [[2, 2, 999, 3], [3]],
+        words: [],
+      },
+      {
+        titleIds: [1],
+        shortTitle: "重复虚构文章",
+        paragraphs: [[2, 4]],
+        words: [],
+      },
+    ],
+  });
+  assert.equal(normalized.articles.length, 1);
+  assert.equal(normalized.articles[0].title, lines[0].text);
+  assert.equal(normalized.articles[0].content, lines[1].text + lines[2].text);
+  assert.equal(normalized.remainder, "图片说明");
   assert.throws(
     () =>
       reconstruct(batch(), {
         articles: [{ titleIds: [1], paragraphs: [[999]] }],
       }),
-    /无效/,
+    /未识别到有效文章正文/,
   );
 });
 test("untitled continuation is merged into its verified previous article without a placeholder title", () => {
