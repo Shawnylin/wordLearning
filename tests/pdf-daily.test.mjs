@@ -143,17 +143,17 @@ test("reconstruct preserves source and safely normalizes repeated or invalid ids
       },
     ],
   });
-  assert.equal(normalized.articles.length, 1);
+  assert.equal(normalized.articles.length, 2);
   assert.equal(normalized.articles[0].title, lines[0].text);
   assert.equal(normalized.articles[0].content, lines[1].text + lines[2].text);
-  assert.equal(normalized.remainder, "图片说明");
-  assert.throws(
-    () =>
-      reconstruct(batch(), {
-        articles: [{ titleIds: [1], paragraphs: [[999]] }],
-      }),
-    /未识别到有效文章正文/,
-  );
+  assert.equal(normalized.articles[1].content, "图片说明");
+  assert.equal(normalized.remainder, "");
+  const fallback = reconstruct(batch(), {
+    articles: [{ titleIds: [1], paragraphs: [[999]] }],
+  });
+  assert.equal(fallback.articles.length, 1);
+  assert.equal(fallback.articles[0].title, lines[0].text);
+  assert.match(fallback.articles[0].content, /图片说明/);
 });
 test("untitled continuation is merged into its verified previous article without a placeholder title", () => {
   const continuation = reconstruct(
@@ -182,19 +182,16 @@ test("untitled continuation is merged into its verified previous article without
   assert.equal(merged.length, 1);
   assert.match(merged[0].content, /续接正文/);
   assert.doesNotMatch(merged[0].title, /续段/);
-  assert.throws(
-    () =>
-      reconstruct(
-        {
-          page: 2,
-          part: 1,
-          lines: [{ id: 1, text: "无法归属", x: 0, y: 1, size: 10 }],
-        },
-        { articles: [{ titleIds: [], shortTitle: "", paragraphs: [[1]] }] },
-        1,
-      ),
-    /未能对应/,
+  const inferred = reconstruct(
+    {
+      page: 2,
+      part: 1,
+      lines: [{ id: 1, text: "无法归属", x: 0, y: 1, size: 10 }],
+    },
+    { articles: [{ titleIds: [], shortTitle: "", paragraphs: [[1]] }] },
+    1,
   );
+  assert.equal(inferred.articles[0].continuationOf, 0);
 });
 test("budgeted batches cover every line once and bound context and output", () => {
   const source = Array.from({ length: 1200 }, (_, i) => ({
@@ -215,7 +212,7 @@ test("budgeted batches cover every line once and bound context and output", () =
     assert.ok(batchBudget(b).output <= 8192);
   }
 });
-test("parser uses independent config and bills failures, retry skips completed batches", async () => {
+test("parser accepts usable length output and does not rebill completed batches", async () => {
   const d = draft();
   d.batches.push({ ...batch(), part: 2 });
   let calls = 0,
@@ -238,18 +235,15 @@ test("parser uses independent config and bills failures, retry skips completed b
       usage: { total_tokens: 123 },
     });
   };
-  await assert.rejects(
-    parsePdfDraft(
-      d,
-      config,
-      new AbortController().signal,
-      () => {},
-      (n) => (tokens += n),
-    ),
-    /未完整/,
+  await parsePdfDraft(
+    d,
+    config,
+    new AbortController().signal,
+    () => {},
+    (n) => (tokens += n),
   );
   assert.ok(d.batches[0].result);
-  assert.equal(d.batches[1].result, undefined);
+  assert.ok(d.batches[1].result);
   assert.equal(tokens, 246);
   await parsePdfDraft(
     d,
@@ -258,12 +252,29 @@ test("parser uses independent config and bills failures, retry skips completed b
     () => {},
     (n) => (tokens += n),
   );
-  assert.equal(calls, 3);
-  assert.equal(tokens, 369);
+  assert.equal(calls, 2);
+  assert.equal(tokens, 246);
   assert.equal(
     pdfIssues(d).reduce((sum, issue) => sum + issue.tokenUsage, 0),
-    369,
+    246,
   );
+});
+test("malformed model JSON falls back to complete local batch text", async () => {
+  globalThis.fetch = async () =>
+    Response.json({
+      choices: [{ message: { content: '{"articles":[' }, finish_reason: "length" }],
+      usage: { total_tokens: 25 },
+    });
+  const d = draft();
+  await parsePdfDraft(
+    d,
+    config,
+    new AbortController().signal,
+    () => {},
+    () => {},
+  );
+  assert.equal(d.batches[0].result.articles.length, 1);
+  assert.match(d.batches[0].result.articles[0].content, /图片说明/);
 });
 test("missing usage is explicitly estimated; cancelled and auth failures do not retry", async () => {
   let calls = 0;

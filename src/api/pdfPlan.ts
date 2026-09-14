@@ -128,24 +128,23 @@ export function reconstruct(
   previousCount = 0,
 ): PdfBatch["result"] {
   const data = value as any;
-  if (
-    !Array.isArray(data?.articles) ||
-    !data.articles.length ||
-    data.articles.length > 80
-  )
-    throw new Error("分篇结果不完整，请重试当前批次");
+  const candidates = Array.isArray(data?.articles)
+    ? data.articles.slice(0, 80)
+    : [];
   const byId = new Map(batch.lines.map((line) => [line.id, line.text])),
     used = new Set<number>();
+  function idList(value: unknown): unknown[] {
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((item) => (Array.isArray(item) ? idList(item) : [item]));
+  }
   function availableIds(
     ids: unknown,
     claimed: Set<number>,
-    empty = false,
   ): number[] {
-    if (!Array.isArray(ids) || (!empty && !ids.length))
-      throw new Error("分篇段落缺少原文编号");
     const valid: number[] = [];
-    for (const id of ids) {
+    for (const id of idList(ids)) {
       if (
+        typeof id !== "number" ||
         !Number.isInteger(id) ||
         !byId.has(id) ||
         used.has(id) ||
@@ -157,41 +156,44 @@ export function reconstruct(
     }
     return valid;
   }
+  function localShortTitle(title: string) {
+    const compact = title.replace(/\s+/g, "").replace(/[，。！？；：、]/g, "");
+    return compact.slice(0, 18) || `第${batch.page}页文章`;
+  }
   const articles: DailyArticle[] = [];
-  for (const a of data.articles) {
+  for (const a of candidates) {
+    if (!a || typeof a !== "object") continue;
     const claimed = new Set<number>();
-    const titleIds = availableIds(a.titleIds, claimed, true);
-    if (!Array.isArray(a.paragraphs) || !a.paragraphs.length)
-      throw new Error("分篇缺少正文");
-    const paragraphIds = a.paragraphs
+    const titleIds = availableIds(a.titleIds, claimed);
+    const rawParagraphs = Array.isArray(a.paragraphs)
+      ? a.paragraphs.some(Array.isArray)
+        ? a.paragraphs
+        : [a.paragraphs]
+      : [];
+    const paragraphIds = rawParagraphs
       .map((ids: unknown) => availableIds(ids, claimed))
       .filter((ids: number[]) => ids.length);
     // A bad model reference must not discard the whole paid batch. Lines that
     // cannot be assigned safely remain in `remainder` for later inspection.
-    if (!paragraphIds.length || (a.titleIds.length && !titleIds.length)) continue;
-    const title = readingText(titleIds.map((id) => byId.get(id)!).join(""));
+    if (!paragraphIds.length) continue;
+    let title = readingText(titleIds.map((id) => byId.get(id)!).join(""));
     const content = paragraphIds
       .map((ids: number[]) =>
         readingText(ids.map((id) => byId.get(id)!).join("")),
       )
       .join("\n\n");
-    const continuationOf = a.continuationOf;
-    if (!content.trim()) throw new Error("文章正文为空，未接受该批次");
+    let continuationOf = a.continuationOf;
     if (!title) {
       if (
         !Number.isInteger(continuationOf) ||
         continuationOf < 0 ||
         continuationOf >= previousCount
       )
-        throw new Error("无标题续文未能对应到此前文章，未接受该批次");
-      if (a.shortTitle) throw new Error("续文不应生成新标题，未接受该批次");
-    } else if (
-      typeof a.shortTitle !== "string" ||
-      a.shortTitle.trim().length < 4 ||
-      a.shortTitle.trim().length > 18 ||
-      /[\r\n]/.test(a.shortTitle)
-    )
-      throw new Error("历史短标题须为4至18个字符");
+        continuationOf = previousCount ? previousCount - 1 : undefined;
+      if (continuationOf === undefined)
+        title = readingText(byId.get(paragraphIds[0][0]) || "") ||
+          `第 ${batch.page} 页文章`;
+    }
     const words = Array.isArray(a.words)
       ? [
           ...new Set<string>(
@@ -207,7 +209,11 @@ export function reconstruct(
     for (const id of claimed) used.add(id);
     articles.push({
       title,
-      shortTitle: title ? a.shortTitle.trim() : "",
+      shortTitle: title
+        ? typeof a.shortTitle === "string" && a.shortTitle.trim()
+          ? a.shortTitle.trim().replace(/[\r\n]+/g, " ").slice(0, 18)
+          : localShortTitle(title)
+        : "",
       content,
       words,
       source: "导入 PDF",
@@ -216,11 +222,42 @@ export function reconstruct(
       analysis: "",
       origin: "pdf",
       page: batch.page,
-      ...(!title ? { continuationOf } : {}),
+      ...(!title && continuationOf !== undefined ? { continuationOf } : {}),
     });
   }
-  if (!articles.length)
-    throw new Error("分篇未识别到有效文章正文，请重试当前批次");
+  if (!articles.length && batch.lines.length) {
+    const texts = batch.lines.map((line) => readingText(line.text));
+    if (previousCount) {
+      articles.push({
+        title: "",
+        shortTitle: "",
+        content: texts.join("\n"),
+        words: [],
+        source: "导入 PDF",
+        url: "",
+        publishedAt: "",
+        analysis: "",
+        origin: "pdf",
+        page: batch.page,
+        continuationOf: previousCount - 1,
+      });
+    } else {
+      const title = texts[0] || `第 ${batch.page} 页文章`;
+      articles.push({
+        title,
+        shortTitle: localShortTitle(title),
+        content: texts.slice(1).join("\n") || title,
+        words: [],
+        source: "导入 PDF",
+        url: "",
+        publishedAt: "",
+        analysis: "",
+        origin: "pdf",
+        page: batch.page,
+      });
+    }
+    for (const line of batch.lines) used.add(line.id);
+  }
   // Unassigned ids are deliberately retained too: the model cannot delete text.
   const remainder = batch.lines
     .filter((line) => !used.has(line.id))
@@ -298,21 +335,25 @@ export async function parsePdfDraft(
       onUsage(tokens);
       if (!draft.models.includes(snapshot.model))
         draft.models.push(snapshot.model);
-      if (
-        data?.choices?.[0]?.finish_reason !== "stop" ||
-        typeof content !== "string"
-      )
-        throw new Error("模型输出未完整结束，未接受该批次；可更换模型后重试");
-      let parsed: unknown;
+      let parsed: unknown = {};
       try {
-        parsed = JSON.parse(
-          content
+        const cleaned = (typeof content === "string" ? content : "")
             .trim()
             .replace(/^```(?:json)?\s*/i, "")
-            .replace(/\s*```$/, ""),
-        );
+            .replace(/\s*```$/, "");
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {
+          const start = cleaned.indexOf("{");
+          const end = cleaned.lastIndexOf("}");
+          if (start >= 0 && end > start)
+            parsed = JSON.parse(cleaned.slice(start, end + 1));
+        }
       } catch {
-        throw new Error("模型未返回完整分篇 JSON，可重试当前批次");
+        // The local PDF text is authoritative. Malformed model output falls
+        // through to reconstruct's whole-batch fallback instead of wasting a
+        // paid request or blocking import.
+        parsed = {};
       }
       signal.throwIfAborted();
       batch.result = reconstruct(batch, parsed, previous.length);

@@ -18,6 +18,14 @@ test('update UI contains the required safe copy and actions', () => {
   assert.match(prompt, /更新不会清除你的学习记录和本地设置/)
   assert.match(prompt, /立即更新/)
   assert.match(prompt, /稍后/)
+  assert.match(prompt, /update-sheet-enter-from/)
+  assert.match(prompt, /env\(safe-area-inset-bottom\)/)
+  assert.match(prompt, /border-radius: 34px/)
+})
+
+test('update reload is bridged by leave and reveal transitions', () => {
+  assert.match(store, /app-update-transition/)
+  assert.match(store, /app-update-leaving/)
 })
 
 test('PWA keeps prompt mode and GitHub Pages base path', () => {

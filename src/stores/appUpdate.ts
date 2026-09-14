@@ -84,9 +84,23 @@ export const useAppUpdateStore = defineStore('app-update', () => {
     applying.value = true
     statusMessage.value = '正在更新…'
     try {
+      sessionStorage.setItem('app-update-transition', '1')
+      document.documentElement.classList.add('app-update-leaving')
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        await new Promise(resolve => setTimeout(resolve, 480))
+      }
       await updateServiceWorker?.(true)
+      setTimeout(() => {
+        // If a browser activates the worker without reloading, restore the UI
+        // instead of leaving the current page faded out indefinitely.
+        document.documentElement.classList.remove('app-update-leaving')
+        sessionStorage.removeItem('app-update-transition')
+        applying.value = false
+      }, 1600)
     } catch {
       applying.value = false
+      sessionStorage.removeItem('app-update-transition')
+      document.documentElement.classList.remove('app-update-leaving')
       statusMessage.value = '更新失败，请稍后重试'
     }
   }

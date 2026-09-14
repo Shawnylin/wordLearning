@@ -56,6 +56,7 @@ const characters = computed(
     ) || 0,
 );
 async function open() {
+  error.value = "";
   visible.value = true;
   await nextTick();
   panel.value?.focus();
