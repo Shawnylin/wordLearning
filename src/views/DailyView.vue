@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Clock,
   Star,
+  Check,
   Trash2,
   X,
 } from "lucide-vue-next";
@@ -534,27 +535,35 @@ onBeforeUnmount(() => {
                   @pointercancel="swipeEnd"
                 >
                   <span class="history-meta">
-                    <span class="min-w-0 truncate opacity-70"
+                    <span class="history-date min-w-0 truncate"
                       >{{ dateLabel(issue.createdAt) }} ·
                       {{ issue.pdf ? "PDF" : "日报" }}</span
                     ><span class="history-state">
                       <Star
-                      v-if="issue.articles[0]?.starred"
-                      :size="15"
-                      fill="currentColor"
-                      class="history-star"
-                      aria-label="已星标" />
+                        :size="15"
+                        :fill="
+                          issue.articles[0]?.starred ? 'currentColor' : 'none'
+                        "
+                        class="history-star"
+                        :class="{ active: issue.articles[0]?.starred }"
+                        :aria-label="
+                          issue.articles[0]?.starred ? '已星标' : '未星标'
+                        "
+                      />
                       <span
-                        class="whitespace-nowrap"
+                        class="history-progress whitespace-nowrap"
                         :class="
                           issue.articles[0]?.completedAt
                             ? 'text-bamboo'
                             : 'text-ink-mute'
                         "
-                        >{{
-                          issue.articles[0]?.completedAt
-                            ? "✓ 已学完"
-                            : "未学完"
+                        ><Check
+                          v-if="issue.articles[0]?.completedAt"
+                          :size="14"
+                          :stroke-width="2.4"
+                          aria-hidden="true"
+                        />{{
+                          issue.articles[0]?.completedAt ? "已学完" : "未学完"
                         }}</span
                       ></span
                     ></span
@@ -583,7 +592,7 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   flex: none;
-  color: #ffc72c;
+  color: var(--ink-mute);
   background: transparent;
 }
 .star-button.active {
@@ -716,13 +725,17 @@ onBeforeUnmount(() => {
 .history-title {
   display: -webkit-box;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 3px;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.6;
+  color: var(--ink);
+}
+.history-row-body[aria-current="true"] .history-title {
+  color: var(--zhuhong);
 }
 .history-meta {
   display: flex;
@@ -741,7 +754,18 @@ onBeforeUnmount(() => {
 }
 .history-star {
   flex: none;
+  color: var(--ink-mute);
+}
+.history-star.active {
   color: #ffc72c;
+}
+.history-date {
+  color: var(--ink-mute);
+}
+.history-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 @keyframes daily-pulse {
   70%,
