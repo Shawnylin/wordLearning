@@ -492,7 +492,7 @@ onBeforeUnmount(() => {
           :style="historyPlacement"
         @keydown="historyKeydown"
         >
-          <div class="p-5">
+          <div class="p-4">
             <header class="flex justify-between items-center mb-4">
               <h2 class="font-kai text-xl">历史日报</h2>
               <button
@@ -533,28 +533,32 @@ onBeforeUnmount(() => {
                   @pointerup="swipeEnd"
                   @pointercancel="swipeEnd"
                 >
-                  <span
-                    class="flex items-center justify-between gap-2 text-xs opacity-70"
-                    ><span
+                  <span class="history-meta">
+                    <span class="min-w-0 truncate opacity-70"
                       >{{ dateLabel(issue.createdAt) }} ·
                       {{ issue.pdf ? "PDF" : "日报" }}</span
-                    ><Star
+                    ><span class="history-state">
+                      <Star
                       v-if="issue.articles[0]?.starred"
                       :size="15"
                       fill="currentColor"
-                      class="text-gold shrink-0"
-                      aria-label="已星标" /></span
-                  ><span
-                    class="block text-xs mt-2"
-                    :class="
-                      issue.articles[0]?.completedAt
-                        ? 'text-bamboo'
-                        : 'text-ink-mute'
-                    "
-                    >{{
-                      issue.articles[0]?.completedAt ? "✓ 已学完" : "未学完"
-                    }}</span
-                  ><span class="block text-sm mt-2 leading-6 history-title">{{
+                      class="history-star"
+                      aria-label="已星标" />
+                      <span
+                        class="whitespace-nowrap"
+                        :class="
+                          issue.articles[0]?.completedAt
+                            ? 'text-bamboo'
+                            : 'text-ink-mute'
+                        "
+                        >{{
+                          issue.articles[0]?.completedAt
+                            ? "✓ 已学完"
+                            : "未学完"
+                        }}</span
+                      ></span
+                    ></span
+                  ><span class="history-title">{{
                     historyTitle(issue)
                   }}</span>
                 </button>
@@ -579,13 +583,11 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   flex: none;
-  border-radius: 999px;
-  color: var(--ink-mute);
-  background: var(--soft);
+  color: #ffc72c;
+  background: transparent;
 }
 .star-button.active {
-  color: var(--gold);
-  background: var(--gold-soft);
+  color: #ffc72c;
 }
 .daily-prose {
   -webkit-user-select: text;
@@ -696,7 +698,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   text-align: left;
   border-radius: 16px;
   background: var(--soft);
@@ -713,9 +715,33 @@ onBeforeUnmount(() => {
 }
 .history-title {
   display: -webkit-box;
+  width: 100%;
+  margin-top: 8px;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.history-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+.history-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.history-star {
+  flex: none;
+  color: #ffc72c;
 }
 @keyframes daily-pulse {
   70%,
