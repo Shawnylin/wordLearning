@@ -37,7 +37,7 @@ const router = createRouter({
       name: 'models',
       component: () => import('../views/ModelSettingsView.vue')
     },
-    { path: '/profile/settings', name: 'profile-settings', component: () => import('../views/ProfileSettingsView.vue') },
+    { path: '/profile/settings', redirect: '/profile' },
     {
       path: '/profile',
       name: 'profile',

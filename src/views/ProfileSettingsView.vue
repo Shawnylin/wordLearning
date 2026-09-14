@@ -19,6 +19,10 @@ const router = useRouter()
 const settings = useSettingsStore()
 const appUpdate = useAppUpdateStore()
 
+withDefaults(defineProps<{ embedded?: boolean }>(), {
+  embedded: false
+})
+
 const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
 const reviewStore = useReviewStore()
@@ -118,9 +122,9 @@ function handleImport() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-8 pb-4">
+  <div :class="embedded ? 'pb-4' : 'min-h-screen px-4 pt-8 pb-4'">
     <div class="mx-auto max-w-lg space-y-4">
-<header class="flex items-center gap-3"><button @click="router.push('/profile')" class="p-3 rounded-full bg-soft" aria-label="返回个人">←</button><h1 class="font-kai text-3xl">设置</h1></header>
+<header v-if="!embedded" class="flex items-center gap-3"><button @click="router.push('/profile')" class="p-3 rounded-full bg-soft" aria-label="返回个人">←</button><h1 class="font-kai text-3xl">设置</h1></header>
         <!-- Token Stats -->
         <div class="card p-5 rounded-2xl">
           <div class="flex items-center gap-2 mb-3">
