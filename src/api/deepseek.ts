@@ -240,7 +240,7 @@ async function callApi(
       model: snapshot.model.trim(), messages,
       ...(snapshot.thinkingEnabled === undefined ? {} : { thinking: { type: snapshot.thinkingEnabled ? 'enabled' : 'disabled' } }),
       ...(snapshot.thinkingEnabled && snapshot.reasoningEffort ? { reasoning_effort: snapshot.reasoningEffort } : {}),
-      ...(budget === undefined ? {} : { max_tokens: budget })
+      ...(budget === undefined ? {} : new URL(apiEndpoint(snapshot.baseUrl, 'chat/completions')).hostname === 'api.xiaomimimo.com' ? { max_completion_tokens: budget } : { max_tokens: budget })
     }
     try {
       if (onProgress) {

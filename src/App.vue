@@ -30,7 +30,7 @@ onBeforeUnmount(() => {
     <main class="pb-safe">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
-          <KeepAlive include="LearnView,CompareView">
+          <KeepAlive include="LearnView,CompareView,DailyView">
             <component :is="Component" />
           </KeepAlive>
         </transition>

@@ -9,7 +9,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useReviewStore } from '../stores/review'
 import { useDailyStore } from '../stores/daily'
 import { useAppUpdateStore } from '../stores/appUpdate'
-import { validateArticles } from '../api/daily'
+import { validateDailyIssue } from '../api/dailyBackup'
 import {
   Sun, Moon, Trash2,
   Download, Upload, Monitor, Coins, RefreshCw, Key, ChevronRight, Smartphone
@@ -103,10 +103,7 @@ function handleImport() {
       const content = ev.target?.result as string
       try {
         const data = JSON.parse(content)
-        const issues = (data.dailyIssues || []).map((issue: any) => {
-          if (typeof issue.id !== 'string' || !Number.isFinite(issue.createdAt)) throw new Error('日报备份格式错误')
-          return { id: issue.id, createdAt: issue.createdAt, articles: validateArticles(issue.articles), tokenUsage: Number.isFinite(issue.tokenUsage) ? Math.max(0, issue.tokenUsage) : 0 }
-        })
+        const issues = (data.dailyIssues || []).map(validateDailyIssue)
         importResult.value = idiomStore.importData(content)
         if (importResult.value.success) {
           daily.issues = [...daily.issues, ...issues.filter((issue: any) => !daily.issues.some(i => i.id === issue.id))].sort((a, b) => b.createdAt - a.createdAt)

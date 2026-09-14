@@ -3,7 +3,7 @@ import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { Sparkles, Link, X, ArrowRight } from 'lucide-vue-next'
 import { articleLink } from '../api/daily'
 const props = defineProps<{ loading: boolean }>()
-const emit = defineEmits<{ generate: [link?: string]; cancel: [] }>()
+const emit = defineEmits<{ generate: [link?: string]; cancel: []; pdf: [] }>()
 const trigger = ref<HTMLButtonElement>(), panel = ref<HTMLElement>()
 const opened = ref(false), morphing = ref(false), link = ref(''), error = ref('')
 const placement = ref({ left: '0px', top: '0px', width: '340px' })
@@ -63,7 +63,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', position))
       <section v-if="opened" ref="panel" role="dialog" aria-modal="true" aria-label="生成日报方式" tabindex="-1" class="daily-generate-menu" :style="placement" @keydown="keydown">
         <div class="p-4">
           <header class="flex items-center justify-between mb-3"><span class="flex items-center gap-2 text-sm font-medium"><Sparkles :size="16" class="text-zhuhong" />生成日报</span><button @click="close" class="p-2 rounded-full bg-soft text-ink-mute" aria-label="关闭生成面板"><X :size="16" /></button></header>
-          <button @click="start()" class="w-full flex items-center justify-between gap-3 rounded-2xl bg-soft p-3.5 text-left hover:bg-zhuhong-soft transition-colors"><span><span class="block text-sm font-medium">直接生成</span><span class="block mt-1 text-xs text-ink-mute">联网精选一篇文章，生成精读卡片</span></span><ArrowRight :size="17" class="text-zhuhong shrink-0" /></button>
+          <button @click="start()" class="w-full flex items-center justify-between gap-3 rounded-2xl bg-soft p-3.5 text-left hover:bg-zhuhong-soft transition-colors"><span><span class="block text-sm font-medium">直接生成</span><span class="block mt-1 text-xs text-ink-mute">联网精选一篇文章，提取精读文段</span></span><ArrowRight :size="17" class="text-zhuhong shrink-0" /></button>
+          <button @click="close(); emit('pdf')" class="mt-3 w-full flex items-center justify-between gap-3 rounded-2xl bg-soft p-3.5 text-left"><span><span class="block text-sm font-medium">PDF 日报导入</span><span class="block mt-1 text-xs text-ink-mute">完整保留版面文章 · 独立解析模型</span></span><ArrowRight :size="17" class="text-zhuhong shrink-0" /></button>
           <form @submit.prevent="start(true)" class="mt-4 pt-4 border-t border-line">
             <label for="daily-article-link" class="flex items-center gap-2 text-sm font-medium"><Link :size="15" class="text-zhuhong" />链接解析</label>
             <p class="mt-1.5 text-xs leading-5 text-ink-mute">读取指定文章并解析，省去联网搜索</p>

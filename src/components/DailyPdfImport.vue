@@ -1,0 +1,79 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { batchBudget, parsePdfDraft, pdfIssue, type PdfDraft } from '../api/pdfPlan'
+import { useDailyStore } from '../stores/daily'
+import { useSettingsStore } from '../stores/settings'
+import { useIdiomStore } from '../stores/idiom'
+const daily = useDailyStore(), settings = useSettingsStore(), idioms = useIdiomStore(), router = useRouter()
+const dialog = ref<HTMLDialogElement>(), input = ref<HTMLInputElement>()
+const draft = ref<PdfDraft>(), busy = ref(false), status = ref(''), error = ref('')
+let controller: AbortController | undefined
+const ready = computed(() => !!draft.value?.batches.length && draft.value.batches.every(b => b.result))
+const articles = computed(() => draft.value?.batches.flatMap(b => b.result?.articles || []) || [])
+const remainder = computed(() => draft.value?.batches.filter(b => b.result?.remainder).map(b => `第 ${b.page} 页 · 批次 ${b.part}\n${b.result!.remainder}`).join('\n\n') || '')
+const budget = computed(() => (draft.value?.batches.filter(b => !b.result) || []).reduce((sum, b) => { const v = batchBudget(b); return { input: sum.input + v.input, output: sum.output + v.output } }, { input: 0, output: 0 }))
+const characters = computed(() => draft.value?.batches.reduce((sum, b) => sum + b.lines.reduce((n, l) => n + l.text.length, 0), 0) || 0)
+function open() { dialog.value?.showModal() }
+function close() { if (busy.value) { controller?.abort(); return }; dialog.value?.close() }
+async function pick(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || busy.value) return
+  draft.value = undefined; error.value = ''; busy.value = true; controller = new AbortController()
+  try {
+    status.value = '正在加载本机 PDF 提取器'
+    const { extractPdf } = await import('../api/pdfExtract')
+    const result = await extractPdf(file, controller.signal, text => { status.value = text })
+    if (daily.issues.some(i => i.pdf?.fingerprint === result.fingerprint)) throw new Error('这份 PDF 已导入，请在历史日报中继续学习')
+    draft.value = result; status.value = '原文已提取，尚未调用模型'
+  } catch (e) { error.value = (e as Error).message }
+  finally { busy.value = false; controller = undefined; if (input.value) input.value.value = '' }
+}
+async function parse() {
+  if (!draft.value || busy.value) return
+  busy.value = true; error.value = ''; controller = new AbortController()
+  try {
+    await parsePdfDraft(draft.value, settings.pdfApiConfig, controller.signal, text => { status.value = text }, tokens => idioms.addTokenUsage(tokens))
+    status.value = `分篇完成，共 ${articles.value.length} 篇；请核对后保存`
+  } catch (e) { error.value = (e as Error).message }
+  finally { busy.value = false; controller = undefined }
+}
+function save() {
+  try { daily.saveIssue(pdfIssue(draft.value!)); draft.value = undefined; status.value = ''; dialog.value?.close() }
+  catch (e) { error.value = `保存失败：${(e as Error).message}。预览仍保留，可导出原文或释放本机空间后重试。` }
+}
+function downloadText() {
+  if (!draft.value) return
+  const text = ready.value ? [...articles.value.map(a => `${a.title}\n\n${a.content}`), pdfIssue(draft.value).pdf!.remainder].join('\n\n') : draft.value.batches.map(b => `第 ${b.page} 页\n${b.lines.map(l => l.text).join('\n')}`).join('\n\n')
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
+  const a = document.createElement('a'); a.href = url; a.download = draft.value.filename.replace(/\.pdf$/i, '.txt'); a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+function models() { dialog.value?.close(); void router.push('/profile/models') }
+onBeforeUnmount(() => controller?.abort())
+defineExpose({ open })
+</script>
+<template>
+  <Teleport to="body"><dialog ref="dialog" class="pdf-import" aria-label="PDF 日报导入" @cancel.prevent="close">
+    <header class="flex items-center justify-between gap-3"><h2 class="font-kai text-xl">导入 PDF 日报</h2><button @click="close" class="bg-soft rounded-full px-3 py-2 text-sm">{{ busy ? '取消任务' : '关闭' }}</button></header>
+    <p class="text-sm text-ink-soft leading-7 mt-4">从<a href="https://paper.people.com.cn/rmrb/" target="_blank" rel="noopener noreferrer" class="text-zhuhong underline">人民日报电子版</a>下载所需版面 PDF。支持文字版，最多 32 页 / 50 MB。仅呈现上传版面的全文；“下转”等续篇需另行导入对应版面。</p>
+    <label class="block mt-4 text-sm">选择 PDF 文件<input ref="input" type="file" accept=".pdf,application/pdf" :disabled="busy" @change="pick" class="block mt-2 w-full text-sm" /></label>
+    <p class="text-xs text-ink-mute leading-6 mt-4">解析模型：{{ settings.pdfApiConfig.model || '尚未配置' }} <button @click="models" :disabled="busy" class="text-zhuhong underline">设置解析模型</button></p>
+    <p v-if="status" role="status" aria-live="polite" class="mt-3 text-sm text-ink-soft">{{ status }}</p>
+    <p v-if="error" role="alert" class="mt-3 text-sm text-zhuhong leading-6">{{ error }}</p>
+    <section v-if="draft" class="mt-4 space-y-4">
+      <p class="text-sm break-all">{{ draft.filename }} · {{ draft.pages }} 页 · {{ characters.toLocaleString() }} 字符 · {{ draft.batches.length }} 批</p>
+      <p class="text-xs text-ink-mute leading-6">剩余预计输入约 {{ budget.input.toLocaleString() }} tokens，输出预算上限 {{ budget.output.toLocaleString() }} tokens。实际用量依模型而异。正文在本机提取，仅发送带编号文字供分篇；模型返回编号，程序还原全文。逐批处理，不自动付费重试。</p>
+      <p v-if="draft.tokenUsage" class="text-xs text-ink-mute">本次累计{{ draft.usageEstimated ? '含估算' : '接口报告' }} {{ draft.tokenUsage.toLocaleString() }} tokens（含失败尝试）。完成批次保留在当前页面，重试只处理未完成批次。</p>
+      <div class="flex flex-wrap gap-2"><button v-if="!ready" @click="parse" :disabled="busy" class="btn-primary rounded-full px-5 py-2 text-sm disabled:opacity-50">{{ busy ? '处理中…' : articles.length ? '继续解析未完成批次' : '开始分篇解析' }}</button><button v-if="ready" @click="save" :disabled="busy" class="btn-primary rounded-full px-5 py-2 text-sm">保存 {{ articles.length }} 篇到日报</button><button @click="downloadText" :disabled="busy" class="bg-soft rounded-full px-4 py-2 text-sm">导出全文 TXT</button></div>
+      <details class="border-t border-line pt-3"><summary class="text-sm cursor-pointer">核对提取原文（含图片说明与报头）</summary><pre class="raw-text">{{ draft.batches.map(b => `第 ${b.page} 页\n` + b.lines.map(l => l.text).join('\n')).join('\n\n') }}</pre></details>
+      <div v-if="articles.length" class="border-t border-line pt-4"><h3 class="text-sm mb-3">全文预览 · 模型分篇请核对</h3><details v-for="(article, index) in articles" :key="index" class="py-3 border-b border-line"><summary class="cursor-pointer text-sm leading-6">{{ index + 1 }}. {{ article.title }} · 第 {{ article.page }} 页</summary><p class="raw-text">{{ article.content }}</p><p v-if="/下转|上接|续完|全文见/.test(article.content)" class="text-xs text-zhuhong">含跨版提示，本篇仅包含上传版面上的内容。</p></details></div>
+      <details v-if="ready" class="pt-2"><summary class="cursor-pointer text-sm">未归入文章的文字（会一并保存）</summary><pre class="raw-text">{{ remainder || '无' }}</pre></details>
+    </section>
+  </dialog></Teleport>
+</template>
+<style scoped>
+.pdf-import { margin:auto; width:min(760px,calc(100vw - 24px)); max-height:85dvh; padding:24px; overflow:auto; border:1px solid var(--line); border-radius:24px; background:var(--card); color:var(--ink); }
+.pdf-import::backdrop { background:#0005; backdrop-filter:blur(8px); }
+.raw-text { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:14px; line-height:2; margin-top:16px; }
+button:focus-visible,summary:focus-visible { outline:2px solid var(--zhuhong); outline-offset:3px; }
+</style>

@@ -10,6 +10,20 @@ export const useDailyStore = defineStore('daily', () => {
   const loading = ref(false), error = ref(''), selectedId = ref('')
   const progressPhase = ref<DailyProgressPhase>('searching'), streamedText = ref('')
   let controller: AbortController | undefined
+  function saveIssue(issue: DailyIssue) {
+    if (issue.pdf && issues.value.some(i => i.pdf?.fingerprint === issue.pdf!.fingerprint)) throw new Error('这份 PDF 已导入，请在历史日报中继续学习')
+    const next = [issue, ...issues.value]
+    localStorage.setItem('daily-store', JSON.stringify({ issues: next, selectedId: issue.id }))
+    issues.value = next; selectedId.value = issue.id
+  }
+  function toggleCompleted(issueId: string, index: number) {
+    error.value = ''
+    const next = issues.value.map(issue => issue.id !== issueId ? issue : { ...issue, articles: issue.articles.map((a, i) => i !== index ? a : { ...a, completedAt: a.completedAt ? undefined : Date.now() }) })
+    try {
+      localStorage.setItem('daily-store', JSON.stringify({ issues: next, selectedId: selectedId.value }))
+      issues.value = next
+    } catch { error.value = '学习进度保存失败，本机空间可能不足，请先导出备份' }
+  }
   async function generate(config: ApiConfig, link?: string) {
     if (loading.value) return
     loading.value = true; error.value = ''; progressPhase.value = link ? 'reading' : 'searching'; streamedText.value = ''; controller = new AbortController()
@@ -23,9 +37,7 @@ export const useDailyStore = defineStore('daily', () => {
       )
       if (controller.signal.aborted) throw new Error('已取消生成')
       // Write before showing success: storage quota errors must never masquerade as a saved issue.
-      const next = [issue, ...issues.value]
-      localStorage.setItem('daily-store', JSON.stringify({ issues: next, selectedId: issue.id }))
-      issues.value = next; selectedId.value = issue.id
+      saveIssue(issue)
     } catch (e) { error.value = e instanceof Error ? e.message : '日报生成失败' }
     finally {
       if (consumedTokens > 0) {
@@ -36,5 +48,5 @@ export const useDailyStore = defineStore('daily', () => {
     }
   }
   function cancel() { controller?.abort() }
-  return { issues, loading, error, selectedId, progressPhase, streamedText, generate, cancel }
+  return { issues, loading, error, selectedId, progressPhase, streamedText, generate, cancel, saveIssue, toggleCompleted }
 }, { persist: { key: 'daily-store', paths: ['issues', 'selectedId'] } })

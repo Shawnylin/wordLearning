@@ -1,7 +1,7 @@
 import { apiEndpoint, type ApiConfig } from './deepseek'
 
-export interface DailyArticle { title: string; source: string; url: string; publishedAt: string; content: string; words: string[]; analysis: string; origin?: 'link' }
-export interface DailyIssue { id: string; createdAt: number; articles: DailyArticle[]; tokenUsage: number }
+export interface DailyArticle { title: string; source: string; url: string; publishedAt: string; content: string; words: string[]; analysis: string; origin?: 'link' | 'pdf'; page?: number; completedAt?: number }
+export interface DailyIssue { id: string; createdAt: number; articles: DailyArticle[]; tokenUsage: number; pdf?: { fingerprint: string; filename: string; pages: number; remainder: string; model: string; usageEstimated: boolean; rawText?: string } }
 export type DailyProgressPhase = 'searching' | 'reading' | 'generating' | 'validating'
 export interface DailyProgress { phase: DailyProgressPhase; text?: string }
 export const sourceDomains = ['people.com.cn', 'gmw.cn', 'banyuetan.org']

@@ -10,6 +10,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const reasoningEffort = ref<ReasoningEffort>('high')
   const profiles = ref<(ApiConfig & { id: string; name: string; models: string[] })[]>([])
   const activeProfileId = ref('')
+  const pdfConfig = ref<ApiConfig>({ apiKey: '', baseUrl: 'https://api.xiaomimimo.com/v1', model: '', thinkingEnabled: false })
+  const pdfUseLearningModel = ref(false)
+  const pdfApiConfig = computed(() => pdfUseLearningModel.value ? { ...apiConfig.value, thinkingEnabled: false } : { ...pdfConfig.value, thinkingEnabled: false })
   const apiConfig = computed<ApiConfig>(() => ({ apiKey: apiKey.value, baseUrl: baseUrl.value, model: model.value, thinkingEnabled: thinkingEnabled.value, reasoningEffort: reasoningEffort.value }))
   function saveProfile(profile: ApiConfig & { id: string; name: string; models: string[] }) {
     const index = profiles.value.findIndex(p => p.id === profile.id)
@@ -53,7 +56,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile,
+    apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile, pdfConfig, pdfUseLearningModel, pdfApiConfig,
     reviewTarget,
     setApiKey,
     clearApiKey,
@@ -63,6 +66,6 @@ export const useSettingsStore = defineStore('settings', () => {
 }, {
   persist: {
     key: 'settings-store',
-    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId']
+    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId', 'pdfConfig', 'pdfUseLearningModel']
   }
 })

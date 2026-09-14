@@ -129,3 +129,17 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 - GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 只允许 `https://shawnylin.github.io` 调用，不接收或保存模型 API Key。
 
 读取服务接受公开文章域名，每次重定向都会重新校验；本机、内网、测试域名、IP 地址以及带账号密码或非标准端口的链接会被拒绝。它不转发 API Key 或浏览器 Cookie，并限制读取大小和短时缓存。网页读取失败不会调用模型。
+
+### PDF 日报导入与学习进度
+
+在“每日精读 → 生成日报 → PDF 日报导入”中选择人民日报电子版下载的文字版 PDF，核对本机提取结果与 token 预算，再开始分篇。预览确认后保存，可从目录跳转、选词查询，读完每篇后标记“已学完”，也能撤销。历史记录显示未开始、学习中、已学完与完成篇数；导出备份包含全文和进度。现有 AI 生成与链接解析继续提供精读节选，阅读页统一采用文章排版。
+
+- PDF.js 在浏览器本机提取文字，PDF 二进制不会发送至模型。原文、编号与版面坐标发往用户配置的解析 API；文档中的指令仅作数据处理。
+- 模型仅返回标题/段落行号与少量查词词语，程序用源文重建全文，去除中文排版空格。原始提取文字单独保留；未分配的行作为其他版面文字保存。无效/重复编号、截断输出均不接受。
+- “个人 → 模型与 API → PDF 解析模型”可单独配置 URL、Key、模型，获取模型列表及测试连接。查词继续使用学习模型；也可显式勾选让 PDF 复用学习模型。MiMo 官方接口按其[Chat Completions 文档](https://mimo.mi.com/docs/zh-CN/api/chat/openai-api)使用 `max_completion_tokens`，分篇关闭思考模式，不硬编码当前模型或价格。
+- 每批保守输入估算上限约 22,000 tokens，输出预算 2,048–8,192 tokens。优先保留整页；超限按原文行分批。按页串行，单批超时 180 秒，不自动付费重试。未提供 token 用量的响应标注为估算。取消/失败保留当前页面内已完成批次，重试跳过这些批次；去设置页再返回仍保留草稿。刷新或关闭应用前应保存日报或导出 TXT。
+- 相同 PDF 的 SHA-256 指纹防止重复导入。保存成功前先确认本机存储写入成功，存储不足时保留预览并提供 TXT 导出。
+- 限制：单次 50 MB / 32 页 / 25 万字符。暂不支持扫描件 OCR；没有文字层的页会明确报错。仅还原上传版面的文字，不包含照片图像，不把“下转第二版”补写成完整续篇，不自动合并跨页续文。多栏分篇需要用户对照 PDF 核对。
+- PDF worker 随站点构建、纳入 PWA 缓存，不依赖第三方 worker CDN；仍保留用户确认更新的 PWA 流程。
+
+验证：`npm test` 包含 PDF 原文还原、分批预算、计费与失败重试、模型路由、进度/备份和存储失败保护。参考 PDF 的 222 行、6,775 个提取字符（含排版空格）可一次分篇，保守输入估算约 17,066 tokens、输出预算上限 4,064 tokens。参考样本的人工编号验收覆盖 3 篇正文与其他版面文字；这不等同于真实服务商模型分篇质量验收。
