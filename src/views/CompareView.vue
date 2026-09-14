@@ -73,7 +73,7 @@ function goToSettings() {
 <template>
   <div class="study-page min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
-    <div class="mx-auto max-w-lg mb-6">
+    <div class="mx-auto max-w-lg mb-4">
       <TransitionGroup name="list" tag="div" class="grid grid-cols-2 gap-3 relative">
         <div
           v-for="(_word, index) in words"

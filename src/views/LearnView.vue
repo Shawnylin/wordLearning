@@ -43,7 +43,7 @@ function goToSettings() {
 <template>
   <div class="study-page min-h-screen px-4 pt-3 pb-4">
     <!-- Search Input -->
-    <div class="mb-6">
+    <div class="mb-4">
       <SearchInput
         :loading="idiomStore.idiomLoading"
         @search="handleSearch"
