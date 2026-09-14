@@ -515,6 +515,7 @@ onBeforeUnmount(() => {
                 v-for="issue in daily.issues"
                 :key="issue.id"
                 class="history-row"
+                :class="{ 'is-revealed': swipedId === issue.id || (dragId === issue.id && dragOffset < 0) }"
               >
               <button
                 @click="removeIssue(issue.id)"
@@ -689,9 +690,12 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  background: var(--zhuhong);
+  isolation: isolate;
 }
 .history-delete {
+  background: var(--zhuhong);
+  border-radius: 0 16px 16px 0;
+  visibility: hidden;
   position: absolute;
   inset: 0 0 0 auto;
   width: 76px;
@@ -703,6 +707,7 @@ onBeforeUnmount(() => {
   color: var(--color-paper-ink);
   font-size: 11px;
 }
+.history-row.is-revealed .history-delete { visibility: visible; }
 .history-row-body {
   position: relative;
   z-index: 1;

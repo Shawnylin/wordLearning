@@ -338,3 +338,33 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Page reading layout; record overlays retain their card presentation. */
+.study-page { width: 100%; max-width: 1120px; margin-inline: auto; }
+.study-page .generation-stage { max-width: none; }
+.study-page > .max-w-lg, .study-page > div > .max-w-lg { max-width: 760px; }
+.study-page .generation-stage.is-active .generation-surface,
+.study-page .generation-result .card {
+ background: transparent; border: 0; border-radius: 0; box-shadow: none;
+ backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible;
+}
+.study-page .study-heading { background: none; padding: 24px 0; text-align: left; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.study-page .study-heading > button { top: 0; }
+.study-page .study-heading > button:first-of-type { left: auto; right: 40px; }
+.study-page .study-heading > button:last-of-type { right: 0; }
+.study-page .study-heading > p { padding-right: 80px; font-size: 15px; letter-spacing: .08em; overflow-wrap: anywhere; }
+.study-page .study-heading h1 { font-size: clamp(32px, 5vw, 44px); letter-spacing: .06em; overflow-wrap: anywhere; }
+.study-page .study-heading > .flex { justify-content: flex-start; }
+.study-page .study-heading > .flex:first-of-type { padding-right: 44px; }
+.study-page .compare-words { justify-content: flex-start; font-size: clamp(24px, 4vw, 34px); gap: 10px 20px; }
+.study-page .study-sections { padding: 0 0 24px; display: grid; gap: 24px 40px; }
+.study-page .study-sections > div { min-width: 0; margin: 0; }
+.study-page .study-sections .pl-9 { padding-left: 0; }
+.study-page .study-sections p { line-height: 1.85; overflow-wrap: anywhere; }
+.study-page .study-sections .grid { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.study-page .study-sections .grid button { white-space: normal; overflow: visible; overflow-wrap: anywhere; border-radius: 0; background: transparent; padding: 4px 0; color: var(--zhuhong); text-align: left; }
+.study-page .study-sections .grid button:hover { text-decoration: underline; }
+@media (min-width: 800px) {
+ .study-page { padding-inline: 40px; }
+ .study-page .study-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

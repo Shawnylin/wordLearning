@@ -37,7 +37,7 @@ function getSectionContent(key: string): string {
   <div class="animate-card-enter">
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="relative px-6 pt-8 pb-6 text-center glass-card-header">
+      <div class="study-heading relative px-6 pt-8 pb-6 text-center glass-card-header">
         <!-- Favorite button -->
         <button
           @click="idiomStore.toggleFavorite(idiom.word)"
@@ -79,7 +79,7 @@ function getSectionContent(key: string): string {
       </div>
 
       <!-- Content sections -->
-      <div class="px-6 pb-6 space-y-5">
+      <div class="study-sections px-6 pb-6 space-y-5">
         <div
           v-for="section in sections"
           :key="section.key"

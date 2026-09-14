@@ -71,7 +71,7 @@ function goToSettings() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-4">
+  <div class="study-page min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
     <div class="mx-auto max-w-lg mb-6">
       <TransitionGroup name="list" tag="div" class="grid grid-cols-2 gap-3 relative">

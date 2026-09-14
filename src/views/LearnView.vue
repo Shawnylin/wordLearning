@@ -41,7 +41,7 @@ function goToSettings() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-3 pb-4">
+  <div class="study-page min-h-screen px-4 pt-3 pb-4">
     <!-- Search Input -->
     <div class="mb-6">
       <SearchInput
