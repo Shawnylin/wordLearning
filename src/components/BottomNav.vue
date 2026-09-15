@@ -7,11 +7,19 @@ import {
   History,
   Newspaper,
   User,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-vue-next";
+import { useTabletLayout } from '../composables/useTabletLayout';
+
+defineProps<{ collapsed: boolean }>();
+const emit = defineEmits<{ toggle: [] }>();
+const tablet = useTabletLayout();
 
 const route = useRoute();
 const router = useRouter();
 const dailyCompact = ref(false);
+const compact = computed(() => dailyCompact.value && !tablet.value);
 
 interface NavItem {
   name: string;
@@ -43,17 +51,19 @@ const count = navItems.length;
 // 指示器定位：绝对定位的百分比相对容器的 padding-box（不含 1px 边框），
 // 而按钮平分的是内容区（padding-box 减去两侧 p-1.5 = 6px 内边距）。
 // 因此按“100% - 12px”均分、偏移 6px，指示器才能与每个 flex-1 按钮严格同心。
-const indicatorStyle = computed(() => ({
-  width: dailyCompact.value
+const indicatorStyle = computed(() => tablet.value ? {
+  width: 'calc(100% - 12px)', left: '6px', top: `${6 + activeIndex.value * 56}px`, height: '48px', bottom: 'auto',
+} : ({
+  width: compact.value
     ? "48px"
     : `calc((100% - 12px) / ${count})`,
-  left: dailyCompact.value
+  left: compact.value
     ? "calc(50% - 24px)"
     : `calc((100% - 12px) * ${activeIndex.value} / ${count} + 6px)`,
 }));
 
 function navigateTo(item: NavItem) {
-  if (dailyCompact.value && item.name === "report") {
+  if (compact.value && item.name === "report") {
     document
       .getElementById("app")
       ?.scrollTo({
@@ -86,16 +96,20 @@ onBeforeUnmount(() =>
 
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 z-50"
-    style="
-      padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px));
-    "
+    class="app-nav fixed bottom-0 left-0 right-0 z-50"
+    :class="{ 'is-collapsed': collapsed }"
+    aria-label="主导航"
   >
+    <button v-if="tablet" class="nav-toggle" :aria-expanded="!collapsed" aria-controls="primary-nav-items" :aria-label="collapsed ? '展开导航' : '收起导航'" @click="emit('toggle')">
+      <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" :size="20" />
+      <span v-if="!collapsed">收起导航</span>
+    </button>
     <div
       class="nav-frame mx-auto max-w-md px-4 pt-1"
-      :class="{ compact: dailyCompact }"
+      :class="{ compact }"
     >
       <div
+        id="primary-nav-items"
         class="nav-shell relative flex items-center rounded-full bg-card/95 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(42,36,28,0.4)] border border-line p-1.5"
       >
         <!-- 印章滑动指示器 -->
@@ -110,10 +124,11 @@ onBeforeUnmount(() =>
           v-for="(item, index) in navItems"
           :key="item.name"
           @click="navigateTo(item)"
-          :aria-label="dailyCompact && item.name === 'report' ? '返回日报顶部' : item.label"
-          :aria-hidden="dailyCompact && item.name !== 'report'"
+          :aria-label="compact && item.name === 'report' ? '返回日报顶部' : item.label"
+          :title="item.label"
+          :aria-hidden="compact && item.name !== 'report'"
           :aria-current="activeIndex === index ? 'page' : undefined"
-          :tabindex="dailyCompact && item.name !== 'report' ? -1 : 0"
+          :tabindex="compact && item.name !== 'report' ? -1 : 0"
           class="nav-item relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5"
           :class="[
             { 'report-item': item.name === 'report' },
@@ -143,6 +158,7 @@ onBeforeUnmount(() =>
 </template>
 
 <style scoped>
+.app-nav { padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px)); }
 .nav-frame {
   transition:
     max-width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
@@ -164,6 +180,7 @@ onBeforeUnmount(() =>
   transition:
     width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
     left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.42s ease;
 }
 .nav-item {
@@ -205,10 +222,16 @@ onBeforeUnmount(() =>
   transform: translateY(5px);
 }
 @media (min-width: 768px) {
-  .nav-frame:not(.compact) { max-width: 560px; }
-  .nav-frame { padding-bottom: 8px; }
-  .nav-item { min-height: 48px; flex-direction: row; justify-content: center; gap: 8px; }
-  .nav-label { font-size: 13px; }
+  .app-nav { top: max(20px, env(safe-area-inset-top)); bottom: auto; left: max(8px, env(safe-area-inset-left)); right: auto; width: calc(var(--nav-width) - 16px); padding: 0; transition: width 420ms cubic-bezier(.22,1,.36,1); }
+  .nav-toggle { display: flex; align-items: center; gap: 10px; width: 100%; height: 48px; padding-inline: 14px; margin-bottom: 16px; white-space: nowrap; overflow: hidden; border-radius: 16px; color: var(--ink-soft); }
+  .nav-toggle:hover { background: var(--soft); }
+  .nav-toggle svg, .nav-item svg { flex-shrink: 0; }
+  .nav-frame { max-width: none; padding: 0; }
+  .nav-shell { flex-direction: column; gap: 8px; border-radius: 22px; }
+  .nav-item { flex: none; width: 100%; height: 48px; flex-direction: row; justify-content: flex-start; gap: 0; padding: 0 8px; border-radius: 16px; }
+  .nav-label { font-size: 14px; line-height: 20px; max-height: 20px; max-width: 80px; margin-left: 12px; white-space: nowrap; transition: max-width 420ms ease, margin 420ms ease, opacity 180ms ease; }
+  .is-collapsed .nav-label { max-width: 0; margin-left: 0; opacity: 0; }
+  .nav-item:focus-visible, .nav-toggle:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-frame,

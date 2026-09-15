@@ -15,6 +15,8 @@ import DailyStudySheet from "../components/DailyStudySheet.vue";
 import DailyPdfImport from "../components/DailyPdfImport.vue";
 import { useDailyStore } from "../stores/daily";
 import { useSettingsStore } from "../stores/settings";
+import { useTabletLayout } from '../composables/useTabletLayout';
+const tablet = useTabletLayout();
 const daily = useDailyStore(),
   settings = useSettingsStore();
 const sheet = ref<InstanceType<typeof DailyStudySheet>>(),
@@ -270,9 +272,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-6 pb-6">
+  <div class="daily-workspace min-h-screen px-4 pt-6 pb-6">
     <div
-      class="mx-auto max-w-3xl"
+      class="daily-reader mx-auto max-w-3xl"
       :class="
         selected && !daily.loading && !daily.error ? 'space-y-0' : 'space-y-5'
       "
@@ -459,9 +461,12 @@ onBeforeUnmount(() => {
         </div></Motion
       >
     </div>
+    <aside class="daily-lookup" aria-label="查词区域">
+      <DailyStudySheet ref="sheet" :docked="tablet" :selection-text="selectedText" @query-selection="querySelected" />
+    </aside>
     <Teleport to="body"
       ><Motion
-        ><div v-if="selectedText" class="selection-query">
+        ><div v-if="selectedText && !tablet" class="selection-query">
           <span class="truncate">{{ selectedText }}</span
           ><button
             @pointerdown.prevent
@@ -578,11 +583,36 @@ onBeforeUnmount(() => {
         </section></Transition
       ></Teleport
     >
-    <DailyStudySheet ref="sheet" /><DailyPdfImport ref="pdfImporter" />
+    <DailyPdfImport ref="pdfImporter" />
   </div>
 </template>
 
 <style scoped>
+.daily-reader { min-width: 0; width: 100%; }
+.daily-lookup { display: none; }
+@media (min-width: 768px) {
+  .app-main > .daily-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 28vw, 360px);
+    gap: clamp(16px, 2.5vw, 40px);
+    align-items: start;
+    max-width: 1440px;
+    padding: 24px 16px;
+  }
+  .daily-reader { max-width: 760px; }
+  .daily-lookup {
+    display: block;
+    position: sticky;
+    top: calc(24px + env(safe-area-inset-top, 0px));
+    height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+  }
+  .daily-prose { font-size: 16px; line-height: 2.15; }
+}
+@media (min-width: 1180px) {
+  .app-main > .daily-workspace { padding-inline: 32px; }
+  .daily-prose { font-size: 18px; }
+}
 .daily-article {
   padding: 2px 0 32px;
   border-bottom: 1px solid var(--line);
