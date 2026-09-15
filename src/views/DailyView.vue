@@ -8,6 +8,7 @@ import {
   Check,
   Trash2,
   X,
+  ArrowRight,
 } from "lucide-vue-next";
 import Motion from "../components/Motion.vue";
 import DailyGenerateMenu from "../components/DailyGenerateMenu.vue";
@@ -24,6 +25,23 @@ const sheet = ref<InstanceType<typeof DailyStudySheet>>(),
 const selected = computed(
   () => daily.issues.find((i) => i.id === daily.selectedId) || daily.issues[0],
 );
+const readingOrder = computed(() => daily.issues.flatMap(issue =>
+  issue.articles.map((article, index) => ({ issueId: issue.id, index, title: article.shortTitle || article.title })),
+));
+function nextArticle(index: number) {
+  const current = readingOrder.value.findIndex(item => item.issueId === selected.value?.id && item.index === index);
+  return current < 0 ? undefined : readingOrder.value[current + 1];
+}
+function readNext(index: number) {
+  const next = nextArticle(index);
+  if (!next) return;
+  window.getSelection()?.removeAllRanges();
+  selectedText.value = '';
+  if (next.issueId !== selected.value?.id) chooseIssue(next.issueId);
+  else document.getElementById(`daily-article-${next.index}`)?.scrollIntoView({
+    block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+  });
+}
 const historyTrigger = ref<HTMLButtonElement>(),
   historyPanel = ref<HTMLElement>();
 const historyOpen = ref(false),
@@ -32,6 +50,7 @@ const historyOpen = ref(false),
 const historyPlacement = ref({ left: "0px", top: "0px", width: "360px" });
 let historyOrigin: DOMRect | undefined,
   appScroller: HTMLElement | null = null;
+let historyAnimation: Animation | undefined, historyContentAnimation: Animation | undefined;
 let swipeStart: { id: string; x: number; y: number } | undefined;
 let swipeMoved = false,
   readingCompact = false;
@@ -111,38 +130,49 @@ function historyMorph(el: Element, done: () => void, leaving = false) {
   historyMorphing.value = true;
   const element = el as HTMLElement,
     end = element.getBoundingClientRect(),
-    start = historyOrigin || end;
+    start = historyTrigger.value?.getBoundingClientRect() || historyOrigin || end;
+  // Capture the current frame before reversing an interrupted opening.
+  const radius = getComputedStyle(element).borderRadius;
+  const inner = element.firstElementChild as HTMLElement | null;
+  const innerOpacity = inner ? getComputedStyle(inner).opacity : '1';
+  if (historyAnimation) {
+    historyAnimation.oncancel = null;
+    historyAnimation.onfinish = null;
+    historyAnimation.cancel();
+  }
+  historyContentAnimation?.cancel();
   const small = {
     left: `${start.left}px`,
     top: `${start.top}px`,
     width: `${start.width}px`,
     height: `${start.height}px`,
-    borderRadius: "999px",
+    borderRadius: `${Math.min(start.width, start.height) / 2}px`,
     backgroundColor: "var(--card)",
-    opacity: 0.35,
+    opacity: 1,
   };
   const large = {
     left: `${end.left}px`,
     top: `${end.top}px`,
     width: `${end.width}px`,
     height: `${end.height}px`,
-    borderRadius: "24px",
+    borderRadius: leaving ? radius : "24px",
     backgroundColor: "var(--card)",
     opacity: 1,
   };
   const duration = matchMedia("(prefers-reduced-motion: reduce)").matches
     ? 1
-    : 440;
-  element.firstElementChild?.animate(
+    : leaving ? 520 : 720;
+  historyContentAnimation = inner?.animate(
     leaving
-      ? [{ opacity: 1 }, { opacity: 0 }]
-      : [{ opacity: 0 }, { opacity: 1 }],
-    { duration: duration * 0.7, fill: "both" },
+      ? [{ opacity: innerOpacity }, { opacity: 0, offset: .35 }, { opacity: 0 }]
+      : [{ opacity: 0 }, { opacity: 0, offset: .22 }, { opacity: 1, offset: .85 }, { opacity: 1 }],
+    { duration, fill: "both", easing: 'linear' },
   );
   const animation = element.animate(leaving ? [large, small] : [small, large], {
     duration,
-    easing: "cubic-bezier(.22,1,.36,1)",
+    easing: "cubic-bezier(.32,0,.18,1)",
   });
+  historyAnimation = animation;
   animation.onfinish = () => {
     historyMorphing.value = false;
     done();
@@ -266,6 +296,8 @@ onMounted(() => {
   window.addEventListener("resize", positionHistory);
 });
 onBeforeUnmount(() => {
+  historyAnimation?.cancel();
+  historyContentAnimation?.cancel();
   document.removeEventListener("selectionchange", readSelection);
   appScroller?.removeEventListener("scroll", onScroll);
   window.removeEventListener("resize", positionHistory);
@@ -349,6 +381,7 @@ onBeforeUnmount(() => {
           <article
             v-for="(article, articleIndex) in selected.articles"
             :key="articleIndex"
+            :id="`daily-article-${articleIndex}`"
             class="daily-article"
           >
             <div class="flex items-center justify-between gap-3">
@@ -443,6 +476,13 @@ onBeforeUnmount(() => {
                 {{ article.completedAt ? "撤销学完" : "标记已学完" }}
               </button>
             </footer>
+            <button class="read-next" :disabled="!nextArticle(articleIndex)" @click="readNext(articleIndex)">
+              <span class="min-w-0">
+                <span class="block text-sm">{{ nextArticle(articleIndex) ? '阅读下一篇' : '已是最后一篇' }}</span>
+                <span v-if="nextArticle(articleIndex)" class="block text-xs text-ink-soft mt-1 break-words">{{ nextArticle(articleIndex)?.title }}</span>
+              </span>
+              <ArrowRight v-if="nextArticle(articleIndex)" :size="18" class="shrink-0" />
+            </button>
           </article>
           <details
             v-if="selected.pdf?.remainder"
@@ -493,7 +533,7 @@ onBeforeUnmount(() => {
         :css="false"
         @enter="(el, done) => historyMorph(el, done)"
         @leave="(el, done) => historyMorph(el, done, true)"
-        @after-leave="historyTrigger?.focus()"
+        @after-leave="historyTrigger?.focus({ preventScroll: true })"
         ><section
           v-if="historyOpen"
           ref="historyPanel"
@@ -619,9 +659,14 @@ onBeforeUnmount(() => {
   .app-main > .daily-workspace { padding-inline: 32px; }
 }
 .daily-article {
+  scroll-margin-top: 24px;
   padding: 2px 0 32px;
   border-bottom: 1px solid var(--line);
 }
+.read-next { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; margin-top: 20px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--soft); color: var(--zhuhong); text-align: left; }
+.read-next:hover:not(:disabled) { background: var(--zhuhong-soft); border-color: var(--zhuhong); }
+.read-next:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
+.read-next:disabled { color: var(--ink-mute); background: transparent; cursor: default; }
 .star-button {
   display: grid;
   place-items: center;
