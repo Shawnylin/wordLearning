@@ -76,6 +76,7 @@ function handleClearCache() {
   reviewStore.resetAll()
   daily.cancel()
   daily.issues = []
+  daily.groups = []
   daily.selectedId = ''
   showClearCacheConfirm.value = false
 }
@@ -85,7 +86,7 @@ function handleRefresh() {
 }
 
 function handleExport() {
-  const json = JSON.stringify({ ...JSON.parse(idiomStore.exportData()), dailyIssues: daily.issues }, null, 2)
+  const json = JSON.stringify({ ...JSON.parse(idiomStore.exportData()), dailyIssues: daily.issues, dailyGroups: daily.groups }, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -111,6 +112,8 @@ function handleImport() {
         importResult.value = idiomStore.importData(content)
         if (importResult.value.success) {
           daily.issues = [...daily.issues, ...issues.filter((issue: any) => !daily.issues.some(i => i.id === issue.id))].sort((a, b) => b.createdAt - a.createdAt)
+          if (Array.isArray(data.dailyGroups)) daily.restoreGroups(data.dailyGroups)
+          else daily.ensureGroups()
         }
       } catch { importResult.value = { success: false, message: '备份格式不正确，未导入日报' } }
       setTimeout(() => { importResult.value = null }, 3000)

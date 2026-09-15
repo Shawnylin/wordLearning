@@ -24,6 +24,7 @@ const {
   batchBudget,
   reconstruct,
   mergedPdfArticles,
+  detectPdfEditionDate,
   parsePdfDraft,
   pdfIssues,
   validateDailyIssue,
@@ -31,6 +32,12 @@ const {
   useSettingsStore,
   testConnection,
 } = await import(file.href);
+
+test("detects newspaper edition date from filename or first-page masthead", () => {
+  assert.equal(detectPdfEditionDate("rmrb20260915.pdf", ""), "2026-09-15");
+  assert.equal(detectPdfEditionDate("人民日报.pdf", "2026年9月16日 星期三"), "2026-09-16");
+  assert.equal(detectPdfEditionDate("人民日报.pdf", "没有日期"), undefined);
+});
 const originalFetch = globalThis.fetch,
   originalStorage = globalThis.localStorage;
 after(async () => {

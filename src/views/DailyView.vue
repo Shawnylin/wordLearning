@@ -9,6 +9,8 @@ import {
   Trash2,
   X,
   ArrowRight,
+  ChevronDown,
+  GripVertical,
 } from "lucide-vue-next";
 import Motion from "../components/Motion.vue";
 import DailyGenerateMenu from "../components/DailyGenerateMenu.vue";
@@ -46,7 +48,14 @@ const historyTrigger = ref<HTMLButtonElement>(),
   historyPanel = ref<HTMLElement>();
 const historyOpen = ref(false),
   historyMorphing = ref(false),
+  historyManaging = ref(false),
+  draggedIssueId = ref(""),
+  dragOverGroupId = ref(""),
   selectedText = ref("");
+const historyGroups = computed(() => daily.groups.map(group => ({
+  ...group,
+  issues: daily.issues.filter(issue => issue.groupId === group.id),
+})).filter(group => historyManaging.value || group.issues.length));
 const historyPlacement = ref({ left: "0px", top: "0px", width: "360px" });
 let historyOrigin: DOMRect | undefined,
   appScroller: HTMLElement | null = null;
@@ -98,7 +107,28 @@ async function openHistory() {
 }
 function closeHistory() {
   historyOpen.value = false;
+  historyManaging.value = false;
   swipedId.value = "";
+}
+function toggleHistoryManagement() {
+  historyManaging.value = !historyManaging.value;
+  swipedId.value = "";
+}
+function renameHistoryGroup(groupId: string, event: Event) {
+  daily.renameGroup(groupId, (event.target as HTMLInputElement).value);
+}
+function startHistoryDrag(issueId: string, event: DragEvent) {
+  if (!historyManaging.value) return;
+  draggedIssueId.value = issueId;
+  event.dataTransfer?.setData("text/plain", issueId);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+}
+function dropIntoGroup(groupId: string, event: DragEvent) {
+  event.preventDefault();
+  const issueId = draggedIssueId.value || event.dataTransfer?.getData("text/plain") || "";
+  if (issueId) daily.moveIssue(issueId, groupId);
+  draggedIssueId.value = "";
+  dragOverGroupId.value = "";
 }
 function historyKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") {
@@ -289,6 +319,7 @@ function segments(content: string, words: string[]) {
 }
 onMounted(() => {
   daily.normalizePdfIssues();
+  daily.ensureGroups();
   document.addEventListener("selectionchange", readSelection);
   appScroller = document.getElementById("app");
   appScroller?.addEventListener("scroll", onScroll, { passive: true });
@@ -546,15 +577,12 @@ onBeforeUnmount(() => {
         @keydown="historyKeydown"
         >
           <div class="p-4">
-            <header class="flex justify-between items-center mb-4">
+            <header class="flex justify-between items-center gap-3 mb-4">
               <h2 class="font-kai text-xl">历史日报</h2>
-              <button
-                @click="closeHistory"
-                class="p-2 rounded-full bg-soft"
-                aria-label="关闭历史日报"
-              >
-                <X :size="18" />
-              </button>
+              <div class="flex items-center gap-2">
+                <button v-if="daily.issues.length" @click="toggleHistoryManagement" class="rounded-full bg-soft px-3 py-2 text-xs text-ink-soft">{{ historyManaging ? '完成' : '管理' }}</button>
+                <button @click="closeHistory" class="p-2 rounded-full bg-soft" aria-label="关闭历史日报"><X :size="18" /></button>
+              </div>
             </header>
             <p
               v-if="!daily.issues.length"
@@ -562,69 +590,31 @@ onBeforeUnmount(() => {
             >
               暂无历史日报，生成后自动保存在这里
             </p>
-            <div class="space-y-2">
-              <div
-                v-for="issue in daily.issues"
-                :key="issue.id"
-                class="history-row"
-                :class="{ 'is-revealed': swipedId === issue.id || (dragId === issue.id && dragOffset < 0) }"
-              >
-              <button
-                @click="removeIssue(issue.id)"
-                class="history-delete"
-                :tabindex="swipedId === issue.id ? 0 : -1"
-                :aria-hidden="swipedId !== issue.id"
-                :aria-label="`删除${historyTitle(issue)}`"
-              >
-                  <Trash2 :size="18" /><span>删除</span></button
-                ><button
-                  class="history-row-body"
-                  :style="rowStyle(issue.id)"
-                  :aria-current="selected?.id === issue.id ? 'true' : undefined"
-                  @click="rowClick(issue.id)"
-                  @pointerdown="(event) => swipeDown(event, issue.id)"
-                  @pointermove="swipeMove"
-                  @pointerup="swipeEnd"
-                  @pointercancel="swipeEnd"
-                >
-                  <span class="history-meta">
-                    <span class="history-date min-w-0 truncate"
-                      >{{ dateLabel(issue.createdAt) }} ·
-                      {{ issue.pdf ? "PDF" : "日报" }}</span
-                    ><span class="history-state">
-                      <Star
-                        :size="15"
-                        :fill="
-                          issue.articles[0]?.starred ? 'currentColor' : 'none'
-                        "
-                        class="history-star"
-                        :class="{ active: issue.articles[0]?.starred }"
-                        :aria-label="
-                          issue.articles[0]?.starred ? '已星标' : '未星标'
-                        "
-                      />
-                      <span
-                        class="history-progress whitespace-nowrap"
-                        :class="
-                          issue.articles[0]?.completedAt
-                            ? 'text-bamboo'
-                            : 'text-ink-mute'
-                        "
-                        ><Check
-                          v-if="issue.articles[0]?.completedAt"
-                          :size="14"
-                          :stroke-width="2.4"
-                          aria-hidden="true"
-                        />{{
-                          issue.articles[0]?.completedAt ? "已学完" : "未学完"
-                        }}</span
-                      ></span
-                    ></span
-                  ><span class="history-title">{{
-                    historyTitle(issue)
-                  }}</span>
-                </button>
-              </div>
+            <div class="space-y-3">
+              <section v-for="group in historyGroups" :key="group.id" class="history-group" :class="{ 'is-drag-over': dragOverGroupId === group.id }" @dragover.prevent="dragOverGroupId = group.id" @dragleave.self="dragOverGroupId = ''" @drop="dropIntoGroup(group.id, $event)">
+                <div class="history-group-header">
+                  <input v-if="historyManaging" :value="group.name" class="history-group-name" maxlength="40" aria-label="分组名称" @change="renameHistoryGroup(group.id, $event)" @keydown.enter="($event.target as HTMLInputElement).blur()" />
+                  <button v-else class="history-group-toggle" :aria-expanded="!group.collapsed" @click="daily.toggleGroup(group.id)">
+                    <span class="min-w-0 truncate">{{ group.name }}</span><span class="shrink-0 text-xs text-ink-mute">{{ group.issues.length }} 篇</span><ChevronDown :size="17" class="history-group-chevron" :class="{ collapsed: group.collapsed }" />
+                  </button>
+                  <button v-if="historyManaging" class="p-2 text-ink-mute" :aria-label="group.collapsed ? '展开分组' : '收起分组'" @click="daily.toggleGroup(group.id)"><ChevronDown :size="17" class="history-group-chevron" :class="{ collapsed: group.collapsed }" /></button>
+                </div>
+                <div v-if="!group.collapsed" class="space-y-2 p-2 pt-0">
+                  <p v-if="historyManaging && !group.issues.length" class="rounded-xl border border-dashed border-line py-5 text-center text-xs text-ink-mute">拖动篇章到这里</p>
+                  <div v-for="issue in group.issues" :key="issue.id" class="history-row" :class="{ 'is-revealed': !historyManaging && (swipedId === issue.id || (dragId === issue.id && dragOffset < 0)), 'is-dragging': draggedIssueId === issue.id }" :draggable="historyManaging" @dragstart="startHistoryDrag(issue.id, $event)" @dragend="draggedIssueId = ''; dragOverGroupId = ''">
+                    <button v-if="!historyManaging" @click="removeIssue(issue.id)" class="history-delete" :tabindex="swipedId === issue.id ? 0 : -1" :aria-hidden="swipedId !== issue.id" :aria-label="`删除${historyTitle(issue)}`"><Trash2 :size="18" /><span>删除</span></button>
+                    <button v-if="!historyManaging" class="history-row-body" :style="rowStyle(issue.id)" :aria-current="selected?.id === issue.id ? 'true' : undefined" @click="rowClick(issue.id)" @pointerdown="(event) => swipeDown(event, issue.id)" @pointermove="swipeMove" @pointerup="swipeEnd" @pointercancel="swipeEnd">
+                      <span class="history-meta"><span class="history-date min-w-0 truncate">{{ dateLabel(issue.createdAt) }} · {{ issue.pdf ? "PDF" : "日报" }}</span><span class="history-state"><Star :size="15" :fill="issue.articles[0]?.starred ? 'currentColor' : 'none'" class="history-star" :class="{ active: issue.articles[0]?.starred }" /><span class="history-progress whitespace-nowrap" :class="issue.articles[0]?.completedAt ? 'text-bamboo' : 'text-ink-mute'"><Check v-if="issue.articles[0]?.completedAt" :size="14" :stroke-width="2.4" aria-hidden="true" />{{ issue.articles[0]?.completedAt ? "已学完" : "未学完" }}</span></span></span>
+                      <span class="history-title">{{ historyTitle(issue) }}</span>
+                    </button>
+                    <div v-else class="history-row-body history-row-manage">
+                      <GripVertical :size="18" class="history-grip" aria-hidden="true" />
+                      <div class="min-w-0 flex-1"><p class="history-title mt-0">{{ historyTitle(issue) }}</p><select :value="group.id" class="history-group-select" :aria-label="`移动${historyTitle(issue)}到其他分组`" @change="daily.moveIssue(issue.id, ($event.target as HTMLSelectElement).value)"><option v-for="target in daily.groups" :key="target.id" :value="target.id">{{ target.name }}</option></select></div>
+                      <button class="history-manage-delete" :aria-label="`删除${historyTitle(issue)}`" @click="removeIssue(issue.id)"><Trash2 :size="17" /></button>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </section></Transition
@@ -774,12 +764,25 @@ onBeforeUnmount(() => {
   box-shadow: 0 14px 48px #0002;
   outline: none;
 }
+.history-group { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; transition: border-color .2s, background-color .2s; }
+.history-group.is-drag-over { border-color: var(--zhuhong); background: var(--zhuhong-soft); }
+.history-group-header { display: flex; min-height: 46px; align-items: center; padding: 4px 6px 4px 12px; }
+.history-group-toggle { display: flex; min-width: 0; width: 100%; align-items: center; gap: 8px; color: var(--ink); text-align: left; font-size: 14px; font-weight: 600; }
+.history-group-toggle > :first-child { flex: 1; }
+.history-group-chevron { flex: none; transition: transform .25s cubic-bezier(.22,1,.36,1); }
+.history-group-chevron.collapsed { transform: rotate(-90deg); }
+.history-group-name { min-width: 0; flex: 1; border-bottom: 1px solid var(--zhuhong); padding: 6px 2px; color: var(--ink); font-size: 14px; font-weight: 600; outline: none; }
 .history-row {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
   isolation: isolate;
 }
+.history-row.is-dragging { opacity: .45; }
+.history-row-manage { display: flex; align-items: center; gap: 9px; transform: none !important; touch-action: auto; }
+.history-grip { flex: none; color: var(--ink-mute); cursor: grab; }
+.history-group-select { width: 100%; margin-top: 7px; border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; background: var(--card); color: var(--ink-soft); font-size: 12px; outline: none; }
+.history-manage-delete { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 12px; background: var(--zhuhong-soft); color: var(--zhuhong); }
 .history-delete {
   background: var(--zhuhong);
   border-radius: 0 16px 16px 0;
@@ -873,5 +876,6 @@ onBeforeUnmount(() => {
   .history-row-body {
     transition: none;
   }
+  .history-group-chevron { transition: none; }
 }
 </style>

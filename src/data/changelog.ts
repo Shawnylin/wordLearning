@@ -9,6 +9,17 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.4.0',
+    date: '2026-09-15',
+    title: '历史日报支持分组管理',
+    changes: [
+      '上传 PDF 后会自动识别报纸日期，并将同一版日报的篇章归入一组。',
+      '无法识别日期时会使用文件名建立暂定分组，之后可以自行修改名称。',
+      '历史日报新增管理模式，可以移动和删除篇章，也可以修改、展开或收起分组。',
+      '原有历史日报会自动整理为分组，已保存的正文和学习进度保持不变。'
+    ]
+  },
+  {
     version: '0.3.3',
     date: '2026-09-15',
     title: '完善日报重点词标记',

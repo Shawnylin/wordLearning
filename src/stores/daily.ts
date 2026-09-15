@@ -9,25 +9,88 @@ import { generateDailyFromLink } from "../api/dailyLink";
 import type { ApiConfig } from "../api/deepseek";
 import { useIdiomStore } from "./idiom";
 
+export interface DailyGroup {
+  id: string;
+  name: string;
+  collapsed: boolean;
+  createdAt: number;
+}
+
 export const useDailyStore = defineStore(
   "daily",
   () => {
     const issues = ref<DailyIssue[]>([]);
+    const groups = ref<DailyGroup[]>([]);
     const loading = ref(false),
       error = ref(""),
       selectedId = ref("");
     const progressPhase = ref<DailyProgressPhase>("searching"),
       streamedText = ref("");
     let controller: AbortController | undefined;
-    function persist(next: DailyIssue[], nextSelected = selectedId.value) {
+    function persist(next: DailyIssue[], nextSelected = selectedId.value, nextGroups = groups.value) {
       localStorage.setItem(
         "daily-store",
-        JSON.stringify({ issues: next, selectedId: nextSelected }),
+        JSON.stringify({ issues: next, selectedId: nextSelected, groups: nextGroups }),
       );
       issues.value = next;
       selectedId.value = nextSelected;
+      groups.value = nextGroups;
+    }
+    function editionName(issue: DailyIssue) {
+      if (issue.pdf?.editionDate) {
+        const [year, month, day] = issue.pdf.editionDate.split("-").map(Number);
+        return `${year}年${month}月${day}日 人民日报`;
+      }
+      if (issue.pdf?.filename) return issue.pdf.filename.replace(/\.pdf$/i, "") || "未识别日报";
+      const date = new Date(issue.createdAt);
+      return `${date.getMonth() + 1}月${date.getDate()}日 在线日报`;
+    }
+    function defaultGroupId(issue: DailyIssue) {
+      if (issue.pdf?.fingerprint) return `pdf-${issue.pdf.fingerprint}`;
+      const date = new Date(issue.createdAt);
+      return `daily-${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+    function ensureGroups() {
+      const nextGroups = [...groups.value], known = new Set(nextGroups.map(group => group.id));
+      let changed = false;
+      const nextIssues = issues.value.map(issue => {
+        const groupId = issue.groupId || defaultGroupId(issue);
+        if (!known.has(groupId)) {
+          nextGroups.push({ id: groupId, name: editionName(issue), collapsed: false, createdAt: issue.createdAt });
+          known.add(groupId);
+          changed = true;
+        }
+        if (issue.groupId === groupId) return issue;
+        changed = true;
+        return { ...issue, groupId };
+      });
+      if (changed) persist(nextIssues, selectedId.value, nextGroups);
+    }
+    function renameGroup(groupId: string, name: string) {
+      const normalized = name.trim().replace(/[\r\n]+/g, " ").slice(0, 40);
+      if (!normalized) return;
+      persist(issues.value, selectedId.value, groups.value.map(group => group.id === groupId ? { ...group, name: normalized } : group));
+    }
+    function toggleGroup(groupId: string) {
+      persist(issues.value, selectedId.value, groups.value.map(group => group.id === groupId ? { ...group, collapsed: !group.collapsed } : group));
+    }
+    function moveIssue(issueId: string, groupId: string) {
+      if (!groups.value.some(group => group.id === groupId)) return;
+      persist(issues.value.map(issue => issue.id === issueId ? { ...issue, groupId } : issue));
+    }
+    function restoreGroups(value: unknown) {
+      const restored = Array.isArray(value) ? value.flatMap(item => {
+        const group = item as Partial<DailyGroup>;
+        if (!group || typeof group.id !== "string" || !/^[a-zA-Z0-9_-]{1,100}$/.test(group.id) || typeof group.name !== "string") return [];
+        const name = group.name.trim().replace(/[\r\n]+/g, " ").slice(0, 40);
+        if (!name) return [];
+        return [{ id: group.id, name, collapsed: group.collapsed === true, createdAt: Number.isFinite(group.createdAt) ? Number(group.createdAt) : Date.now() }];
+      }) : [];
+      persist(issues.value, selectedId.value, restored);
+      ensureGroups();
     }
     function saveIssue(issue: DailyIssue) {
+      const groupId = issue.groupId || defaultGroupId(issue);
       if (
         issue.pdf &&
         issues.value.some(
@@ -37,8 +100,8 @@ export const useDailyStore = defineStore(
         )
       )
         throw new Error("这篇 PDF 文章已导入，请在历史日报中继续学习");
-      const next = [issue, ...issues.value];
-      persist(next, issue.id);
+      const nextGroups = groups.value.some(group => group.id === groupId) ? groups.value : [{ id: groupId, name: editionName(issue), collapsed: false, createdAt: issue.createdAt }, ...groups.value];
+      persist([{ ...issue, groupId }, ...issues.value], issue.id, nextGroups);
     }
     function savePdfIssues(records: DailyIssue[]) {
       if (!records.length) throw new Error("PDF 中没有可保存的文章");
@@ -50,7 +113,10 @@ export const useDailyStore = defineStore(
         throw new Error("PDF 文章记录不一致");
       if (issues.value.some((issue) => issue.pdf?.fingerprint === fingerprint))
         throw new Error("这份 PDF 已导入，请在历史日报中继续学习");
-      persist(records.concat(issues.value), records[0].id);
+      const groupId = records[0].groupId || defaultGroupId(records[0]);
+      const nextRecords: DailyIssue[] = records.map(record => ({ ...record, groupId }));
+      const nextGroups = groups.value.some(group => group.id === groupId) ? groups.value : [{ id: groupId, name: editionName(records[0]), collapsed: false, createdAt: records[0].createdAt }, ...groups.value];
+      persist([...nextRecords, ...issues.value], nextRecords[0].id, nextGroups);
     }
     function toggleCompleted(issueId: string, index: number) {
       error.value = "";
@@ -183,6 +249,7 @@ export const useDailyStore = defineStore(
     }
     return {
       issues,
+      groups,
       loading,
       error,
       selectedId,
@@ -196,7 +263,12 @@ export const useDailyStore = defineStore(
       toggleStarred,
       deleteIssue,
       normalizePdfIssues,
+      ensureGroups,
+      renameGroup,
+      toggleGroup,
+      moveIssue,
+      restoreGroups,
     };
   },
-  { persist: { key: "daily-store", paths: ["issues", "selectedId"] } },
+  { persist: { key: "daily-store", paths: ["issues", "selectedId", "groups"] } },
 );

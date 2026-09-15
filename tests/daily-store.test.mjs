@@ -68,3 +68,23 @@ test('link generation saves the card through the same history and usage path', a
   await daily.generate({ ...config, apiKey: 'test' }, url)
   assert.match(daily.error, /已收录/); assert.equal(calls, 2); assert.equal(idioms.tokenStats.totalTokens, 123)
 })
+
+test('history groups migrate, rename, collapse and move issues without changing article content', () => {
+  setActivePinia(createPinia())
+  const store = useDailyStore()
+  globalThis.localStorage = { setItem: () => {} }
+  const first = { id: 'a', createdAt: Date.UTC(2026, 8, 15), tokenUsage: 0, articles: [{ title: '甲', source: '导入 PDF', url: '', publishedAt: '', content: '原文甲', words: [], analysis: '', origin: 'pdf', page: 1 }], pdf: { fingerprint: 'a'.repeat(64), filename: 'rmrb-20260915.pdf', pages: 1, remainder: '', model: 'test', usageEstimated: false, editionDate: '2026-09-15' } }
+  const second = { ...structuredClone(first), id: 'b', articles: [{ ...first.articles[0], title: '乙', content: '原文乙' }] }
+  store.issues = [first, second]
+  store.ensureGroups()
+  assert.equal(store.groups.length, 1)
+  assert.equal(store.groups[0].name, '2026年9月15日 人民日报')
+  store.renameGroup(store.groups[0].id, '自定义日报')
+  store.toggleGroup(store.groups[0].id)
+  store.groups.push({ id: 'manual', name: '稍后整理', collapsed: false, createdAt: Date.now() })
+  store.moveIssue('b', 'manual')
+  assert.equal(store.groups[0].name, '自定义日报')
+  assert.equal(store.groups[0].collapsed, true)
+  assert.equal(store.issues.find(issue => issue.id === 'b').groupId, 'manual')
+  assert.equal(store.issues[1].articles[0].content, '原文乙')
+})

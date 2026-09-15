@@ -95,6 +95,7 @@ export function validateDailyIssue(value: unknown): DailyIssue {
       usageEstimated: p.usageEstimated === true,
       ...(p.articleIndex !== undefined ? { articleIndex: p.articleIndex } : {}),
       ...(p.articleCount !== undefined ? { articleCount: p.articleCount } : {}),
+      ...(typeof p.editionDate === "string" && /^20\d{2}-\d{2}-\d{2}$/.test(p.editionDate) ? { editionDate: p.editionDate } : {}),
     };
   } else articles = validateArticles(issue.articles);
   articles = articles.map((a, index) => {
@@ -116,6 +117,7 @@ export function validateDailyIssue(value: unknown): DailyIssue {
     tokenUsage: Number.isFinite(issue.tokenUsage)
       ? Math.max(0, issue.tokenUsage)
       : 0,
+    ...(typeof issue.groupId === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(issue.groupId) ? { groupId: issue.groupId } : {}),
     ...(pdf ? { pdf } : {}),
   };
 }

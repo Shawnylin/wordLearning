@@ -1,6 +1,6 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import { planBatches, textLines, type PdfDraft, type TextItem } from './pdfPlan'
+import { detectPdfEditionDate, planBatches, textLines, type PdfDraft, type TextItem } from './pdfPlan'
 GlobalWorkerOptions.workerSrc = workerUrl
 
 export async function extractPdf(file: File, signal: AbortSignal, onProgress: (text: string, progress: number) => void): Promise<PdfDraft> {
@@ -29,6 +29,8 @@ export async function extractPdf(file: File, signal: AbortSignal, onProgress: (t
       draft.batches.push(...planBatches(page, lines)); pdfPage.cleanup()
       onProgress(`已读取 ${page}/${doc.numPages} 页`, page / doc.numPages)
     }
+    const firstPageText = draft.batches.filter(batch => batch.page === 1).flatMap(batch => batch.lines).map(line => line.text).join('\n')
+    draft.editionDate = detectPdfEditionDate(file.name, firstPageText)
     return draft
   } catch (e) {
     if (signal.aborted) throw new Error('已取消读取')

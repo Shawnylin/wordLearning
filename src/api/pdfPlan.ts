@@ -23,6 +23,7 @@ export interface PdfDraft {
   tokenUsage: number;
   usageEstimated: boolean;
   models: string[];
+  editionDate?: string;
 }
 export interface TextItem {
   str: string;
@@ -30,6 +31,17 @@ export interface TextItem {
   height: number;
   transform: number[];
   hasEOL: boolean;
+}
+
+export function detectPdfEditionDate(filename: string, firstPageText: string): string | undefined {
+  for (const source of [filename.replace(/\.pdf$/i, ''), firstPageText.slice(0, 5000)]) {
+    const match = source.match(/(20\d{2})\s*(?:年|[-_.\/])?\s*(1[0-2]|0?[1-9])\s*(?:月|[-_.\/])?\s*(3[01]|[12]\d|0?[1-9])\s*日?/)
+    if (!match) continue
+    const year = Number(match[1]), month = Number(match[2]), day = Number(match[3])
+    const date = new Date(Date.UTC(year, month - 1, day))
+    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  }
+  return undefined
 }
 
 // Keep the PDF content stream order. A baseline AND horizontal adjacency check
@@ -397,6 +409,7 @@ export function pdfIssues(draft: PdfDraft): DailyIssue[] {
     draft.batches.flatMap((b) => b.result!.articles),
   );
   const createdAt = Date.now(),
+    groupId = `pdf-${draft.fingerprint}`,
     remainder = draft.batches
       .filter((b) => b.result!.remainder)
       .map((b) => `第 ${b.page} 页 · 批次 ${b.part}\n${b.result!.remainder}`)
@@ -404,6 +417,7 @@ export function pdfIssues(draft: PdfDraft): DailyIssue[] {
   return articles.map((article, index) => ({
     id: crypto.randomUUID(),
     createdAt: createdAt + index,
+    groupId,
     tokenUsage:
       Math.floor(draft.tokenUsage / articles.length) +
       (index < draft.tokenUsage % articles.length ? 1 : 0),
@@ -416,6 +430,7 @@ export function pdfIssues(draft: PdfDraft): DailyIssue[] {
       usageEstimated: draft.usageEstimated,
       articleIndex: index,
       articleCount: articles.length,
+      ...(draft.editionDate ? { editionDate: draft.editionDate } : {}),
       remainder: index === 0 ? remainder : "",
     },
   }));
