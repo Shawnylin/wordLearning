@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.3.3',
+    date: '2026-09-15',
+    title: '完善日报重点词标记',
+    changes: [
+      '日报会优先标记原文中的全部规范成语，减少成语漏标。',
+      '“牛鼻子”等具有固定比喻含义的惯用表达也会加入划线学习。',
+      '提高单篇文章可标记的高价值词语数量。'
+    ]
+  },
+  {
     version: '0.3.2',
     date: '2026-09-15',
     title: '改善日报续文拼接',

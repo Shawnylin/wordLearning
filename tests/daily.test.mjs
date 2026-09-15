@@ -240,6 +240,14 @@ test('pause continuation stops at two requests and reports all returned usage', 
   assert.equal(calls, 2); assert.equal(usage, 240)
 })
 
+test('keeps required idioms and figurative expressions available for highlighting', () => {
+  const content = '工作不能面面俱到，更不能浅尝辄止，要牵住改革的牛鼻子。'.repeat(8)
+  assert.deepEqual(
+    validateArticles([{ ...article, content, words: ['面面俱到', '浅尝辄止', '牛鼻子'] }])[0].words,
+    ['面面俱到', '浅尝辄止', '牛鼻子'],
+  )
+})
+
 function sse(events) {
   return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''), { headers: { 'Content-Type': 'text/event-stream' } })
 }
