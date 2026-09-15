@@ -181,6 +181,7 @@ test("untitled continuation is merged into its verified previous article without
   ]);
   assert.equal(merged.length, 1);
   assert.match(merged[0].content, /续接正文/);
+  assert.doesNotMatch(merged[0].content, /\n续接正文/);
   assert.doesNotMatch(merged[0].title, /续段/);
   const inferred = reconstruct(
     {

@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.3.2',
+    date: '2026-09-15',
+    title: '改善日报续文拼接',
+    changes: [
+      '修复 PDF 日报上文与续文之间出现多余换行的问题。',
+      '续文现在会自然接在上文之后，同时保留正文内部原有段落。'
+    ]
+  },
+  {
     version: '0.3.1',
     date: '2026-09-15',
     title: '日报解析进度更清晰',

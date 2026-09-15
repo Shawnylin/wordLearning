@@ -380,7 +380,11 @@ export function mergedPdfArticles(articles: DailyArticle[]): DailyArticle[] {
     if (article.continuationOf !== undefined) {
       const target = merged[article.continuationOf];
       if (!target) throw new Error("续文对应的文章不存在，未保存");
-      target.content += `\n\n${article.content}`;
+      // A continuation resumes the preceding text directly. Remove only line
+      // breaks at the join so the renderer does not create a false paragraph;
+      // all text and paragraph breaks inside either source segment stay intact.
+      target.content = target.content.replace(/[\r\n\u2028\u2029]+$/u, "")
+        + article.content.replace(/^[\r\n\u2028\u2029]+/u, "");
       target.words = normalizeStudyWords([...target.words, ...article.words], target.content);
     } else merged.push({ ...article });
   }
