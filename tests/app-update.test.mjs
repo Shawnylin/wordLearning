@@ -10,7 +10,9 @@ test('update lifecycle uses prompt registration and registration.update', () => 
   assert.match(store, /registerSW\(\{/)
   assert.match(store, /onNeedRefresh\(\)/)
   assert.match(store, /await registration\.update\(\)/)
-  assert.match(store, /updateServiceWorker\?\.\(true\)/)
+  assert.match(store, /waitingWorker\.postMessage\(\{ type: 'SKIP_WAITING' \}\)/)
+  assert.match(store, /controllerchange/)
+  assert.match(store, /window\.location\.reload\(\)/)
 })
 
 test('update UI contains the required safe copy and actions', () => {

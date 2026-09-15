@@ -3,11 +3,68 @@ import { computed, ref } from 'vue'
 import { registerSW } from 'virtual:pwa-register'
 
 const FOREGROUND_CHECK_INTERVAL = 30 * 60 * 1000
+const UPDATE_INSTALL_TIMEOUT = 30_000
+const UPDATE_ACTIVATE_TIMEOUT = 12_000
 
 let registration: ServiceWorkerRegistration | undefined
 let updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | undefined
 let initialized = false
 let lastForegroundCheck = 0
+
+function waitForWorkerState(worker: ServiceWorker, target: ServiceWorkerState, timeout: number) {
+  if (worker.state === target) return Promise.resolve(true)
+  return new Promise<boolean>((resolve) => {
+    const finish = (matched: boolean) => {
+      clearTimeout(timer)
+      worker.removeEventListener('statechange', handleStateChange)
+      resolve(matched)
+    }
+    const handleStateChange = () => {
+      if (worker.state === target) finish(true)
+      else if (worker.state === 'redundant') finish(false)
+    }
+    const timer = window.setTimeout(() => finish(false), timeout)
+    worker.addEventListener('statechange', handleStateChange)
+  })
+}
+
+async function findWaitingWorker(swRegistration: ServiceWorkerRegistration) {
+  if (swRegistration.waiting) return swRegistration.waiting
+
+  const installing = swRegistration.installing
+  if (installing) {
+    await waitForWorkerState(installing, 'installed', UPDATE_INSTALL_TIMEOUT)
+    return swRegistration.waiting
+  }
+
+  return undefined
+}
+
+function waitForControllerChange(timeout: number) {
+  return new Promise<boolean>((resolve) => {
+    const finish = (changed: boolean) => {
+      clearTimeout(timer)
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
+      resolve(changed)
+    }
+    const handleControllerChange = () => finish(true)
+    const timer = window.setTimeout(() => finish(false), timeout)
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+  })
+}
+
+function waitForUpdateFound(swRegistration: ServiceWorkerRegistration, timeout: number) {
+  return new Promise<ServiceWorker | undefined>((resolve) => {
+    const finish = (worker?: ServiceWorker) => {
+      clearTimeout(timer)
+      swRegistration.removeEventListener('updatefound', handleUpdateFound)
+      resolve(worker)
+    }
+    const handleUpdateFound = () => finish(swRegistration.installing ?? undefined)
+    const timer = window.setTimeout(() => finish(), timeout)
+    swRegistration.addEventListener('updatefound', handleUpdateFound)
+  })
+}
 
 export const useAppUpdateStore = defineStore('app-update', () => {
   const needRefresh = ref(false)
@@ -66,8 +123,17 @@ export const useAppUpdateStore = defineStore('app-update', () => {
         return
       }
 
+      const updateFound = waitForUpdateFound(registration, 1500)
       await registration.update()
-      if (registration.waiting) {
+      let waitingWorker = await findWaitingWorker(registration)
+      if (!waitingWorker) {
+        const discoveredWorker = await updateFound
+        if (discoveredWorker) {
+          await waitForWorkerState(discoveredWorker, 'installed', UPDATE_INSTALL_TIMEOUT)
+          waitingWorker = registration.waiting
+        }
+      }
+      if (waitingWorker) {
         needRefresh.value = true
         promptVisible.value = true
       }
@@ -89,19 +155,23 @@ export const useAppUpdateStore = defineStore('app-update', () => {
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
         await new Promise(resolve => setTimeout(resolve, 480))
       }
-      await updateServiceWorker?.(true)
-      setTimeout(() => {
-        // If a browser activates the worker without reloading, restore the UI
-        // instead of leaving the current page faded out indefinitely.
-        document.documentElement.classList.remove('app-update-leaving')
-        sessionStorage.removeItem('app-update-transition')
-        applying.value = false
-      }, 1600)
+      if (!registration) {
+        registration = await navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL)
+      }
+      const waitingWorker = registration ? await findWaitingWorker(registration) : undefined
+      if (!waitingWorker) throw new Error('waiting worker unavailable')
+
+      const controllerChanged = waitForControllerChange(UPDATE_ACTIVATE_TIMEOUT)
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' })
+      // Keep the plugin bridge as a compatibility fallback for Workbox-managed updates.
+      await updateServiceWorker?.(false)
+      if (!await controllerChanged) throw new Error('worker activation timed out')
+      window.location.reload()
     } catch {
       applying.value = false
       sessionStorage.removeItem('app-update-transition')
       document.documentElement.classList.remove('app-update-leaving')
-      statusMessage.value = '更新失败，请稍后重试'
+      statusMessage.value = '更新未能完成，请关闭后重新打开应用再试'
     }
   }
 

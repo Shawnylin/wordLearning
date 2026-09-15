@@ -37,6 +37,11 @@ const router = createRouter({
       name: 'models',
       component: () => import('../views/ModelSettingsView.vue')
     },
+    {
+      path: '/profile/changelog',
+      name: 'changelog',
+      component: () => import('../views/ChangelogView.vue')
+    },
     { path: '/profile/settings', redirect: '/profile' },
     {
       path: '/profile',

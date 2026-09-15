@@ -12,7 +12,7 @@ import { useAppUpdateStore } from '../stores/appUpdate'
 import { validateDailyIssue } from '../api/dailyBackup'
 import {
   Sun, Moon, Trash2,
-  Download, Upload, Monitor, Coins, RefreshCw, Key, ChevronRight, Smartphone
+  Download, Upload, Monitor, Coins, RefreshCw, Key, ChevronRight, Smartphone, FileText
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -155,7 +155,7 @@ function handleImport() {
                 :aria-checked="settings.thinkingEnabled"
                 aria-label="深度思考"
               >
-                <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-all duration-300" :style="{ transform: settings.thinkingEnabled ? 'translateX(20px)' : 'translateX(0)' }" />
+                <span class="absolute top-1/2 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-transform duration-300" :style="{ transform: settings.thinkingEnabled ? 'translate(20px, -50%)' : 'translate(0, -50%)' }" />
               </button>
             </div>
             <Motion><div v-if="settings.thinkingEnabled" class="grid grid-cols-3 gap-2 mt-3">
@@ -216,8 +216,8 @@ function handleImport() {
             :class="themeStore.followSystem ? 'bg-zhuhong border-zhuhong' : 'bg-soft border-line'"
           >
             <span
-              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-all duration-300"
-              :style="{ transform: themeStore.followSystem ? 'translateX(20px)' : 'translateX(0)' }"
+              class="absolute top-1/2 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-transform duration-300"
+              :style="{ transform: themeStore.followSystem ? 'translate(20px, -50%)' : 'translate(0, -50%)' }"
             />
           </button>
         </div>
@@ -249,12 +249,19 @@ function handleImport() {
 
       <!-- App Update -->
       <div class="settings-card-update card rounded-2xl p-6">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai"><Smartphone :size="20" /></div>
-          <div class="min-w-0">
-            <h3 class="font-semibold text-ink">应用更新</h3>
-            <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0"><Smartphone :size="20" /></div>
+            <div class="min-w-0">
+              <h3 class="font-semibold text-ink">应用更新</h3>
+              <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
+            </div>
           </div>
+          <button
+            class="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-dai bg-dai-soft hover:opacity-80 transition-opacity"
+            aria-label="查看更新日志"
+            @click="router.push('/profile/changelog')"
+          ><FileText :size="15" />更新日志</button>
         </div>
         <p class="mb-3 text-sm" :class="appUpdate.needRefresh ? 'text-zhuhong' : 'text-ink-mute'">{{ appUpdate.statusText }}</p>
         <button
@@ -393,7 +400,7 @@ function handleImport() {
     </Teleport>
 
     <!-- Version -->
-    <div class="text-center mt-8 mb-4">
+    <div class="text-center mt-4 mb-4">
       <p class="text-xs text-ink-mute">v{{ appUpdate.currentVersion }}</p>
     </div>
   </div>
