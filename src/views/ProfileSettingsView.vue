@@ -123,10 +123,10 @@ function handleImport() {
 
 <template>
   <div :class="embedded ? 'pb-4' : 'min-h-screen px-4 pt-8 pb-4'">
-    <div class="settings-layout mx-auto max-w-lg space-y-4">
+    <div class="settings-layout mx-auto max-w-lg space-y-4" :class="{ 'is-profile-embedded': embedded }">
 <header v-if="!embedded" class="flex items-center gap-3"><button @click="router.push('/profile')" class="p-3 rounded-full bg-soft" aria-label="返回个人">←</button><h1 class="font-kai text-3xl">设置</h1></header>
         <!-- Token Stats -->
-        <div class="card p-5 rounded-2xl">
+        <div class="settings-card-token card p-5 rounded-2xl">
           <div class="flex items-center gap-2 mb-3">
             <Coins :size="16" class="text-gold" />
             <span class="text-sm font-medium text-ink-soft">Token 消耗统计</span>
@@ -184,14 +184,14 @@ function handleImport() {
             </button>
           </div>
         </div>
-      <button @click="router.push('/profile/models')" class="card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
+      <button @click="router.push('/profile/models')" class="settings-card-model card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
         <div class="w-10 h-10 rounded-xl bg-dai-soft text-dai flex items-center justify-center shrink-0"><Key :size="20" /></div>
         <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 配置与切换</p></div>
         <ChevronRight :size="18" class="text-ink-mute shrink-0" />
       </button>
 
       <!-- Theme Setting -->
-      <div class="card rounded-2xl p-6 space-y-4">
+      <div class="settings-card-theme card rounded-2xl p-6 space-y-4">
         <div class="flex items-center gap-3">
           <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gold-soft text-gold">
             <component :is="themeStore.followSystem ? Monitor : (themeStore.theme === 'dark' ? Moon : Sun)" :size="20" />
@@ -248,7 +248,7 @@ function handleImport() {
       </div>
 
       <!-- App Update -->
-      <div class="card rounded-2xl p-6">
+      <div class="settings-card-update card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai"><Smartphone :size="20" /></div>
           <div class="min-w-0">
@@ -272,7 +272,7 @@ function handleImport() {
       </div>
 
       <!-- Data Management -->
-      <div class="card rounded-2xl p-6">
+      <div class="settings-card-data card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-soft text-ink-soft">
             <Trash2 :size="20" />

@@ -396,13 +396,22 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 }
 @media (min-width: 1024px) {
   .app-main > * > .max-w-lg:has(.settings-layout) { max-width: 960px; }
-  .app-main .settings-layout {
+  .app-main .settings-layout.is-profile-embedded {
     max-width: 960px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    grid-template-areas:
+      "token model"
+      "token update"
+      "theme data";
+    align-items: stretch;
     gap: 20px;
   }
   .app-main .settings-layout > * { min-width: 0; margin-block: 0; }
   .app-main .settings-layout > header { grid-column: 1 / -1; }
+  .app-main .is-profile-embedded .settings-card-token { grid-area: token; }
+  .app-main .is-profile-embedded .settings-card-model { grid-area: model; }
+  .app-main .is-profile-embedded .settings-card-theme { grid-area: theme; }
+  .app-main .is-profile-embedded .settings-card-update { grid-area: update; }
+  .app-main .is-profile-embedded .settings-card-data { grid-area: data; }
 }

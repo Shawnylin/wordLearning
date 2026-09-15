@@ -228,6 +228,7 @@ onBeforeUnmount(() =>
   .nav-toggle svg, .nav-item svg { flex-shrink: 0; }
   .nav-frame { max-width: none; padding: 0; }
   .nav-shell { flex-direction: column; gap: 8px; border-radius: 22px; }
+  #bottom-nav-indicator { border-radius: 14px; }
   .nav-item { flex: none; width: 100%; height: 48px; flex-direction: row; justify-content: flex-start; gap: 0; padding: 0 8px; border-radius: 16px; }
   .nav-label { font-size: 14px; line-height: 20px; max-height: 20px; max-width: 80px; margin-left: 12px; white-space: nowrap; transition: max-width 420ms ease, margin 420ms ease, opacity 180ms ease; }
   .is-collapsed .nav-label { max-width: 0; margin-left: 0; opacity: 0; }
