@@ -122,7 +122,27 @@ defineExpose({ open })
           </div>
           <div class="flex flex-col flex-1 min-h-0" aria-live="polite">
             <Motion><div v-if="error" class="p-4 text-sm text-zhuhong"><p>{{ error }}</p><button @click="lookup(word)" :disabled="store.idiomLoading" class="mt-3 underline">重试查询</button></div></Motion>
-            <p v-if="visible && store.idiomLoading && !content" class="p-4 text-sm text-ink-mute animate-pulse">{{ pending ? '接下来查询' : '正在查询' }}「{{ word }}」…</p>
+            <p v-if="visible && store.idiomLoading && !content && !docked" class="p-4 text-sm text-ink-mute animate-pulse">{{ pending ? '接下来查询' : '正在查询' }}「{{ word }}」…</p>
+            <div v-if="visible && store.idiomLoading && !content && docked" class="lookup-skeleton" role="status" :aria-label="`${pending ? '接下来查询' : '正在查询'}${word}`">
+              <div class="lookup-skeleton-heading">
+                <div class="min-w-0 flex-1">
+                  <div class="skeleton-block skeleton-word" />
+                  <div class="skeleton-block skeleton-pinyin" />
+                </div>
+                <div class="skeleton-block skeleton-action" />
+                <div class="skeleton-block skeleton-action" />
+              </div>
+              <div class="lookup-skeleton-tabs" aria-hidden="true">
+                <div v-for="index in 5" :key="index" class="skeleton-block skeleton-tab" />
+              </div>
+              <div class="lookup-skeleton-copy" aria-hidden="true">
+                <div class="skeleton-block skeleton-line is-full" />
+                <div class="skeleton-block skeleton-line is-full" />
+                <div class="skeleton-block skeleton-line is-medium" />
+                <div class="skeleton-block skeleton-line is-short" />
+              </div>
+              <div class="lookup-skeleton-footer"><span class="skeleton-dot" />{{ pending ? '等待当前查询完成…' : `正在整理「${word}」的学习内容…` }}</div>
+            </div>
             <Transition name="lookup-result" mode="out-in">
               <DailyWordContent v-if="content && (visible || !docked)" :key="word" :idiom="content" :loading="store.idiomLoading" @related-click="lookup" @regenerate="lookup(word, true)" />
             </Transition>
@@ -146,10 +166,28 @@ defineExpose({ open })
 .selection-action { display: flex; align-items: center; gap: 8px; padding: 0 16px 12px; font-size: 13px; flex-shrink: 0; }
 .selection-action span { min-width: 0; overflow-wrap: anywhere; }
 .selection-action button { margin-left: auto; padding: 10px 12px; flex-shrink: 0; border-radius: 12px; background: var(--zhuhong-soft); color: var(--zhuhong); }
+.lookup-skeleton { display: flex; min-height: 0; flex: 1; flex-direction: column; overflow: hidden; }
+.lookup-skeleton-heading { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
+.lookup-skeleton-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 0 12px 10px; }
+.lookup-skeleton-copy { display: flex; flex: 1; flex-direction: column; gap: 11px; padding: 14px 18px; }
+.skeleton-block { position: relative; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--ink-mute) 12%, var(--soft)); }
+.skeleton-block::after { content: ''; position: absolute; inset: 0; transform: translateX(-110%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--card) 72%, transparent), transparent); animation: lookup-shimmer 1.55s ease-in-out infinite; }
+.skeleton-word { width: min(68%, 132px); height: 24px; border-radius: 8px; }
+.skeleton-pinyin { width: min(46%, 88px); height: 10px; margin-top: 8px; }
+.skeleton-action { width: 34px; height: 34px; flex: none; }
+.skeleton-tab { height: 32px; }
+.skeleton-line { height: 12px; border-radius: 6px; }
+.skeleton-line.is-full { width: 100%; }
+.skeleton-line.is-medium { width: 82%; }
+.skeleton-line.is-short { width: 56%; }
+.lookup-skeleton-footer { display: flex; align-items: center; gap: 7px; min-height: 33px; padding: 7px 16px; border-top: 1px solid var(--line); color: var(--ink-mute); font-size: 10px; }
+.skeleton-dot { width: 6px; height: 6px; flex: none; border-radius: 999px; background: var(--zhuhong); animation: lookup-dot 1.2s ease-in-out infinite; }
+@keyframes lookup-shimmer { to { transform: translateX(110%); } }
+@keyframes lookup-dot { 50% { opacity: .35; transform: scale(.8); } }
 .lookup-result-enter-active, .lookup-result-leave-active { transition: opacity 160ms ease; }
 .lookup-result-enter-from, .lookup-result-leave-to { opacity: 0; }
 @media (min-width: 768px) { .daily-scrim { display: none; } }
-@media (prefers-reduced-motion: reduce) { .daily-sheet { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .daily-sheet { transition: none; } .skeleton-block::after, .skeleton-dot { animation: none; } }
 .daily-blur-enter-active,.daily-blur-leave-active { transition: backdrop-filter 520ms ease, background 520ms ease; }
 .daily-blur-enter-from,.daily-blur-leave-to { backdrop-filter: blur(0); background: transparent; }
 @media (prefers-reduced-motion: reduce) { .daily-blur-enter-active,.daily-blur-leave-active { transition-duration: 1ms; } }

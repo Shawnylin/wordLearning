@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.2.2',
+    date: '2026-09-15',
+    title: 'iPad 随文查词加载体验优化',
+    changes: [
+      '重新设计 iPad 随文查词的加载画面，查询时可提前看到清晰的内容结构。',
+      '优化加载动画和状态提示，减少内容出现前的空白与跳动。',
+      '保留“减少动态效果”支持，关闭动画后仍能清楚识别加载状态。'
+    ]
+  },
+  {
     version: '0.2.1',
     date: '2026-09-15',
     title: '界面细节与应用更新体验优化',
