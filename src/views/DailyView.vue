@@ -236,6 +236,11 @@ function onScroll() {
     new CustomEvent("daily-reading-mode", { detail: { compact: next } }),
   );
 }
+// Paragraph spacing belongs to the renderer, not to blank lines in stored text.
+// Keep every nonblank line verbatim and never rewrite the saved article.
+function readingParagraphs(content: string) {
+  return content.split(/\r\n?|\n|\u2028|\u2029/).filter(line => line.trim().length > 0);
+}
 function segments(content: string, words: string[]) {
   const terms = [...words].sort((a, b) => b.length - a.length),
     result: { text: string; word?: string }[] = [];
@@ -385,9 +390,10 @@ onBeforeUnmount(() => {
               ><template v-else> · 未标注发布日期</template
               ><ExternalLink :size="12"
             /></a>
-            <p class="daily-prose mt-5">
+            <div class="daily-body mt-5">
+            <p v-for="(paragraph, paragraphIndex) in readingParagraphs(article.content)" :key="paragraphIndex" class="daily-prose">
               <template
-                v-for="(segment, i) in segments(article.content, article.words)"
+                v-for="(segment, i) in segments(paragraph, article.words)"
                 :key="i"
                 ><button
                   v-if="segment.word"
@@ -399,6 +405,7 @@ onBeforeUnmount(() => {
                 ><template v-else>{{ segment.text }}</template></template
               >
             </p>
+            </div>
             <p
               v-if="
                 article.origin === 'pdf' &&
@@ -444,7 +451,7 @@ onBeforeUnmount(() => {
             <summary class="text-sm cursor-pointer text-ink-soft">
               其他版面文字 · 图片说明、报头及未归类文字
             </summary>
-            <p class="daily-prose mt-4">{{ selected.pdf.remainder }}</p>
+            <div class="daily-body mt-4"><p v-for="(paragraph, index) in readingParagraphs(selected.pdf.remainder)" :key="index" class="daily-prose">{{ paragraph }}</p></div>
           </details>
           <p class="text-center text-xs text-ink-mute">
             保存于 {{ dateLabel(selected.createdAt) }} ·
@@ -607,11 +614,9 @@ onBeforeUnmount(() => {
     height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     min-width: 0;
   }
-  .daily-prose { font-size: 16px; line-height: 2.15; }
 }
 @media (min-width: 1180px) {
   .app-main > .daily-workspace { padding-inline: 32px; }
-  .daily-prose { font-size: 18px; }
 }
 .daily-article {
   padding: 2px 0 32px;
@@ -638,6 +643,14 @@ onBeforeUnmount(() => {
   color: var(--ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.daily-body > .daily-prose { margin: 0; }
+.daily-body > .daily-prose + .daily-prose { margin-top: .65em; }
+@media (min-width: 768px) {
+  .daily-prose { font-size: 16px; line-height: 1.95; }
+}
+@media (min-width: 1180px) {
+  .daily-prose { font-size: 18px; }
 }
 .daily-word {
   -webkit-user-select: text;

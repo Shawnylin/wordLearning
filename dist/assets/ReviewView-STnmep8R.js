@@ -1,4 +1,4 @@
-import{u as tt,_}from"./settings-DYW78cuO.js";import{l as I,d as et,m as st,z as ot,q as nt,c as a,a as t,b as u,u as o,t as r,e as w,k as it,o as d,g as c,F as g,i as z,n as C,h as b,B as P,H as y,r as B,M as lt,j as f,_ as at}from"./index-CMOpwuxw.js";import{u as rt,S as dt}from"./review-CQIhVh_M.js";import{u as ut}from"./idiom-DfEW1ABU.js";import{X as ct}from"./x-BCqAS9Q9.js";import{C as ft}from"./check-a7VLRew_.js";import{S as xt}from"./sparkles-Btx7fvSN.js";/**
+import{u as tt,_}from"./settings-Cw-peMCP.js";import{l as I,d as et,m as st,z as ot,q as nt,c as a,a as t,b as u,u as o,t as r,e as w,k as it,o as d,g as c,F as g,i as z,n as C,h as b,B as P,H as y,r as B,M as lt,j as f,_ as at}from"./index-DoIMN4c5.js";import{u as rt,S as dt}from"./review-Cwm8mnwL.js";import{u as ut}from"./idiom-DUxRLP6G.js";import{X as ct}from"./x-HhhllL0p.js";import{C as ft}from"./check-BaGNcDfK.js";import{S as xt}from"./sparkles-DkNcd1o3.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.
