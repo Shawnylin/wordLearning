@@ -2,12 +2,21 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export type ThemeMode = 'light' | 'dark'
+export type ThemeColor = 'cinnabar' | 'dai' | 'bamboo' | 'violet'
+
+export const themeColorOptions: { value: ThemeColor; label: string; preview: string }[] = [
+  { value: 'cinnabar', label: '朱砂', preview: '#b23a2c' },
+  { value: 'dai', label: '黛蓝', preview: '#486a88' },
+  { value: 'bamboo', label: '竹青', preview: '#4f775b' },
+  { value: 'violet', label: '紫藤', preview: '#765b86' }
+]
 
 const STORAGE_KEY = 'word-learning-theme'
 
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<ThemeMode>('light')
   const followSystem = ref(true)
+  const themeColor = ref<ThemeColor>('cinnabar')
 
   function applyTheme() {
     const html = document.documentElement
@@ -16,12 +25,14 @@ export const useThemeStore = defineStore('theme', () => {
     } else {
       html.classList.remove('dark')
     }
+    html.dataset.themeColor = themeColor.value
   }
 
   function saveToStorage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       theme: theme.value,
-      followSystem: followSystem.value
+      followSystem: followSystem.value,
+      themeColor: themeColor.value
     }))
   }
 
@@ -32,6 +43,7 @@ export const useThemeStore = defineStore('theme', () => {
         const data = JSON.parse(saved)
         if (data.theme) theme.value = data.theme
         if (typeof data.followSystem === 'boolean') followSystem.value = data.followSystem
+        if (themeColorOptions.some(option => option.value === data.themeColor)) themeColor.value = data.themeColor
         return true
       }
     } catch {}
@@ -77,6 +89,12 @@ export const useThemeStore = defineStore('theme', () => {
     saveToStorage()
   }
 
+  function setThemeColor(color: ThemeColor) {
+    themeColor.value = color
+    applyTheme()
+    saveToStorage()
+  }
+
   // 监听系统主题变化
   function watchSystemTheme() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -91,11 +109,13 @@ export const useThemeStore = defineStore('theme', () => {
 
   return {
     theme,
+    themeColor,
     followSystem,
     initTheme,
     toggleTheme,
     setTheme,
     setFollowSystem,
+    setThemeColor,
     watchSystemTheme
   }
 })

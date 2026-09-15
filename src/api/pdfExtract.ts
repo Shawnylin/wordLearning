@@ -3,7 +3,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { planBatches, textLines, type PdfDraft, type TextItem } from './pdfPlan'
 GlobalWorkerOptions.workerSrc = workerUrl
 
-export async function extractPdf(file: File, signal: AbortSignal, onProgress: (text: string) => void): Promise<PdfDraft> {
+export async function extractPdf(file: File, signal: AbortSignal, onProgress: (text: string, progress: number) => void): Promise<PdfDraft> {
   if (!/\.pdf$/i.test(file.name) || !file.size || file.size > 50 * 1024 * 1024) throw new Error('请选择不超过 50 MB 的 PDF 文件')
   const bytes = new Uint8Array(await file.arrayBuffer())
   signal.throwIfAborted()
@@ -19,7 +19,7 @@ export async function extractPdf(file: File, signal: AbortSignal, onProgress: (t
     const draft: PdfDraft = { filename: file.name, fingerprint, pages: doc.numPages, batches: [], tokenUsage: 0, usageEstimated: false, models: [] }
     let chars = 0
     for (let page = 1; page <= doc.numPages; page++) {
-      signal.throwIfAborted(); onProgress(`本机读取 ${page}/${doc.numPages} 页`)
+      signal.throwIfAborted(); onProgress(`读取第 ${page}/${doc.numPages} 页`, (page - 1) / doc.numPages)
       const pdfPage = await doc.getPage(page)
       const content = await pdfPage.getTextContent()
       const lines = textLines(content.items.filter((item): item is TextItem & { dir: string; fontName: string } => 'str' in item))
@@ -27,6 +27,7 @@ export async function extractPdf(file: File, signal: AbortSignal, onProgress: (t
       chars += lines.reduce((n, line) => n + line.text.length, 0)
       if (chars > 250000) throw new Error('文字超过 25 万字，请拆分 PDF 后导入')
       draft.batches.push(...planBatches(page, lines)); pdfPage.cleanup()
+      onProgress(`已读取 ${page}/${doc.numPages} 页`, page / doc.numPages)
     }
     return draft
   } catch (e) {

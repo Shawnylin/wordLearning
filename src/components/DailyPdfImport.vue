@@ -21,6 +21,7 @@ const panel = ref<HTMLElement>(),
 const draft = ref<PdfDraft>(),
   busy = ref(false),
   status = ref(""),
+  progress = ref(0),
   error = ref("");
 let controller: AbortController | undefined;
 const ready = computed(
@@ -76,18 +77,22 @@ async function pick(event: Event) {
   if (!file || busy.value) return;
   draft.value = undefined;
   error.value = "";
+  progress.value = 0;
   busy.value = true;
   controller = new AbortController();
   try {
-    status.value = "正在加载本机 PDF 提取器";
+    status.value = "准备读取 PDF";
+    progress.value = 4;
     const { extractPdf } = await import("../api/pdfExtract");
-    const result = await extractPdf(file, controller.signal, (text) => {
+    const result = await extractPdf(file, controller.signal, (text, value) => {
       status.value = text;
+      progress.value = Math.round(8 + value * 32);
     });
     if (daily.issues.some((i) => i.pdf?.fingerprint === result.fingerprint))
       throw new Error("这份 PDF 已导入，请在历史日报中继续学习");
     draft.value = result;
-    status.value = "原文已提取，尚未调用模型";
+    status.value = "PDF 已读取，可以开始解析";
+    progress.value = 40;
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
@@ -100,18 +105,22 @@ async function parse() {
   if (!draft.value || busy.value) return;
   busy.value = true;
   error.value = "";
+  const completed = draft.value.batches.filter((batch) => batch.result).length;
+  progress.value = Math.round(40 + (completed / draft.value.batches.length) * 55);
   controller = new AbortController();
   try {
     await parsePdfDraft(
       draft.value,
       settings.pdfApiConfig,
       controller.signal,
-      (text) => {
+      (text, value) => {
         status.value = text;
+        progress.value = Math.round(40 + value * 55);
       },
       (tokens) => idioms.addTokenUsage(tokens),
     );
     status.value = `分篇完成，共 ${articles.value.length} 篇；请核对后保存`;
+    progress.value = 100;
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
@@ -124,6 +133,7 @@ function save() {
     daily.savePdfIssues(pdfIssues(draft.value!));
     draft.value = undefined;
     status.value = "";
+    progress.value = 0;
     visible.value = false;
   } catch (e) {
     error.value = `保存失败：${(e as Error).message}。预览仍保留，可导出原文或释放本机空间后重试。`;
@@ -179,15 +189,14 @@ defineExpose({ open });
             {{ busy ? "取消任务" : "关闭" }}
           </button>
         </header>
-        <p class="text-sm text-ink-soft leading-7 mt-4">
-          从<a
+        <p class="text-sm text-ink-soft leading-6 mt-4">
+          导入文字版 PDF，自动识别文章并保留原文。最多 32 页 / 50 MB。<a
             href="https://paper.people.com.cn/rmrb/"
             target="_blank"
             rel="noopener noreferrer"
             class="text-zhuhong underline"
-            >人民日报电子版</a
-          >下载所需版面 PDF。支持文字版，最多 32 页 / 50
-          MB。仅呈现上传版面的全文；“下转”等续篇需另行导入对应版面。
+            >下载人民日报 PDF</a
+          >
         </p>
         <input
           ref="input"
@@ -204,21 +213,28 @@ defineExpose({ open });
           class="pdf-file-button mt-4 w-full rounded-2xl py-4 text-sm font-medium"
         >
           {{
-            busy ? "正在读取 PDF…" : draft ? "重新选择 PDF" : "选择 PDF 文件"
+            busy ? "处理中…" : draft ? "更换 PDF" : "选择 PDF"
           }}
         </button>
         <p class="text-xs text-ink-mute leading-6 mt-4">
-          解析模型：{{ settings.pdfApiConfig.model || "尚未配置" }}
+          模型：{{ settings.pdfApiConfig.model || "未配置" }}
           <button
             @click="models"
             :disabled="busy"
             class="text-zhuhong underline"
           >
-            设置解析模型
+            设置
           </button>
         </p>
+        <div v-if="progress > 0" class="pdf-progress mt-4" role="progressbar" aria-label="日报解析进度" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="progress">
+          <div class="flex items-center justify-between gap-3 text-xs">
+            <span class="truncate text-ink-soft">{{ status }}</span>
+            <span class="shrink-0 font-medium text-zhuhong">{{ progress }}%</span>
+          </div>
+          <div class="pdf-progress-track mt-2"><span :style="{ width: `${progress}%` }" /></div>
+        </div>
         <p
-          v-if="status"
+          v-if="status && progress === 0"
           role="status"
           aria-live="polite"
           class="mt-3 text-sm text-ink-soft"
@@ -238,14 +254,10 @@ defineExpose({ open });
             {{ characters.toLocaleString() }} 字符 ·
             {{ draft.batches.length }} 批
           </p>
-          <p class="text-xs text-ink-mute leading-6">
-            剩余预计输入约
-            {{ budget.input.toLocaleString() }} tokens，输出预算上限
-            {{
-              budget.output.toLocaleString()
-            }}
-            tokens。实际用量依模型而异。正文在本机提取，仅发送带编号文字供分篇；模型返回编号，程序还原全文。逐批处理，不自动付费重试。
-          </p>
+          <details class="text-xs text-ink-mute">
+            <summary class="cursor-pointer text-ink-soft">用量与处理说明</summary>
+            <p class="mt-2 leading-6">预计剩余输入 {{ budget.input.toLocaleString() }} tokens，输出上限 {{ budget.output.toLocaleString() }} tokens。正文在本机提取，模型仅用于分篇；任务逐批处理，不自动付费重试。“下转”等内容需同时导入对应版面。</p>
+          </details>
           <p v-if="draft.tokenUsage" class="text-xs text-ink-mute">
             本次累计{{ draft.usageEstimated ? "含估算" : "接口报告" }}
             {{
@@ -262,10 +274,10 @@ defineExpose({ open });
             >
               {{
                 busy
-                  ? "处理中…"
+                  ? `${progress}%`
                   : articles.length
-                    ? "继续解析未完成批次"
-                    : "开始分篇解析"
+                    ? "继续解析"
+                    : "开始解析"
               }}</button
             ><button
               v-if="ready"
@@ -273,18 +285,18 @@ defineExpose({ open });
               :disabled="busy"
               class="btn-primary rounded-full px-5 py-2 text-sm"
             >
-              保存 {{ articles.length }} 篇到日报</button
+              保存 {{ articles.length }} 篇</button
             ><button
               @click="downloadText"
               :disabled="busy"
               class="bg-soft rounded-full px-4 py-2 text-sm"
             >
-              导出全文 TXT
+              导出 TXT
             </button>
           </div>
           <details class="border-t border-line pt-3">
             <summary class="text-sm cursor-pointer">
-              核对提取原文（含图片说明与报头）
+              核对提取原文
             </summary>
             <pre class="raw-text">{{
               draft.batches
@@ -296,7 +308,7 @@ defineExpose({ open });
             }}</pre>
           </details>
           <div v-if="articles.length" class="border-t border-line pt-4">
-            <h3 class="text-sm mb-3">全文预览 · 模型分篇请核对</h3>
+            <h3 class="text-sm mb-3">分篇预览</h3>
             <details
               v-for="(article, index) in articles"
               :key="index"
@@ -355,6 +367,8 @@ defineExpose({ open });
   background: var(--zhuhong-soft);
   color: var(--zhuhong);
 }
+.pdf-progress-track { height: 7px; overflow: hidden; border-radius: 999px; background: var(--soft); }
+.pdf-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--zhuhong-solid); transition: width 360ms cubic-bezier(.22,1,.36,1); }
 .pdf-panel-enter-active,
 .pdf-panel-leave-active {
   transition:
@@ -397,5 +411,6 @@ summary:focus-visible {
   .pdf-scrim-leave-active {
     transition-duration: 1ms;
   }
+  .pdf-progress-track span { transition: none; }
 }
 </style>

@@ -260,7 +260,7 @@ export async function parsePdfDraft(
   draft: PdfDraft,
   config: ApiConfig,
   signal: AbortSignal,
-  onProgress: (text: string) => void,
+  onProgress: (text: string, progress: number) => void,
   onUsage: (tokens: number) => void,
 ) {
   const snapshot = { ...config };
@@ -268,12 +268,18 @@ export async function parsePdfDraft(
     throw new Error("请先在模型与 API 中配置 PDF 解析模型");
   const endpoint = apiEndpoint(snapshot.baseUrl, "chat/completions");
   const host = new URL(endpoint).hostname;
+  const completedBeforeStart = draft.batches.filter((batch) => batch.result).length;
+  onProgress(
+    completedBeforeStart ? `继续解析 ${completedBeforeStart}/${draft.batches.length}` : `准备解析 ${draft.batches.length} 个批次`,
+    completedBeforeStart / draft.batches.length,
+  );
   for (let index = 0; index < draft.batches.length; index++) {
     const batch = draft.batches[index];
     if (batch.result) continue; // Retrying never rebills completed batches.
     signal.throwIfAborted();
     onProgress(
-      `分篇 ${index + 1}/${draft.batches.length} · 第 ${batch.page} 页`,
+      `解析 ${index + 1}/${draft.batches.length} · 第 ${batch.page} 页`,
+      draft.batches.filter((item) => item.result).length / draft.batches.length,
     );
     const controller = new AbortController(),
       abort = () => controller.abort();
@@ -348,6 +354,8 @@ export async function parsePdfDraft(
       }
       signal.throwIfAborted();
       batch.result = reconstruct(batch, parsed, previous.length);
+      const completed = draft.batches.filter((item) => item.result).length;
+      onProgress(`已完成 ${completed}/${draft.batches.length} 个批次`, completed / draft.batches.length);
     } catch (e) {
       if (controller.signal.aborted || signal.aborted)
         throw new Error(

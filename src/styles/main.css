@@ -63,6 +63,38 @@ html.dark {
   --violet-soft: #292031;
 }
 
+/* 主题强调色：背景与正文保持中性，只改变主要操作和选中状态。 */
+html:not(.dark)[data-theme-color="dai"] {
+  --zhuhong: #486a88;
+  --zhuhong-soft: #e3ebf2;
+  --zhuhong-solid: #486a88;
+}
+html.dark[data-theme-color="dai"] {
+  --zhuhong: #91afc9;
+  --zhuhong-soft: #202c37;
+  --zhuhong-solid: #527698;
+}
+html:not(.dark)[data-theme-color="bamboo"] {
+  --zhuhong: #4f775b;
+  --zhuhong-soft: #e4ede6;
+  --zhuhong-solid: #4f775b;
+}
+html.dark[data-theme-color="bamboo"] {
+  --zhuhong: #8eb89a;
+  --zhuhong-soft: #1e2b23;
+  --zhuhong-solid: #4f7d5d;
+}
+html:not(.dark)[data-theme-color="violet"] {
+  --zhuhong: #765b86;
+  --zhuhong-soft: #eee7f2;
+  --zhuhong-solid: #765b86;
+}
+html.dark[data-theme-color="violet"] {
+  --zhuhong: #b89ac8;
+  --zhuhong-soft: #2b2231;
+  --zhuhong-solid: #76568a;
+}
+
 /* 将色板映射为 Tailwind 工具类（bg-card / text-ink / border-line …） */
 @theme inline {
   --color-paper: var(--paper);

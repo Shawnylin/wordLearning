@@ -2,7 +2,7 @@
 import Motion from '../components/Motion.vue'
 import { onMounted, ref, watch } from 'vue'
 import { fetchBalance, type ApiBalance } from '../api/deepseek'
-import { useThemeStore } from '../stores/theme'
+import { themeColorOptions, useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
@@ -245,6 +245,25 @@ function handleImport() {
             深色
           </button>
         </div></Motion>
+
+        <div class="border-t border-line pt-4">
+          <p class="mb-3 text-xs font-medium text-ink-mute">主题颜色</p>
+          <div class="grid grid-cols-4 gap-2" role="radiogroup" aria-label="主题颜色">
+            <button
+              v-for="option in themeColorOptions"
+              :key="option.value"
+              class="flex min-w-0 flex-col items-center gap-2 rounded-xl border px-1 py-2.5 text-xs transition-colors"
+              :class="themeStore.themeColor === option.value ? 'border-zhuhong bg-zhuhong-soft text-zhuhong' : 'border-line bg-soft text-ink-mute'"
+              role="radio"
+              :aria-checked="themeStore.themeColor === option.value"
+              :aria-label="`${option.label}主题色`"
+              @click="themeStore.setThemeColor(option.value)"
+            >
+              <span class="h-5 w-5 rounded-full border-2 border-white/70 shadow-sm" :style="{ backgroundColor: option.preview }" />
+              <span class="truncate">{{ option.label }}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- App Update -->
