@@ -131,7 +131,15 @@ onMounted(() => {
     animate(panel.value!, [frame(sourceRect, 16), frame(targetRect, 24)]),
     animate(content.value!, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear'),
     moveRowDetails(false)
-  ])
+  ]).then(() => {
+    if (disposed) return
+    // Return geometry to CSS after the shared transition so rotation and
+    // Split View resizing keep the open panel inside the current viewport.
+    animations.forEach(animation => animation.cancel())
+    animations.length = 0
+    panel.value!.removeAttribute('style')
+    if (rowGhost) rowGhost.style.opacity = '0'
+  })
 })
 async function close() {
   if (closing) return
@@ -139,6 +147,8 @@ async function close() {
   // Let a quick back tap finish the shared motion before reversing it.
   await opening
   if (disposed) return
+  targetRect = panel.value!.getBoundingClientRect()
+  Object.assign(panel.value!.style, frame(targetRect, 24))
   dialog.value!.classList.add('closing')
   const sourceRect = props.source?.getBoundingClientRect() || targetRect
   if (rowGhost) {
@@ -196,6 +206,17 @@ onBeforeUnmount(() => {
 .record-panel .card { border: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
 .record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
+@media (min-width: 768px) {
+  .record-panel {
+    left: calc((100vw - min(760px, 100vw - 64px)) / 2);
+    top: max(32px, env(safe-area-inset-top));
+    width: min(760px, calc(100vw - 64px));
+    height: calc(100dvh - max(32px, env(safe-area-inset-top)) - max(32px, env(safe-area-inset-bottom)));
+  }
+  .record-content > .max-w-lg { max-width: none; }
+  .record-panel .study-sections { padding: 28px; }
+  .record-back { padding: 18px 28px; }
+}
 @keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }
 @keyframes record-backdrop-out { to { backdrop-filter: blur(0); background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .record-dialog::backdrop { animation: none !important; } }

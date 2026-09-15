@@ -27,7 +27,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="min-h-screen bg-paper text-ink transition-colors duration-300">
-    <main class="pb-safe">
+    <main class="app-main pb-safe">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <KeepAlive include="LearnView,CompareView,DailyView">

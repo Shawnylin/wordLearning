@@ -94,6 +94,16 @@ defineExpose({ open })
 .daily-scrim { position: fixed; inset: 0; z-index: 70; background: rgb(0 0 0 / .18); backdrop-filter: blur(9px); }
 .daily-sheet { position: fixed; z-index: 71; left: max(0px, calc((100vw - 560px) / 2)); bottom: 0; width: min(100vw, 560px); height: 50dvh; border-radius: 20px 20px 0 0; background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 20px 80px rgb(0 0 0 / .2); overflow: hidden; outline: none; padding-bottom: env(safe-area-inset-bottom, 0px); transition: height 360ms cubic-bezier(.22,1,.36,1); }
 .daily-sheet.expanded { height: 85dvh; }
+@media (min-width: 768px) {
+  .daily-sheet {
+    left: calc((100vw - min(720px, 100vw - 64px)) / 2);
+    bottom: max(24px, env(safe-area-inset-bottom));
+    width: min(720px, calc(100vw - 64px));
+    height: min(60dvh, 680px);
+    border-radius: 24px;
+  }
+  .daily-sheet.expanded { height: calc(100dvh - max(24px, env(safe-area-inset-bottom)) - max(24px, env(safe-area-inset-top))); }
+}
 @media (prefers-reduced-motion: reduce) { .daily-sheet { transition: none; } }
 .daily-blur-enter-active,.daily-blur-leave-active { transition: backdrop-filter 520ms ease, background 520ms ease; }
 .daily-blur-enter-from,.daily-blur-leave-to { backdrop-filter: blur(0); background: transparent; }

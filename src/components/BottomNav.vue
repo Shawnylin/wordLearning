@@ -112,6 +112,7 @@ onBeforeUnmount(() =>
           @click="navigateTo(item)"
           :aria-label="dailyCompact && item.name === 'report' ? '返回日报顶部' : item.label"
           :aria-hidden="dailyCompact && item.name !== 'report'"
+          :aria-current="activeIndex === index ? 'page' : undefined"
           :tabindex="dailyCompact && item.name !== 'report' ? -1 : 0"
           class="nav-item relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5"
           :class="[
@@ -202,6 +203,12 @@ onBeforeUnmount(() =>
   max-height: 0;
   opacity: 0;
   transform: translateY(5px);
+}
+@media (min-width: 768px) {
+  .nav-frame:not(.compact) { max-width: 560px; }
+  .nav-frame { padding-bottom: 8px; }
+  .nav-item { min-height: 48px; flex-direction: row; justify-content: center; gap: 8px; }
+  .nav-label { font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-frame,
