@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.2',
+    date: '2026-09-17',
+    title: '圆球从中心展开为词语卡片',
+    changes: [
+      '学习和对比卡片以圆球中心向四周展开为圆角矩形，长内容随后向下延伸，消除先移向左上角的观感。',
+      '圆球图标保持居中，内容在外框展开后淡入，收起时沿相反路径回到圆球。'
+    ]
+  },
+  {
     version: '0.6.1',
     date: '2026-09-17',
     title: '修复收起输入栏时发送图标露出',
