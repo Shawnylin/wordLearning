@@ -54,23 +54,23 @@ defineExpose({ focusWord })
       <div class="command-drop" />
     </div>
     <div class="input-area">
-      <label class="study-field first">
+      <label class="study-field glass-control first">
         <input :value="firstValue" :disabled="loading" :aria-label="comparing ? '输入词语 1' : '输入成语或词语'" :placeholder="comparing ? '输入词语 1' : '输入成语或词语…'"
           @input="updateFirst" @focus="focused = true" @blur="focused = false" @keydown.enter="enter" />
         <Transition name="remove-icon"><button v-if="comparing && words.length > 2" type="button" :disabled="loading" aria-label="移除词语 1" @click="emit('remove', words[0]!.id)"><X :size="16" /></button></Transition>
       </label>
-      <label class="study-field second" :inert="!comparing" :aria-hidden="!comparing">
+      <label class="study-field glass-control second" :inert="!comparing" :aria-hidden="!comparing">
         <input :value="words[1]?.value" :disabled="loading || !comparing" aria-label="输入词语 2" placeholder="输入词语 2" @input="emit('update-word', words[1]!.id, ($event.target as HTMLInputElement).value)" @keydown.enter="enter" />
         <Transition name="remove-icon"><button v-if="comparing && words.length > 2" type="button" :disabled="loading" aria-label="移除词语 2" @click="emit('remove', words[1]!.id)"><X :size="16" /></button></Transition>
       </label>
       <TransitionGroup name="extra-field" tag="div" class="extra-fields">
-        <label v-for="(item, index) in comparing ? words.slice(2) : []" :key="item.id" class="study-field extra" :class="index === 0 ? 'third' : 'fourth'">
+        <label v-for="(item, index) in comparing ? words.slice(2) : []" :key="item.id" class="study-field glass-control extra" :class="index === 0 ? 'third' : 'fourth'">
           <input :data-word-id="item.id" :value="item.value" :disabled="loading" :aria-label="`输入词语 ${index + 3}`" :placeholder="`输入词语 ${index + 3}`" @input="emit('update-word', item.id, ($event.target as HTMLInputElement).value)" @keydown.enter="enter" />
           <button type="button" :disabled="loading" :aria-label="`移除词语 ${index + 3}`" @click="emit('remove', item.id)"><X :size="16" /></button>
         </label>
       </TransitionGroup>
     </div>
-    <button class="study-top-action" :class="{ ready: canSend || expanded }" :inert="!actionVisible" :tabindex="actionVisible ? 0 : -1" :disabled="!expanded && !canSend" :aria-label="expanded ? '收起卡片' : loading ? '正在生成' : '发送词语'" @pointerdown.prevent @click="expanded ? emit('close') : emit('submit')">
+    <button class="study-top-action glass-control" :class="{ ready: canSend || expanded }" :inert="!actionVisible" :tabindex="actionVisible ? 0 : -1" :disabled="!expanded && !canSend" :aria-label="expanded ? '收起卡片' : loading ? '正在生成' : '发送词语'" @pointerdown.prevent @click="expanded ? emit('close') : emit('submit')">
       <Transition name="action-icon" mode="out-in">
         <X v-if="expanded" key="close" :size="22" />
         <RefreshCw v-else-if="loading" key="loading" :size="20" class="word-command-refresh" />
@@ -86,7 +86,7 @@ defineExpose({ focusWord })
 .liquid-defs { position: absolute; pointer-events: none; }
 .input-area, .background-inputs { position: relative; width: 100%; height: 100%; transition: width var(--motion); }
 .has-action .input-area, .has-action .background-inputs { width: calc(100% - 64px); }
-.capsule-backgrounds { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.capsule-backgrounds { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .12; }
 .command-drop { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; background: var(--fill); transform: translateX(-28px); transition: transform var(--motion), opacity 300ms ease; }
 .is-compare:not(.has-action) .command-drop { opacity: 0; }
 .has-action .command-drop { transform: none; }
@@ -114,9 +114,9 @@ defineExpose({ focusWord })
 .extra-field-enter-active button { animation: delete-reveal 420ms 120ms both; }
 .remove-icon-enter-active, .remove-icon-leave-active { transition: opacity 220ms ease, transform 300ms ease, flex-basis 300ms ease, width 300ms ease; }
 .remove-icon-enter-from, .remove-icon-leave-to { opacity: 0; transform: scale(.4) rotate(-60deg); flex-basis: 0 !important; width: 0 !important; }
-.study-top-action { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: transparent; color: var(--ink-mute); opacity: 0; transform: translateX(-28px) scale(.7); pointer-events: none; transition: transform var(--motion), opacity 240ms ease, background 240ms ease; }
+.study-top-action { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-mute); opacity: 0; transform: translateX(-28px) scale(.7); pointer-events: none; transition: transform var(--motion), opacity 240ms ease, background 240ms ease; }
 .has-action .study-top-action { opacity: 1; transform: none; pointer-events: auto; }
-.study-top-action.ready { background: var(--zhuhong-solid); color: white; }
+.study-top-action.ready { --control-glass-fill: color-mix(in srgb, var(--zhuhong-solid) 12%, transparent); color: var(--zhuhong); }
 .has-action .study-top-action:disabled, .study-field input:disabled, .study-field button:disabled { opacity: .55; }
 button:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
 .action-icon-enter-active, .action-icon-leave-active { transition: transform 180ms ease, opacity 180ms ease; }

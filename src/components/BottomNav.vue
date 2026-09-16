@@ -169,7 +169,7 @@ onBeforeUnmount(() =>
 }
 .nav-shell {
   min-height: 52px;
-  background: var(--glass-fill);
+  background: var(--nav-glass-fill);
   border-color: var(--glass-edge);
   box-shadow: var(--glass-shadow), 0 8px 30px -18px rgb(20 24 28 / .32);
   backdrop-filter: blur(22px) saturate(118%);

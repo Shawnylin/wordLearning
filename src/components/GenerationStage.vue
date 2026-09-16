@@ -86,10 +86,10 @@ onDeactivated(stopAnimation)
           </filter>
         </defs></svg>
         <div class="orb-liquid" :style="{ filter: `url(#${filterId})` }" aria-hidden="true"><i class="orb-core" /><i class="satellite-shape left" /><i class="satellite-shape right" /></div>
-        <button class="satellite left" :disabled="!canAdd" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="canAdd ? '添加对比词语' : '最多四个词语，生成时不可添加'" @click="emit('add')"><Plus :size="23" /></button>
-        <button class="satellite right" :disabled="!canSend" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="loading ? '正在生成对比' : '发送对比'" @click="emit('submit')"><RefreshCw v-if="loading" :size="21" class="word-command-refresh" /><ArrowUp v-else :size="23" /></button>
+        <button class="satellite glass-control left" :disabled="!canAdd" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="canAdd ? '添加对比词语' : '最多四个词语，生成时不可添加'" @click="emit('add')"><Plus :size="23" /></button>
+        <button class="satellite glass-control right" :disabled="!canSend" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="loading ? '正在生成对比' : '发送对比'" @click="emit('submit')"><RefreshCw v-if="loading" :size="21" class="word-command-refresh" /><ArrowUp v-else :size="23" /></button>
       </div>
-      <div ref="surface" class="generation-surface">
+      <div ref="surface" class="generation-surface glass-control">
         <button class="mode-orb" :class="{ concealed: expanded }" :inert="expanded" :tabindex="expanded ? -1 : 0" :aria-label="kind === 'idiom' ? '当前学习，点击切换对比' : '当前对比，点击切换学习'" :title="kind === 'idiom' ? '切换到对比' : '切换到学习'" @click="emit('toggle')">
           <BookOpen class="mode-icon learning-icon" :size="32" /><GitCompare class="mode-icon compare-icon" :size="32" />
         </button>
@@ -117,8 +117,8 @@ onDeactivated(stopAnimation)
 .generation-stage { --orb-top: clamp(64px, 16vh, 160px); --orb-fill: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%); position: relative; width: 100%; margin: 0 auto; }
 .generation-body { position: relative; padding-top: var(--orb-top); }
 .is-active .generation-body { padding-top: 0; }
-.generation-surface { position: relative; left: calc(50% - 40px); z-index: 1; width: 80px; height: 80px; border: 1px solid var(--line); background: var(--orb-fill); border-radius: 40px; overflow: hidden; transform-origin: top left; }
-.is-active .generation-surface { left: 0; width: 100%; height: auto; border-radius: 24px; background: var(--glass-fill); }
+.generation-surface { position: relative; left: calc(50% - 40px); z-index: 1; width: 80px; height: 80px; border-radius: 40px; overflow: hidden; transform-origin: top left; }
+.is-active .generation-surface { left: 0; width: 100%; height: auto; border-radius: 24px; }
 .is-active:not(.is-morphing) .generation-surface { min-height: var(--frame-min-height, 0px); }
 .generation-result :deep(.animate-card-enter) { animation: none; }
 .generation-content { padding: clamp(20px, 3vw, 32px); min-height: var(--frame-min-height, 0px); opacity: 1; transition: opacity 220ms ease; }
@@ -134,7 +134,7 @@ onDeactivated(stopAnimation)
 .is-compare .compare-icon { opacity: 1; transform: rotate(0) scale(1); }
 .orb-satellites { position: absolute; top: var(--orb-top); left: calc(50% - 40px); width: 80px; height: 80px; transition: opacity 300ms ease; }
 .orb-satellites > svg { position: absolute; }
-.orb-liquid { position: absolute; inset: 0; pointer-events: none; }
+.orb-liquid { position: absolute; inset: 0; pointer-events: none; opacity: .12; }
 .orb-core { position: absolute; inset: 0; border-radius: 50%; background: var(--orb-fill); }
 .satellite, .satellite-shape { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; transform: translate(0,0) scale(.7); transition: transform 620ms cubic-bezier(.22,1,.36,1), opacity 300ms ease; }
 .satellite-shape { background: var(--orb-fill); }

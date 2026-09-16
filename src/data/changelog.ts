@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.3',
+    date: '2026-09-17',
+    title: '更通透的导航与学习玻璃控件',
+    changes: [
+      '降低底部导航的底色不透明度，保留背景模糊，让毛玻璃更加通透。',
+      '学习球、对比按钮、发送按钮和胶囊输入框统一增加半透明玻璃、边缘高光与轻阴影，适配深浅主题。',
+      '保留圆球展开和输入框分裂动画，不支持背景模糊的浏览器使用清晰底色。'
+    ]
+  },
+  {
     version: '0.6.2',
     date: '2026-09-17',
     title: '圆球从中心展开为词语卡片',
