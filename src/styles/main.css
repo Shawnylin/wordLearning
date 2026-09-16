@@ -629,6 +629,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 
 /* Page reading layout; record overlays retain their card presentation. */
 .study-page { width: 100%; max-width: 1120px; margin-inline: auto; container-type: inline-size; }
+.study-page .study-command-zone { min-height: 96px; }
 .study-page .generation-stage { max-width: none; }
 .study-page > .max-w-lg, .study-page > div > .max-w-lg { max-width: 760px; }
 .study-page .generation-stage.is-active .generation-surface,

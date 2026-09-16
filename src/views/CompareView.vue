@@ -73,12 +73,12 @@ function goToSettings() {
 <template>
   <div class="study-page min-h-screen px-4 pt-6 pb-4">
     <!-- Word inputs -->
-    <div class="mx-auto max-w-lg mb-4">
-      <TransitionGroup name="list" tag="div" class="grid grid-cols-2 gap-3 relative">
+    <div class="study-command-zone mx-auto max-w-lg mb-4">
+      <TransitionGroup name="compare-field" tag="div" class="compare-input-grid grid grid-cols-2 gap-3 relative">
         <div
           v-for="(_word, index) in words"
           :key="wordIds[index]"
-          class="relative min-w-0"
+          class="compare-word-field relative min-w-0"
         >
           <input
             v-model="words[index]"
@@ -87,15 +87,15 @@ function goToSettings() {
             class="w-full min-w-0 px-4 py-3 rounded-2xl bg-card text-base text-ink placeholder-ink-mute outline-none border border-line focus:ring-2 focus:ring-dai/20 focus:border-dai transition-all"
             :class="words.length > 2 ? 'pr-10' : ''"
           />
-          <Motion><button
+          <Transition name="compare-remove"><button
             v-if="words.length > 2"
             @click="removeWord(index)"
-            class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+            class="compare-remove absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
             :aria-label="`移除词语 ${index + 1}`"
             title="移除"
           >
             <X :size="18" />
-          </button></Motion>
+          </button></Transition>
         </div>
       </TransitionGroup>
 
@@ -177,3 +177,111 @@ function goToSettings() {
     </GenerationStage>
   </div>
 </template>
+
+<style scoped>
+.compare-word-field {
+  z-index: 0;
+  transform-origin: top center;
+}
+
+.compare-word-field::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -14px;
+  left: 24%;
+  right: 24%;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  opacity: 0;
+  transform: scaleX(.3);
+  pointer-events: none;
+}
+
+.compare-field-enter-active {
+  animation: compare-field-split 560ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.compare-field-enter-active::before {
+  animation: compare-liquid-bridge 420ms ease-out both;
+}
+
+.compare-field-leave-active {
+  z-index: 2;
+  pointer-events: none;
+  animation: compare-field-fuse 520ms cubic-bezier(.55, 0, .25, 1) both;
+}
+
+.compare-field-leave-active::before {
+  animation: compare-liquid-bridge 360ms ease-in reverse both;
+}
+
+.compare-field-move {
+  transition: transform 420ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.compare-remove-enter-active,
+.compare-remove-leave-active {
+  transition: opacity 180ms ease, transform 240ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.compare-remove-enter-from,
+.compare-remove-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) scale(.65);
+}
+
+.compare-field-leave-active .compare-remove {
+  animation: compare-remove-away 140ms ease forwards;
+}
+
+@keyframes compare-field-split {
+  0% {
+    opacity: .15;
+    transform: translateY(calc(-100% - 12px)) scaleX(.58) scaleY(.16);
+    border-radius: 999px;
+  }
+  48% {
+    opacity: 1;
+    transform: translateY(-8px) scaleX(.9) scaleY(1.08);
+  }
+  72% { transform: translateY(2px) scaleX(1.025) scaleY(.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes compare-field-fuse {
+  0%, 14% { opacity: 1; transform: translateY(0) scale(1); }
+  48% { opacity: .96; transform: translateY(-8px) scaleX(.88) scaleY(1.08); }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(-100% - 12px)) scaleX(.5) scaleY(.12);
+    border-radius: 999px;
+  }
+}
+
+@keyframes compare-liquid-bridge {
+  0% { opacity: .9; transform: scaleX(.28) scaleY(1.2); }
+  58% { opacity: .72; transform: scaleX(.72) scaleY(.72); }
+  100% { opacity: 0; transform: scaleX(1) scaleY(.15); }
+}
+
+@keyframes compare-remove-away {
+  to { opacity: 0; transform: translateY(-50%) scale(.65); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compare-field-enter-active,
+  .compare-field-leave-active,
+  .compare-field-enter-active::before,
+  .compare-field-leave-active::before,
+  .compare-field-leave-active .compare-remove {
+    animation-duration: .01ms;
+  }
+  .compare-field-move,
+  .compare-remove-enter-active,
+  .compare-remove-leave-active {
+    transition-duration: .01ms;
+  }
+}
+</style>

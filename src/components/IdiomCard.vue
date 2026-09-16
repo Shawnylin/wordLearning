@@ -39,7 +39,7 @@ function getSectionContent(key: string): string {
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
       <div class="study-heading idiom-heading px-6 pt-8 pb-6 text-center glass-card-header">
-        <div class="study-heading-row mb-2">
+        <div class="study-heading-row">
           <p class="min-w-0 text-lg tracking-widest text-zhuhong">
             {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
           </p>

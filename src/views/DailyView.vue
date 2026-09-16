@@ -603,7 +603,7 @@ onBeforeUnmount(() => {
                   </button>
                   <button v-if="historyManaging" class="p-2 text-ink-mute" :aria-label="group.collapsed ? '展开分组' : '收起分组'" @click="daily.toggleGroup(group.id)"><ChevronDown :size="17" class="history-group-chevron" :class="{ collapsed: group.collapsed }" /></button>
                 </div>
-                <div v-if="!group.collapsed" class="space-y-2 p-2 pt-0">
+                <Motion><div v-if="!group.collapsed" class="space-y-2 p-2 pt-0">
                   <p v-if="historyManaging && !group.issues.length" class="rounded-xl border border-dashed border-line py-5 text-center text-xs text-ink-mute">拖动篇章到这里</p>
                   <div v-for="issue in group.issues" :key="issue.id" class="history-row" :class="{ 'is-revealed': !historyManaging && (swipedId === issue.id || (dragId === issue.id && dragOffset < 0)), 'is-dragging': draggedIssueId === issue.id }" :draggable="historyManaging" @dragstart="startHistoryDrag(issue.id, $event)" @dragend="draggedIssueId = ''; dragOverGroupId = ''">
                     <button v-if="!historyManaging" @click="removeIssue(issue.id)" class="history-delete" :tabindex="swipedId === issue.id ? 0 : -1" :aria-hidden="swipedId !== issue.id" :aria-label="`删除${historyTitle(issue)}`"><Trash2 :size="18" /><span>删除</span></button>
@@ -617,7 +617,7 @@ onBeforeUnmount(() => {
                       <button class="history-manage-delete" :aria-label="`删除${historyTitle(issue)}`" @click="removeIssue(issue.id)"><Trash2 :size="17" /></button>
                     </div>
                   </div>
-                </div>
+                </div></Motion>
               </section>
             </div>
           </div>
