@@ -204,6 +204,19 @@ onBeforeUnmount(() => {
 .record-back:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
 .record-panel .animate-card-enter, .record-panel .stagger > * { animation: none; }
 .record-panel .card { border: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.record-panel .idiom-heading { position: relative; margin: 0 24px 24px; padding: 22px 0 18px; text-align: left; background: none; border-bottom: 1px solid var(--line); }
+.record-panel .idiom-heading .study-heading-row { display: block; min-height: 34px; margin-bottom: 0; padding-right: 124px; }
+.record-panel .idiom-heading .study-heading-row > p { margin: 0 0 3px; color: var(--zhuhong); font-size: 14px; line-height: 1.45; letter-spacing: .08em; overflow-wrap: anywhere; }
+.record-panel .idiom-heading .study-heading-actions { position: absolute; top: 18px; right: -8px; display: flex; align-items: center; gap: 2px; }
+.record-panel .idiom-heading h1 { margin: 0; color: var(--ink); font-size: clamp(40px, 11vw, 52px); line-height: 1.18; letter-spacing: .06em; text-align: left; overflow-wrap: anywhere; }
+.record-panel .idiom-heading .token-usage { justify-content: flex-start; margin-top: 6px; }
+.record-panel .idiom-sections { display: grid; gap: 24px; padding: 0 24px 28px; }
+.record-panel .idiom-sections > div { min-width: 0; margin: 0; }
+.record-panel .idiom-sections .pl-9 { padding-left: 0; }
+.record-panel .idiom-sections p { font-size: 15px; line-height: 1.9; overflow-wrap: anywhere; }
+.record-panel .idiom-sections .grid { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.record-panel .idiom-sections .grid button { width: auto; padding: 4px 0; border-radius: 0; background: transparent; color: var(--zhuhong); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-align: left; }
+.record-panel .idiom-sections .grid button:hover { text-decoration: underline; }
 .record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
 .record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
 @media (min-width: 768px) {
@@ -214,7 +227,11 @@ onBeforeUnmount(() => {
     height: calc(100dvh - max(32px, env(safe-area-inset-top)) - max(32px, env(safe-area-inset-bottom)));
   }
   .record-content > .max-w-lg { max-width: none; }
-  .record-panel .study-sections { padding: 28px; }
+  .record-panel .idiom-heading { margin: 0 32px 28px; padding-top: 28px; }
+  .record-panel .idiom-heading .study-heading-actions { top: 24px; }
+  .record-panel .idiom-heading h1 { font-size: 56px; }
+  .record-panel .idiom-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
+  .record-panel .study-sections:not(.idiom-sections) { padding: 28px; }
   .record-back { padding: 18px 28px; }
 }
 @keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }

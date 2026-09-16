@@ -38,7 +38,7 @@ function getSectionContent(key: string): string {
   <div class="animate-card-enter">
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="study-heading px-6 pt-8 pb-6 text-center glass-card-header">
+      <div class="study-heading idiom-heading px-6 pt-8 pb-6 text-center glass-card-header">
         <div class="study-heading-row mb-2">
           <p class="min-w-0 text-lg tracking-widest text-zhuhong">
             {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
@@ -80,7 +80,7 @@ function getSectionContent(key: string): string {
       </div>
 
       <!-- Content sections -->
-      <div class="study-sections px-6 pb-6 space-y-5">
+      <div class="study-sections idiom-sections px-6 pb-6 space-y-5">
         <div
           v-for="section in sections"
           :key="section.key"
