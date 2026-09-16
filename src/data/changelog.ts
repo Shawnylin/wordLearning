@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.4',
+    date: '2026-09-17',
+    title: '微调液态输入栏间距与层次',
+    changes: [
+      '输入框分离时减少缩短幅度，让发送按钮更靠近文本框。',
+      '加深输入栏默认底色，使其在浅色与深色主题中都更容易从页面背景中辨认。'
+    ]
+  },
+  {
     version: '0.5.3',
     date: '2026-09-17',
     title: '输入栏采用液态分离动效',

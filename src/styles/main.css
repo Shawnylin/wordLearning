@@ -9,7 +9,7 @@
   --command-space: 0px;
   --command-motion: 560ms cubic-bezier(.22, 1, .36, 1);
 }
-.word-command.is-open { --command-space: 64px; }
+.word-command.is-open { --command-space: 56px; }
 .word-command-surface { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
 .word-command-filter { position: absolute; }
 .word-command-liquid { position: absolute; inset: 0; }
@@ -18,7 +18,7 @@
   inset: 0 auto 0 0;
   width: calc(100% - var(--command-space));
   border-radius: 28px;
-  background: var(--soft);
+  background: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%);
   transition: width var(--command-motion);
 }
 .word-command-drop {
@@ -28,7 +28,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--soft);
+  background: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%);
   transform: translateX(-28px);
   transition: transform var(--command-motion);
 }
