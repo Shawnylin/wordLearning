@@ -189,7 +189,7 @@ function handleImport() {
         </div>
       <button @click="router.push('/profile/models')" class="settings-card-model card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
         <div class="w-10 h-10 rounded-xl bg-dai-soft text-dai flex items-center justify-center shrink-0"><Key :size="20" /></div>
-        <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 配置与切换</p></div>
+        <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 模型配置与 MiMo 朗读</p></div>
         <ChevronRight :size="18" class="text-ink-mute shrink-0" />
       </button>
 

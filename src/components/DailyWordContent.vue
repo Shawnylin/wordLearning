@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SpeechButton from './SpeechButton.vue'
 import { computed, ref, watch } from 'vue'
 import { Heart, RefreshCw } from 'lucide-vue-next'
 import type { IdiomData } from '../types/idiom'
@@ -17,6 +18,7 @@ watch(active, () => scroller.value?.scrollTo({ top: 0 }))
   <div class="word-content">
     <div class="flex items-center gap-2 px-4 pt-3 pb-2 shrink-0">
       <div class="flex-1 min-w-0"><h2 class="font-kai text-2xl break-words">{{ idiom.word }}</h2><p class="text-xs text-ink-mute mt-1">{{ idiom.pinyin }}</p></div>
+      <SpeechButton :text="idiom.word" label="朗读词语" />
       <button @click="store.toggleFavorite(idiom.word)" class="p-2 rounded-full bg-soft" :aria-label="store.isFavorite(idiom.word) ? '取消收藏' : '收藏词语'"><Heart :size="17" :fill="store.isFavorite(idiom.word) ? 'currentColor' : 'none'" /></button>
       <button @click="emit('regenerate')" :disabled="loading" class="p-2 rounded-full bg-soft disabled:opacity-50" aria-label="重新生成词语"><RefreshCw :size="17" :class="{ 'animate-spin': loading }" /></button>
     </div>

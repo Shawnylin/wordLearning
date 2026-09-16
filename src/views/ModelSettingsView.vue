@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ModelSettings from '../components/ModelSettings.vue'
+import SpeechSettings from '../components/SpeechSettings.vue'
 import PdfModelSettings from '../components/PdfModelSettings.vue'
 const router = useRouter()
 </script>
@@ -9,6 +10,7 @@ const router = useRouter()
     <div class="mx-auto max-w-lg">
       <button @click="router.push('/profile')" class="text-sm text-ink-soft px-2 py-3 mb-2">← 返回个人</button>
       <ModelSettings />
+      <SpeechSettings />
       <PdfModelSettings />
     </div>
   </div>

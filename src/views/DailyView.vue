@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SpeechButton from '../components/SpeechButton.vue'
 import { computed, nextTick, ref, onMounted, onBeforeUnmount } from "vue";
 import {
   Newspaper,
@@ -424,7 +425,9 @@ onBeforeUnmount(() => {
                 }}<span v-if="article.completedAt" class="ml-3 text-bamboo"
                   >✓ 已学完</span
                 ></span
-              ><button
+              ><div class="flex items-center gap-1 shrink-0">
+              <SpeechButton :text="article.title + '\n' + article.content" label="朗读日报" show-label />
+              <button
                 @click="daily.toggleStarred(selected.id)"
                 class="star-button"
                 :class="{ active: article.starred }"
@@ -436,6 +439,7 @@ onBeforeUnmount(() => {
                   :fill="article.starred ? 'currentColor' : 'none'"
                 />
               </button>
+              </div>
             </div>
             <h2
               class="font-serif text-xl font-semibold leading-relaxed text-ink"

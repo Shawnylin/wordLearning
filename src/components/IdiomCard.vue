@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SpeechButton from './SpeechButton.vue'
 import { RefreshCw, BookOpen, FileText, Quote, Lightbulb, Link2, Heart, Coins } from 'lucide-vue-next'
 import type { IdiomData } from '../types/idiom'
 import { useIdiomStore } from '../stores/idiom'
@@ -43,6 +44,7 @@ function getSectionContent(key: string): string {
             {{ idiom.pinyin || (loading ? '正在生成…' : '') }}
           </p>
           <div class="study-heading-actions">
+            <SpeechButton :text="idiom.word" label="朗读词语" />
             <button
               @click="idiomStore.toggleFavorite(idiom.word)"
               class="p-2 rounded-full transition-all duration-200"

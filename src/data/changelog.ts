@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.0',
+    date: '2026-09-16',
+    title: '词语与日报支持 MiMo 朗读',
+    changes: [
+      '词语查询及日报随文查词新增朗读按钮，可以直接收听词语发音。',
+      '日报星标旁新增朗读入口，依次朗读标题和正文，支持随时停止。',
+      '模型与 API 设置新增独立的 MiMo 语音配置，支持保存密钥、选择音色和试听。'
+    ]
+  },
+  {
     version: '0.4.0',
     date: '2026-09-15',
     title: '历史日报支持分组管理',

@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { defaultSpeechConfig } from '../api/speech'
 import type { ApiConfig, ReasoningEffort } from '../api/deepseek'
 
 export const useSettingsStore = defineStore('settings', () => {
+  const speechConfig = ref({ ...defaultSpeechConfig })
   const apiKey = ref('')
   const baseUrl = ref('https://api.deepseek.com')
   const model = ref('deepseek-flash')
@@ -56,7 +58,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile, pdfConfig, pdfUseLearningModel, pdfApiConfig,
+    speechConfig, apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile, pdfConfig, pdfUseLearningModel, pdfApiConfig,
     reviewTarget,
     setApiKey,
     clearApiKey,
@@ -66,6 +68,6 @@ export const useSettingsStore = defineStore('settings', () => {
 }, {
   persist: {
     key: 'settings-store',
-    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId', 'pdfConfig', 'pdfUseLearningModel']
+    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId', 'pdfConfig', 'pdfUseLearningModel', 'speechConfig']
   }
 })
