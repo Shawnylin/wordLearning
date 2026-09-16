@@ -47,6 +47,18 @@ const router = useRouter()
 .settings-grid :deep(.settings-switch) { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:11px; background:var(--soft); color:var(--ink-soft); font-size:12px; }
 .settings-grid :deep(.settings-switch input) { accent-color:var(--zhuhong); }
 .settings-grid :deep(.settings-form-muted) { opacity:.72; }
+.settings-grid :deep(.settings-summary) { overflow:hidden; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
+.settings-grid :deep(.settings-summary-row) { display:grid; grid-template-columns:82px minmax(0,1fr); gap:12px; align-items:start; padding:10px 12px; border-bottom:1px solid var(--line); }
+.settings-grid :deep(.settings-summary-row > span),.settings-grid :deep(.settings-summary-key > span) { color:var(--ink-mute); font-size:11px; line-height:1.55; }
+.settings-grid :deep(.settings-summary-row > strong) { color:var(--ink-soft); font-size:12px; font-weight:500; line-height:1.55; text-align:right; }
+.settings-grid :deep(.settings-summary-key) { padding:9px 12px 11px; }
+.settings-grid :deep(.settings-summary-key .api-key-field input) { margin-top:4px; border-color:transparent; background:var(--card); }
+.settings-grid :deep(.settings-model-picker) { display:grid; gap:7px; padding:11px 12px; border:1px solid var(--line); border-radius:13px; }
+.settings-grid :deep(.settings-model-picker-head) { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--ink-soft); font-size:12px; font-weight:550; }
+.settings-grid :deep(.settings-text-button) { color:var(--zhuhong); font-size:11px; font-weight:500; }
+.settings-grid :deep(.settings-text-button:disabled) { color:var(--ink-mute); }
+.settings-grid :deep(.settings-model-current) { display:flex; min-width:0; align-items:center; justify-content:space-between; gap:10px; color:var(--ink); font-size:13px; }
+.settings-grid :deep(.settings-model-current span) { flex:none; color:var(--ink-mute); font-size:10px; }
 @media (min-width:768px) {
   .settings-page { padding-inline:24px; }
   .settings-grid { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr); align-items:start; }

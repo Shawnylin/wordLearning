@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
 
-withDefaults(defineProps<{ placeholder?: string }>(), { placeholder: '输入 API Key' })
+withDefaults(defineProps<{ placeholder?: string; readonly?: boolean }>(), { placeholder: '输入 API Key', readonly: false })
 const model = defineModel<string>({ required: true })
 const visible = ref(false)
 </script>
@@ -14,6 +14,7 @@ const visible = ref(false)
       type="text"
       :class="{ concealed: !visible }"
       :placeholder="placeholder"
+      :readonly="readonly"
       autocomplete="off"
       autocapitalize="off"
       spellcheck="false"
@@ -39,5 +40,6 @@ const visible = ref(false)
 .api-key-toggle { position: absolute; right: 5px; bottom: 5px; display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: var(--ink-mute); }
 .api-key-toggle:hover,.api-key-toggle:focus-visible { background: var(--zhuhong-soft); color: var(--zhuhong); }
 .api-key-field input:focus { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
+.api-key-field input:read-only { cursor: default; }
 @media (min-width: 768px) { .api-key-field input { margin-top: 4px; padding-block: 9px; font-size: 15px; } .api-key-toggle { bottom: 2px; } .api-key-field.is-concealed::after { bottom: 10px; } }
 </style>
