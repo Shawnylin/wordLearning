@@ -46,7 +46,6 @@ const router = useRouter()
 .settings-grid :deep(.settings-status) { padding:8px 10px; border-radius:10px; background:var(--soft); font-size:11px; line-height:1.55; }
 .settings-grid :deep(.settings-footnote) { color:var(--ink-mute); font-size:10.5px; line-height:1.65; }
 .settings-grid :deep(.settings-switch) { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:11px; background:var(--soft); color:var(--ink-soft); font-size:12px; }
-.settings-grid :deep(.settings-switch input) { accent-color:var(--zhuhong); }
 .settings-grid :deep(.settings-form-muted) { opacity:.72; }
 .settings-grid :deep(.settings-summary) { overflow:hidden; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
 .settings-grid :deep(.settings-summary-row) { display:grid; grid-template-columns:82px minmax(0,1fr); gap:12px; align-items:start; padding:10px 12px; border-bottom:1px solid var(--line); }

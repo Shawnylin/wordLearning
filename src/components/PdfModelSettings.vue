@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
 import { useSettingsStore } from '../stores/settings'
 import ApiKeyInput from './ApiKeyInput.vue'
+import LiquidToggle from './LiquidToggle.vue'
 const settings = useSettingsStore()
 const draft = reactive({ ...settings.pdfConfig })
 const models = ref<string[]>([]), busy = ref(false), message = ref(''), error = ref(false)
@@ -51,7 +52,7 @@ function cancelEdit() {
       </template>
     </div>
     <template v-if="editing">
-    <label class="settings-switch"><input type="checkbox" v-model="draftUseLearningModel" /><span>使用当前学习模型</span></label>
+    <div class="settings-switch"><LiquidToggle v-model="draftUseLearningModel" label="使用当前学习模型" /><span>使用当前学习模型</span></div>
     <fieldset :disabled="busy || draftUseLearningModel" class="settings-form" :class="{ 'settings-form-muted': draftUseLearningModel }">
       <label class="settings-label">API 地址<input v-model="draft.baseUrl" type="url" autocomplete="off" spellcheck="false" /></label>
       <label class="settings-label">API Key<ApiKeyInput v-model="draft.apiKey" placeholder="输入解析 API Key" /></label>

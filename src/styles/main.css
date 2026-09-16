@@ -1,5 +1,55 @@
 @import "tailwindcss";
 
+.liquid-toggle {
+  --liquid-toggle-accent: var(--zhuhong-solid);
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--soft) 88%, var(--ink) 12%);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.liquid-toggle.is-gold { --liquid-toggle-accent: var(--gold); }
+.liquid-toggle.is-checked {
+  border-color: transparent;
+  background: var(--liquid-toggle-accent);
+}
+.liquid-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 28%, transparent);
+  transform: translateX(0);
+  will-change: transform;
+}
+.liquid-toggle.is-checked .liquid-toggle-knob { transform: translateX(20px); }
+.liquid-toggle.moves-on .liquid-toggle-knob { animation: liquid-toggle-on var(--liquid-speed) cubic-bezier(.22, 1, .36, 1); }
+.liquid-toggle.moves-off .liquid-toggle-knob { animation: liquid-toggle-off var(--liquid-speed) cubic-bezier(.22, 1, .36, 1); }
+@keyframes liquid-toggle-on {
+  0% { transform: translateX(0) scaleX(1); }
+  46% { transform: translateX(10px) scaleX(var(--liquid-stretch)); }
+  100% { transform: translateX(20px) scaleX(1); }
+}
+@keyframes liquid-toggle-off {
+  0% { transform: translateX(20px) scaleX(1); }
+  46% { transform: translateX(10px) scaleX(var(--liquid-stretch)); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+.liquid-toggle:focus-visible { outline: 2px solid var(--liquid-toggle-accent); outline-offset: 3px; }
+.liquid-toggle:disabled { cursor: not-allowed; opacity: .48; }
+@media (prefers-reduced-motion: reduce) {
+  .liquid-toggle, .liquid-toggle-knob { transition: none; }
+  .liquid-toggle.moves-on .liquid-toggle-knob, .liquid-toggle.moves-off .liquid-toggle-knob { animation: none; }
+}
+
 /* A fixed-height field separates into two filtered background shapes. */
 .word-command {
   position: relative;
@@ -9,7 +59,7 @@
   --command-space: 0px;
   --command-motion: 560ms cubic-bezier(.22, 1, .36, 1);
 }
-.word-command.is-open { --command-space: 56px; }
+.word-command.is-open { --command-space: 64px; }
 .word-command-surface { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
 .word-command-filter { position: absolute; }
 .word-command-liquid { position: absolute; inset: 0; }
@@ -24,9 +74,9 @@
 .word-command-drop {
   position: absolute;
   right: 0;
-  top: 4px;
-  width: 48px;
-  height: 48px;
+  top: 0;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%);
   transform: translateX(-28px);
@@ -67,11 +117,11 @@
 .word-command-action {
   position: absolute;
   right: 0;
-  top: 4px;
+  top: 0;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   padding: 0;
   border: 0;
   border-radius: 50%;

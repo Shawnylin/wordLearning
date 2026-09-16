@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
+import LiquidToggle from '../components/LiquidToggle.vue'
 import { onMounted, ref, watch } from 'vue'
 import { fetchBalance, type ApiBalance } from '../api/deepseek'
 import { themeColorOptions, useThemeStore } from '../stores/theme'
@@ -150,16 +151,7 @@ function handleImport() {
                 <p class="text-sm font-medium text-ink-soft">深度思考</p>
                 <p class="text-xs text-ink-mute mt-0.5">关闭后响应更快，开启后分析更充分</p>
               </div>
-              <button
-                @click="settings.thinkingEnabled = !settings.thinkingEnabled"
-                class="relative w-11 h-6 rounded-full transition-colors duration-300 border shrink-0"
-                :class="settings.thinkingEnabled ? 'bg-gold border-gold' : 'bg-soft border-line'"
-                role="switch"
-                :aria-checked="settings.thinkingEnabled"
-                aria-label="深度思考"
-              >
-                <span class="absolute top-1/2 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-transform duration-300" :style="{ transform: settings.thinkingEnabled ? 'translate(20px, -50%)' : 'translate(0, -50%)' }" />
-              </button>
+              <LiquidToggle v-model="settings.thinkingEnabled" label="深度思考" tone="gold" />
             </div>
             <Motion><div v-if="settings.thinkingEnabled" class="grid grid-cols-3 gap-2 mt-3">
               <button v-for="effort in ['low', 'high', 'max']" :key="effort" @click="settings.reasoningEffort = effort as any" class="py-2 rounded-lg text-xs font-medium transition-colors" :class="settings.reasoningEffort === effort ? 'bg-gold text-paper-ink' : 'bg-soft text-ink-soft'">
@@ -213,16 +205,7 @@ function handleImport() {
             <Monitor :size="16" class="text-ink-soft" />
             <span class="text-sm text-ink">跟随系统</span>
           </div>
-          <button
-            @click="themeStore.setFollowSystem(!themeStore.followSystem)"
-            class="relative w-11 h-6 rounded-full transition-colors duration-300 border"
-            :class="themeStore.followSystem ? 'bg-zhuhong border-zhuhong' : 'bg-soft border-line'"
-          >
-            <span
-              class="absolute top-1/2 left-0.5 w-5 h-5 rounded-full bg-paper-ink shadow-sm transition-transform duration-300"
-              :style="{ transform: themeStore.followSystem ? 'translate(20px, -50%)' : 'translate(0, -50%)' }"
-            />
-          </button>
+          <LiquidToggle :model-value="themeStore.followSystem" label="跟随系统" @update:model-value="themeStore.setFollowSystem" />
         </div>
 
         <!-- Manual theme selector -->

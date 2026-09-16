@@ -9,6 +9,23 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.6',
+    date: '2026-09-17',
+    title: '统一输入栏与发送按钮高度',
+    changes: [
+      '液态分离出的发送按钮直径调整为 56px，与输入框高度完全一致，并保留紧凑间距。'
+    ]
+  },
+  {
+    version: '0.5.5',
+    date: '2026-09-17',
+    title: '统一开关的液态滑动效果',
+    changes: [
+      '深度思考、跟随系统和 PDF 学习模型开关统一采用液态滑动样式。',
+      '开关圆点在切换时会沿移动方向拉伸并自然回弹，同时保留主题色、键盘操作和减少动态效果适配。'
+    ]
+  },
+  {
     version: '0.5.4',
     date: '2026-09-17',
     title: '微调液态输入栏间距与层次',
