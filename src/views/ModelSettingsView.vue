@@ -38,6 +38,7 @@ const router = useRouter()
 .settings-grid :deep(.settings-pair) { display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,.58fr); gap:10px; }
 .settings-grid :deep(.settings-inline) { display:flex; justify-content:flex-start; }
 .settings-grid :deep(.settings-actions) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding-top:2px; }
+.settings-grid :deep(.settings-actions:has(> :only-child)) { grid-template-columns:1fr; }
 .settings-grid :deep(.settings-actions > button),.settings-grid :deep(.settings-actions .speech-button) { min-height:38px; border-radius:11px; padding:8px 12px; font-size:12px; }
 .settings-grid :deep(.settings-actions .speech-control),.settings-grid :deep(.settings-actions .speech-button) { width:100%; }
 .settings-grid :deep(.settings-secondary) { border-radius:10px; padding:8px 12px; background:var(--soft); color:var(--ink-soft); font-size:12px; }
