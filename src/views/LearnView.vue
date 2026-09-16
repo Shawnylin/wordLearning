@@ -48,7 +48,11 @@ function handlePagePointerDown(event: PointerEvent) {
 </script>
 
 <template>
-  <div class="study-page min-h-screen px-4 pt-6 pb-4" @pointerdown="handlePagePointerDown">
+  <div
+    class="study-page learn-page min-h-screen px-4 pt-6 pb-4"
+    :class="{ 'has-study-result': idiomStore.idiomLoading || !!idiomStore.currentIdiom }"
+    @pointerdown="handlePagePointerDown"
+  >
     <!-- Search Input -->
     <div class="study-command-zone mb-4">
       <SearchInput

@@ -630,6 +630,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 /* Page reading layout; record overlays retain their card presentation. */
 .study-page { width: 100%; max-width: 1120px; margin-inline: auto; container-type: inline-size; }
 .study-page .study-command-zone { min-height: 96px; }
+.learn-page.has-study-result .study-command-zone { min-height: 0; }
 .study-page .generation-stage { max-width: none; }
 .study-page > .max-w-lg, .study-page > div > .max-w-lg { max-width: 760px; }
 .study-page .generation-stage.is-active .generation-surface,
@@ -681,6 +682,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   .app-main .settings-layout { width: 100%; max-width: 760px; }
   .study-page .study-sections { gap: 28px 36px; }
   .study-page .study-heading { margin-top: 28px; }
+  .learn-page.has-study-result .study-heading { margin-top: 0; }
   .study-page .study-sections p { font-size: 15px; line-height: 1.95; }
 }
 @media (min-width: 1024px) {
