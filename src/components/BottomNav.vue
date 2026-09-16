@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   BookOpen,
-  GitCompare,
   History,
   Newspaper,
   User,
@@ -30,7 +29,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "learn", label: "学习", icon: BookOpen, path: "/learn" },
-  { name: "compare", label: "对比", icon: GitCompare, path: "/compare" },
   { name: "report", label: "日报", icon: Newspaper, path: "/report" },
   { name: "record", label: "记录", icon: History, path: "/record" },
   { name: "profile", label: "个人", icon: User, path: "/profile" },
@@ -132,7 +130,7 @@ onBeforeUnmount(() =>
           class="nav-item relative z-10 flex flex-1 flex-col items-center gap-0.5 py-1.5"
           :class="[
             { 'report-item': item.name === 'report' },
-            { 'before-report': index < 2, 'after-report': index > 2 },
+            { 'before-report': index < navItems.findIndex(nav => nav.name === 'report'), 'after-report': index > navItems.findIndex(nav => nav.name === 'report') },
             activeIndex === navItems.findIndex((nav) => nav.name === item.name)
               ? 'text-paper-ink'
               : 'text-ink-mute',

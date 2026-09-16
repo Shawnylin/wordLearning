@@ -633,7 +633,6 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 .learn-page.has-study-result .study-command-zone { min-height: 0; }
 .study-page .generation-stage { max-width: none; }
 .study-page > .max-w-lg, .study-page > div > .max-w-lg { max-width: 760px; }
-.study-page .generation-stage.is-active .generation-surface,
 .study-page .generation-result .card {
  background: transparent; border: 0; border-radius: 0; box-shadow: none;
  backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible;

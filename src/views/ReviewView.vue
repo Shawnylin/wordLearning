@@ -60,7 +60,7 @@ function goReport() {
 
 function openWord(word: string) {
   idiomStore.setCurrentIdiom(word)
-  router.push('/learn')
+  router.push({ path: '/learn', query: { word } })
 }
 
 // —— 手势 ——

@@ -15,7 +15,7 @@ const router = createRouter({
     {
       path: '/compare',
       name: 'compare',
-      component: () => import('../views/CompareView.vue')
+      redirect: to => ({ path: '/learn', query: { ...to.query, mode: 'compare' } })
     },
     {
       path: '/record',
