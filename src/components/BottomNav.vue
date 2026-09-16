@@ -110,7 +110,7 @@ onBeforeUnmount(() =>
     >
       <div
         id="primary-nav-items"
-        class="nav-shell relative flex items-center rounded-full bg-card/95 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(42,36,28,0.4)] border border-line p-1.5"
+        class="nav-shell glass-card relative flex items-center rounded-full border p-1.5"
       >
         <!-- 印章滑动指示器 -->
         <div
@@ -171,7 +171,15 @@ onBeforeUnmount(() =>
 }
 .nav-shell {
   min-height: 52px;
+  background: var(--glass-fill);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-shadow), 0 8px 30px -18px rgb(20 24 28 / .32);
+  backdrop-filter: blur(22px) saturate(118%);
+  -webkit-backdrop-filter: blur(22px) saturate(118%);
   transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav-shell { background: var(--card); }
 }
 .nav-frame.compact .nav-shell {
   min-height: 52px;

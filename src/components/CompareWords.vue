@@ -3,7 +3,7 @@ withDefaults(defineProps<{ words: string[]; variant?: 'list' | 'card' }>(), { va
 </script>
 
 <template>
-  <div class="compare-words" :class="`compare-words--${variant}`" aria-label="对比词语">
+  <div class="compare-words" :class="[`compare-words--${variant}`, `compare-words--count-${words.length}`]" aria-label="对比词语">
     <template v-for="(word, index) in words" :key="index">
       <span v-if="index" data-row-aux class="compare-word-divider" aria-hidden="true">vs</span>
       <span class="compare-word font-kai" :data-morph-word="word" :data-morph-index="index">{{ word }}</span>

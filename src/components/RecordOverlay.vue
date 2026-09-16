@@ -220,9 +220,23 @@ onBeforeUnmount(() => {
 .record-panel .compare-heading { position: relative; margin: 0 24px 24px; padding: 22px 0 18px; text-align: left; background: none; border-bottom: 1px solid var(--line); }
 .record-panel .compare-heading .study-heading-row { display: block; min-height: 48px; padding-right: 44px; }
 .record-panel .compare-heading .study-heading-actions { position: absolute; top: 18px; right: -8px; }
-.record-panel .compare-heading .compare-words { justify-content: flex-start; gap: 10px 20px; color: var(--ink); font-size: clamp(40px, 11vw, 52px); font-weight: 700; letter-spacing: .06em; }
+.record-panel .compare-heading .compare-words { justify-content: flex-start; color: var(--ink); font-weight: 700; letter-spacing: .04em; }
 .record-panel .compare-heading .compare-word { line-height: 1.18; }
 .record-panel .compare-heading .compare-word-divider { font-size: 14px; letter-spacing: 0; }
+.record-panel .compare-heading .compare-words--count-2 { flex-wrap: nowrap; gap: 6px 10px; font-size: clamp(24px, 7.5vw, 48px); }
+.record-panel .compare-heading .compare-words--count-3 { flex-wrap: nowrap; gap: 4px 6px; font-size: clamp(15px, 4.8vw, 32px); }
+.record-panel .compare-heading .compare-words--count-2 .compare-word,
+.record-panel .compare-heading .compare-words--count-3 .compare-word { flex: 0 1 auto; white-space: nowrap; overflow-wrap: normal; }
+.record-panel .compare-heading .compare-words--count-4 { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px 10px; width: 100%; font-size: clamp(22px, 7vw, 42px); }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(1),
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(5) { justify-self: end; text-align: right; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(3),
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(7) { justify-self: start; text-align: left; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(2) { grid-column: 2; grid-row: 1; align-self: center; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(4) { display: none; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(5) { grid-column: 1; grid-row: 2; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(6) { grid-column: 2; grid-row: 2; align-self: center; }
+.record-panel .compare-heading .compare-words--count-4 > :nth-child(7) { grid-column: 3; grid-row: 2; }
 .record-panel .compare-heading .token-usage { justify-content: flex-start; margin-top: 6px; }
 .record-panel .compare-sections { display: grid; gap: 24px; padding: 0 24px 28px; }
 .record-panel .compare-sections > div { min-width: 0; margin: 0; }
@@ -244,7 +258,9 @@ onBeforeUnmount(() => {
   .record-panel .idiom-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
   .record-panel .compare-heading { margin: 0 32px 28px; padding-top: 28px; }
   .record-panel .compare-heading .study-heading-actions { top: 24px; }
-  .record-panel .compare-heading .compare-words { font-size: 56px; }
+  .record-panel .compare-heading .compare-words--count-2 { font-size: 48px; }
+  .record-panel .compare-heading .compare-words--count-3 { font-size: 32px; }
+  .record-panel .compare-heading .compare-words--count-4 { font-size: 42px; }
   .record-panel .compare-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
   .record-back { padding: 18px 28px; }
 }
