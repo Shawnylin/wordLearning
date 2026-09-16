@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CommandSubmit from './CommandSubmit.vue'
+import CommandSurface from './CommandSurface.vue'
 import { ref } from 'vue'
 import { Search } from 'lucide-vue-next'
 
@@ -30,7 +31,8 @@ function handleKeydown(event: KeyboardEvent) {
 
 <template>
   <div class="relative w-full max-w-lg mx-auto">
-    <div class="word-command" :class="{ 'is-ready': inputValue.trim() && !loading, 'is-focused': focused }" :aria-busy="loading">
+    <div class="word-command" :class="{ 'is-ready': inputValue.trim() && !loading, 'is-open': focused || !!inputValue.trim() || loading }" :aria-busy="loading">
+      <CommandSurface />
       <label class="word-command-field">
         <Search :size="19" class="word-command-icon" aria-hidden="true" />
       <input
@@ -46,6 +48,7 @@ function handleKeydown(event: KeyboardEvent) {
       />
       </label>
       <CommandSubmit
+        @pointerdown.prevent
         @click="handleSearch"
         :disabled="!inputValue.trim() || loading"
         :loading="loading"

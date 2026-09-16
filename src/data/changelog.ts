@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.3',
+    date: '2026-09-17',
+    title: '输入栏采用液态分离动效',
+    changes: [
+      '输入栏始终保持相同高度，未点击时显示完整长条，聚焦后缩短并在右侧分离出发送按钮。',
+      '移除输入框聚焦光圈，使用背景黏连分离动效，保留生成中的灰色刷新图标与结束回弹。'
+    ]
+  },
+  {
     version: '0.5.2',
     date: '2026-09-17',
     title: '改善输入栏展开与生成反馈',

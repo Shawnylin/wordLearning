@@ -1,36 +1,62 @@
 @import "tailwindcss";
 
-/* Shared command bar for study and the docked daily lookup. Keep text outside filters. */
+/* A fixed-height field separates into two filtered background shapes. */
 .word-command {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  position: relative;
+  isolation: isolate;
   min-width: 0;
-  padding-inline: 10px;
-  transition: gap 360ms cubic-bezier(.22, 1, .36, 1), padding 360ms cubic-bezier(.22, 1, .36, 1);
+  height: 56px;
+  --command-space: 0px;
+  --command-motion: 560ms cubic-bezier(.22, 1, .36, 1);
 }
+.word-command.is-open { --command-space: 64px; }
+.word-command-surface { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
+.word-command-filter { position: absolute; }
+.word-command-liquid { position: absolute; inset: 0; }
+.word-command-body {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(100% - var(--command-space));
+  border-radius: 28px;
+  background: var(--soft);
+  transition: width var(--command-motion);
+}
+.word-command-drop {
+  position: absolute;
+  right: 0;
+  top: 4px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--soft);
+  transform: translateX(-28px);
+  transition: transform var(--command-motion);
+}
+.word-command.is-open .word-command-drop { transform: translateX(0); }
 .word-command-field {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
+  width: calc(100% - var(--command-space));
   min-width: 0;
   height: 56px;
   padding: 0 18px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 28px;
-  background: var(--card);
-  box-shadow: 0 3px 12px -8px color-mix(in srgb, var(--ink) 24%, transparent);
+  background: transparent;
   cursor: text;
-  transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+  transition: width var(--command-motion);
 }
-.word-command-icon { flex: none; color: var(--ink-mute); transition: color 200ms ease; }
+.word-command-icon { flex: none; color: var(--ink-mute); }
 .word-command-input {
   width: 100%;
   min-width: 0;
   height: 100%;
+  padding: 0;
   border: 0;
   outline: none;
+  box-shadow: none;
   background: transparent;
   color: var(--ink);
   font-size: 16px;
@@ -39,30 +65,33 @@
 .word-command-input::placeholder { color: var(--ink-mute); }
 .word-command-input:disabled { opacity: .6; }
 .word-command-action {
+  position: absolute;
+  right: 0;
+  top: 4px;
   display: grid;
   place-items: center;
-  flex: none;
   width: 48px;
   height: 48px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: var(--soft);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   color: var(--ink-mute);
-  transition: transform 360ms cubic-bezier(.34, 1.56, .64, 1), background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 160ms, background 200ms ease, color 200ms ease;
 }
-.word-command.is-ready .word-command-action {
-  border-color: transparent;
-  background: var(--zhuhong-solid);
-  color: #fff;
-  box-shadow: 0 4px 10px -5px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent);
+.word-command.is-open .word-command-action {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 180ms;
 }
-.word-command.is-focused { gap: 12px; padding-inline: 0; }
+.word-command.is-ready .word-command-action { background: var(--zhuhong-solid); color: #fff; }
 .word-command .word-command-action.is-generating {
-  border-color: var(--line);
   background: color-mix(in srgb, var(--ink-mute) 12%, var(--card));
   color: var(--ink-mute);
-  box-shadow: none;
 }
 .word-command-refresh { animation: command-refresh 1.1s linear infinite; }
 .word-command-action.is-settling { animation: command-settle 460ms cubic-bezier(.22, 1, .36, 1); }
@@ -73,23 +102,14 @@
   72% { transform: scale(.96); }
   100% { transform: scale(1); }
 }
-.word-command-field:focus-within {
-  border-color: var(--zhuhong);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--zhuhong) 10%, transparent);
-}
-.word-command-field:focus-within .word-command-icon { color: var(--zhuhong); }
 .word-command-action:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
 .word-command-action:disabled { cursor: not-allowed; }
-@media (hover: hover) and (pointer: fine) {
-  .word-command-action:not(:disabled):hover { transform: translateY(-2px) scale(1.04); }
-}
 .word-command-action:not(:disabled):active { transform: scale(.92); }
 @media (prefers-reduced-motion: reduce) {
-  .word-command, .word-command-field, .word-command-icon, .word-command-action { transition: none; }
-  .word-command-action:not(:disabled):hover, .word-command-action:not(:disabled):active { transform: none; }
+  .word-command-body, .word-command-drop, .word-command-field, .word-command-action { transition: none; }
+  .word-command-action:not(:disabled):active { transform: none; }
   .word-command-refresh, .word-command-action.is-settling { animation: none; }
 }
-
 /* 使用 .dark class 控制暗色模式（Tailwind v4 默认跟随系统 prefers-color-scheme，
    这里显式改为 class 变体，配合 theme store 在 <html> 上切换 .dark） */
 @custom-variant dark (&:where(.dark, .dark *));
