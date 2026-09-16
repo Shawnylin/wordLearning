@@ -9,6 +9,14 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.1',
+    date: '2026-09-17',
+    title: '修复收起输入栏时发送图标露出',
+    changes: [
+      '修复学习模式下未点击输入栏时，禁用样式导致发送图标意外显示的问题，保留输入栏展开和收回动画。'
+    ]
+  },
+  {
     version: '0.6.0',
     date: '2026-09-17',
     title: '学习与对比融合为圆球工作台',

@@ -117,7 +117,7 @@ defineExpose({ focusWord })
 .study-top-action { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: transparent; color: var(--ink-mute); opacity: 0; transform: translateX(-28px) scale(.7); pointer-events: none; transition: transform var(--motion), opacity 240ms ease, background 240ms ease; }
 .has-action .study-top-action { opacity: 1; transform: none; pointer-events: auto; }
 .study-top-action.ready { background: var(--zhuhong-solid); color: white; }
-.study-top-action:disabled, .study-field input:disabled, .study-field button:disabled { opacity: .55; }
+.has-action .study-top-action:disabled, .study-field input:disabled, .study-field button:disabled { opacity: .55; }
 button:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
 .action-icon-enter-active, .action-icon-leave-active { transition: transform 180ms ease, opacity 180ms ease; }
 .action-icon-enter-from { opacity: 0; transform: rotate(-90deg) scale(.5); }
