@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import VersionEntry from '../features/developerBeta/VersionEntry.vue'
 import Motion from '../components/Motion.vue'
 import { onMounted, ref, watch } from 'vue'
 import { fetchBalance, type ApiBalance } from '../api/deepseek'
@@ -276,7 +277,7 @@ function handleImport() {
             <div class="settings-theme-icon flex items-center justify-center w-10 h-10 rounded-xl shrink-0"><Smartphone :size="20" /></div>
             <div class="min-w-0">
               <h3 class="font-semibold text-ink">应用更新</h3>
-              <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
+              <VersionEntry />
             </div>
           </div>
           <button
