@@ -188,7 +188,7 @@ function handleImport() {
           </div>
         </div>
       <button @click="router.push('/profile/models')" class="settings-card-model card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
-        <div class="w-10 h-10 rounded-xl bg-dai-soft text-dai flex items-center justify-center shrink-0"><Key :size="20" /></div>
+        <div class="settings-theme-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0"><Key :size="20" /></div>
         <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 模型配置与 MiMo 朗读</p></div>
         <ChevronRight :size="18" class="text-ink-mute shrink-0" />
       </button>
@@ -196,7 +196,7 @@ function handleImport() {
       <!-- Theme Setting -->
       <div class="settings-card-theme card rounded-2xl p-6 space-y-4">
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gold-soft text-gold">
+          <div class="settings-theme-icon flex items-center justify-center w-10 h-10 rounded-xl">
             <component :is="themeStore.followSystem ? Monitor : (themeStore.theme === 'dark' ? Moon : Sun)" :size="20" />
           </div>
           <div>
@@ -273,14 +273,14 @@ function handleImport() {
       <div class="settings-card-update card rounded-2xl p-6">
         <div class="flex items-center justify-between gap-3 mb-4">
           <div class="flex min-w-0 items-center gap-3">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0"><Smartphone :size="20" /></div>
+            <div class="settings-theme-icon flex items-center justify-center w-10 h-10 rounded-xl shrink-0"><Smartphone :size="20" /></div>
             <div class="min-w-0">
               <h3 class="font-semibold text-ink">应用更新</h3>
               <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
             </div>
           </div>
           <button
-            class="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-dai bg-dai-soft hover:opacity-80 transition-opacity"
+            class="settings-theme-action flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium hover:opacity-80 transition-opacity"
             aria-label="查看更新日志"
             @click="router.push('/profile/changelog')"
           ><FileText :size="15" />更新日志</button>
@@ -303,7 +303,7 @@ function handleImport() {
       <!-- Data Management -->
       <div class="settings-card-data card rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-soft text-ink-soft">
+          <div class="settings-theme-icon flex items-center justify-center w-10 h-10 rounded-xl">
             <Trash2 :size="20" />
           </div>
           <div>
@@ -427,3 +427,11 @@ function handleImport() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.settings-theme-icon,
+.settings-theme-action {
+  color: var(--zhuhong);
+  background: var(--zhuhong-soft);
+}
+</style>

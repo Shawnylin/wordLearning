@@ -63,36 +63,132 @@ html.dark {
   --violet-soft: #292031;
 }
 
-/* 主题强调色：背景与正文保持中性，只改变主要操作和选中状态。 */
+/* 完整主题色板：强调色、纸面、卡片、层次色和文字共同协调。 */
 html:not(.dark)[data-theme-color="dai"] {
+  --paper: #f3f6f8;
+  --card: #fbfcfd;
+  --soft: #e9eff3;
+  --line: #d8e2e9;
+  --ink: #25313b;
+  --ink-soft: #566977;
+  --ink-mute: #899aa6;
   --zhuhong: #486a88;
-  --zhuhong-soft: #e3ebf2;
+  --zhuhong-soft: #dfe9f1;
   --zhuhong-solid: #486a88;
+  --dai: #486a88;
+  --dai-soft: #dfe9f1;
+  --dai-solid: #486a88;
+  --gold: #92764a;
+  --gold-soft: #f1ece1;
+  --bamboo: #557465;
+  --bamboo-soft: #e2ebe5;
+  --violet: #71677c;
+  --violet-soft: #ebe7ee;
 }
 html.dark[data-theme-color="dai"] {
+  --paper: #101820;
+  --card: #18222b;
+  --soft: #202d37;
+  --line: #30414e;
+  --ink: #e5ebef;
+  --ink-soft: #aab8c3;
+  --ink-mute: #788a98;
   --zhuhong: #91afc9;
   --zhuhong-soft: #202c37;
   --zhuhong-solid: #527698;
+  --dai: #91afc9;
+  --dai-soft: #202c37;
+  --dai-solid: #527698;
+  --gold: #c1ad85;
+  --gold-soft: #2b2d2d;
+  --bamboo: #86aa91;
+  --bamboo-soft: #1d2b25;
+  --violet: #ae9cba;
+  --violet-soft: #2b2730;
 }
 html:not(.dark)[data-theme-color="bamboo"] {
+  --paper: #f4f7f2;
+  --card: #fbfdfb;
+  --soft: #eaf0e8;
+  --line: #dae4d8;
+  --ink: #283229;
+  --ink-soft: #596a5b;
+  --ink-mute: #89998b;
   --zhuhong: #4f775b;
-  --zhuhong-soft: #e4ede6;
+  --zhuhong-soft: #e0ebe2;
   --zhuhong-solid: #4f775b;
+  --dai: #526c73;
+  --dai-soft: #e2e9ea;
+  --dai-solid: #526c73;
+  --gold: #917342;
+  --gold-soft: #f1ebdd;
+  --bamboo: #4f775b;
+  --bamboo-soft: #e0ebe2;
+  --violet: #746679;
+  --violet-soft: #ebe6ed;
 }
 html.dark[data-theme-color="bamboo"] {
+  --paper: #111814;
+  --card: #19221c;
+  --soft: #222e26;
+  --line: #334239;
+  --ink: #e5ece7;
+  --ink-soft: #a9b9ad;
+  --ink-mute: #788c7e;
   --zhuhong: #8eb89a;
   --zhuhong-soft: #1e2b23;
   --zhuhong-solid: #4f7d5d;
+  --dai: #8ba9af;
+  --dai-soft: #213036;
+  --dai-solid: #526f77;
+  --gold: #c0aa7d;
+  --gold-soft: #2d2d27;
+  --bamboo: #8eb89a;
+  --bamboo-soft: #1e2b23;
+  --violet: #ad9ab2;
+  --violet-soft: #2b2730;
 }
 html:not(.dark)[data-theme-color="violet"] {
+  --paper: #f7f4f8;
+  --card: #fdfcfe;
+  --soft: #eee9f0;
+  --line: #e2d9e5;
+  --ink: #312b33;
+  --ink-soft: #675e6b;
+  --ink-mute: #998e9d;
   --zhuhong: #765b86;
-  --zhuhong-soft: #eee7f2;
+  --zhuhong-soft: #ebe4ef;
   --zhuhong-solid: #765b86;
+  --dai: #5c6d80;
+  --dai-soft: #e3e8ed;
+  --dai-solid: #5c6d80;
+  --gold: #927548;
+  --gold-soft: #f1ebdf;
+  --bamboo: #5e7765;
+  --bamboo-soft: #e3ebe5;
+  --violet: #765b86;
+  --violet-soft: #ebe4ef;
 }
 html.dark[data-theme-color="violet"] {
+  --paper: #171419;
+  --card: #211d23;
+  --soft: #2b252e;
+  --line: #403746;
+  --ink: #ede7ef;
+  --ink-soft: #bcb0c1;
+  --ink-mute: #908296;
   --zhuhong: #b89ac8;
   --zhuhong-soft: #2b2231;
   --zhuhong-solid: #76568a;
+  --dai: #9aabba;
+  --dai-soft: #252c34;
+  --dai-solid: #5b6e82;
+  --gold: #c4ad82;
+  --gold-soft: #302c29;
+  --bamboo: #8eaa95;
+  --bamboo-soft: #252e27;
+  --violet: #b89ac8;
+  --violet-soft: #2b2231;
 }
 
 /* 将色板映射为 Tailwind 工具类（bg-card / text-ink / border-line …） */
@@ -214,7 +310,7 @@ html.app-update-entering #app {
 .card {
   background-color: var(--card);
   border: 1px solid var(--line);
-  box-shadow: 0 1px 0 rgba(42, 36, 28, 0.03), 0 8px 24px -16px rgba(42, 36, 28, 0.18);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 3%, transparent), 0 8px 24px -16px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 /* 印章（红色方形，白/宣纸字） */
