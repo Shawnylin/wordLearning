@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.1',
+    date: '2026-09-17',
+    title: '优化学习与随文查词输入栏',
+    changes: [
+      '学习页全端采用大圆角输入栏与独立圆形搜索按钮，输入时轻柔展开，点击时回弹。',
+      'iPad 日报随文查词同步采用新样式，并适配深色模式、主题色与减少动态效果设置。'
+    ]
+  },
+  {
     version: '0.5.0',
     date: '2026-09-16',
     title: '词语与日报支持 MiMo 朗读',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onDeactivated, ref, watch } from 'vue'
-import { X, Maximize2, Minimize2, Search } from 'lucide-vue-next'
+import { X, Maximize2, Minimize2, Search, ArrowUp } from 'lucide-vue-next'
 import DailyWordContent from './DailyWordContent.vue'
 import Motion from './Motion.vue'
 import { useIdiomStore } from '../stores/idiom'
@@ -112,9 +112,12 @@ defineExpose({ open })
       <section v-if="visible || docked" ref="panel" :role="docked ? 'region' : 'dialog'" :aria-modal="docked ? undefined : true" :aria-label="docked ? '随文查词' : `${word} · 日报学习`" tabindex="-1" class="daily-sheet" :class="{ expanded: expanded && !docked, 'is-docked': docked }" @keydown="keydown">
         <div class="h-full flex flex-col">
           <header class="flex items-center justify-between px-4 py-2 border-b border-line shrink-0"><p class="text-xs text-ink-mute">{{ docked ? '随文查词' : '日报 · 随文学习' }}</p><div class="flex gap-1"><button v-if="!docked" @click="expanded = !expanded" class="p-2 rounded-full bg-soft" :aria-label="expanded ? '恢复半屏' : '展开阅读'" :aria-expanded="expanded"><component :is="expanded ? Minimize2 : Maximize2" :size="16" /></button><button v-if="visible" @click="close" class="p-2 rounded-full bg-soft" :aria-label="docked ? '清除查词结果' : '收回日报学习卡片'"><X :size="18" /></button></div></header>
-          <form v-if="docked" class="lookup-form" @submit.prevent="open(input)">
-            <input v-model="input" aria-label="查询词语" placeholder="输入词语…" />
-            <button type="submit" aria-label="查词" :disabled="!input.trim()"><Search :size="18" /></button>
+          <form v-if="docked" class="lookup-form word-command" :class="{ 'is-ready': input.trim() }" @submit.prevent="open(input)">
+            <label class="word-command-field">
+              <Search :size="18" class="word-command-icon" aria-hidden="true" />
+              <input v-model="input" class="word-command-input" aria-label="查询词语" placeholder="输入词语…" @keydown.enter="($event.isComposing || $event.keyCode === 229) && $event.preventDefault()" />
+            </label>
+            <button type="submit" class="word-command-action" aria-label="查词" title="查词" :disabled="!input.trim()"><ArrowUp :size="22" /></button>
           </form>
           <div v-if="docked && selectionText" class="selection-action">
             <span>已选「{{ selectionText }}」</span>
@@ -158,11 +161,7 @@ defineExpose({ open })
 .daily-sheet { position: fixed; z-index: 71; left: max(0px, calc((100vw - 560px) / 2)); bottom: 0; width: min(100vw, 560px); height: 50dvh; border-radius: 20px 20px 0 0; background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 20px 80px rgb(0 0 0 / .2); overflow: hidden; outline: none; padding-bottom: env(safe-area-inset-bottom, 0px); transition: height 360ms cubic-bezier(.22,1,.36,1); }
 .daily-sheet.expanded { height: 85dvh; }
 .daily-sheet.is-docked { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; border-radius: 20px; box-shadow: none; padding-bottom: 0; transition: none; }
-.lookup-form { display: flex; flex-shrink: 0; margin: 12px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
-.lookup-form input { min-width: 0; width: 100%; padding: 8px; font-size: 16px; outline: none; }
-.lookup-form:focus-within { border-color: var(--zhuhong); }
-.lookup-form button { display: grid; place-items: center; width: 40px; flex-shrink: 0; border-radius: 8px; color: var(--zhuhong); }
-.lookup-form button:disabled { opacity: .4; }
+.lookup-form { flex-shrink: 0; margin: 12px; }
 .selection-action { display: flex; align-items: center; gap: 8px; padding: 0 16px 12px; font-size: 13px; flex-shrink: 0; }
 .selection-action span { min-width: 0; overflow-wrap: anywhere; }
 .selection-action button { margin-left: auto; padding: 10px 12px; flex-shrink: 0; border-radius: 12px; background: var(--zhuhong-soft); color: var(--zhuhong); }
