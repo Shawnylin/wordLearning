@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.2',
+    date: '2026-09-17',
+    title: '改善输入栏展开与生成反馈',
+    changes: [
+      '增强手机端输入栏聚焦时的展开效果，点击输入框即可向两侧展开。',
+      '学习页与 iPad 随文查词在生成期间显示灰色旋转刷新图标，结束后回弹恢复发送按钮。'
+    ]
+  },
+  {
     version: '0.5.1',
     date: '2026-09-17',
     title: '优化学习与随文查词输入栏',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onDeactivated, ref, watch } from 'vue'
-import { X, Maximize2, Minimize2, Search, ArrowUp } from 'lucide-vue-next'
+import { X, Maximize2, Minimize2, Search } from 'lucide-vue-next'
+import CommandSubmit from './CommandSubmit.vue'
 import DailyWordContent from './DailyWordContent.vue'
 import Motion from './Motion.vue'
 import { useIdiomStore } from '../stores/idiom'
@@ -10,6 +11,7 @@ const store = useIdiomStore(), settings = useSettingsStore()
 const props = defineProps<{ docked?: boolean; selectionText?: string }>()
 const emit = defineEmits<{ querySelection: [] }>()
 const input = ref(''), pending = ref('')
+const inputFocused = ref(false)
 const expanded = ref(false)
 const visible = ref(false), word = ref(''), panel = ref<HTMLElement>(), error = ref('')
 const content = computed(() => store.currentIdiom?.word === word.value ? store.currentIdiom : store.idiomCache[word.value] || null)
@@ -112,12 +114,12 @@ defineExpose({ open })
       <section v-if="visible || docked" ref="panel" :role="docked ? 'region' : 'dialog'" :aria-modal="docked ? undefined : true" :aria-label="docked ? '随文查词' : `${word} · 日报学习`" tabindex="-1" class="daily-sheet" :class="{ expanded: expanded && !docked, 'is-docked': docked }" @keydown="keydown">
         <div class="h-full flex flex-col">
           <header class="flex items-center justify-between px-4 py-2 border-b border-line shrink-0"><p class="text-xs text-ink-mute">{{ docked ? '随文查词' : '日报 · 随文学习' }}</p><div class="flex gap-1"><button v-if="!docked" @click="expanded = !expanded" class="p-2 rounded-full bg-soft" :aria-label="expanded ? '恢复半屏' : '展开阅读'" :aria-expanded="expanded"><component :is="expanded ? Minimize2 : Maximize2" :size="16" /></button><button v-if="visible" @click="close" class="p-2 rounded-full bg-soft" :aria-label="docked ? '清除查词结果' : '收回日报学习卡片'"><X :size="18" /></button></div></header>
-          <form v-if="docked" class="lookup-form word-command" :class="{ 'is-ready': input.trim() }" @submit.prevent="open(input)">
+          <form v-if="docked" class="lookup-form word-command" :class="{ 'is-ready': input.trim(), 'is-focused': inputFocused }" @submit.prevent="open(input)">
             <label class="word-command-field">
               <Search :size="18" class="word-command-icon" aria-hidden="true" />
-              <input v-model="input" class="word-command-input" aria-label="查询词语" placeholder="输入词语…" @keydown.enter="($event.isComposing || $event.keyCode === 229) && $event.preventDefault()" />
+              <input v-model="input" class="word-command-input" aria-label="查询词语" placeholder="输入词语…" @focus="inputFocused = true" @blur="inputFocused = false" @keydown.enter="($event.isComposing || $event.keyCode === 229) && $event.preventDefault()" />
             </label>
-            <button type="submit" class="word-command-action" aria-label="查词" title="查词" :disabled="!input.trim()"><ArrowUp :size="22" /></button>
+            <CommandSubmit :loading="store.idiomLoading" :disabled="!input.trim()" label="查词" />
           </form>
           <div v-if="docked && selectionText" class="selection-action">
             <span>已选「{{ selectionText }}」</span>

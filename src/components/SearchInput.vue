@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Motion from '../components/Motion.vue'
+import CommandSubmit from './CommandSubmit.vue'
 import { ref } from 'vue'
-import { Search, Loader2, ArrowUp } from 'lucide-vue-next'
+import { Search } from 'lucide-vue-next'
 
 const props = defineProps<{
   loading?: boolean
@@ -12,6 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const inputValue = ref('')
+const focused = ref(false)
 
 function handleSearch() {
   const word = inputValue.value.trim()
@@ -29,12 +30,14 @@ function handleKeydown(event: KeyboardEvent) {
 
 <template>
   <div class="relative w-full max-w-lg mx-auto">
-    <div class="word-command" :class="{ 'is-ready': inputValue.trim() && !loading, 'is-loading': loading }" :aria-busy="loading">
+    <div class="word-command" :class="{ 'is-ready': inputValue.trim() && !loading, 'is-focused': focused }" :aria-busy="loading">
       <label class="word-command-field">
         <Search :size="19" class="word-command-icon" aria-hidden="true" />
       <input
         v-model="inputValue"
         @keydown="handleKeydown"
+        @focus="focused = true"
+        @blur="focused = false"
         type="text"
         aria-label="输入成语或词语"
         placeholder="输入成语或词语…"
@@ -42,15 +45,12 @@ function handleKeydown(event: KeyboardEvent) {
         class="word-command-input"
       />
       </label>
-      <button
+      <CommandSubmit
         @click="handleSearch"
         :disabled="!inputValue.trim() || loading"
-        class="word-command-action"
-        :aria-label="loading ? '正在生成' : '搜索词语'"
-        :title="loading ? '正在生成' : '搜索词语'"
-      >
-        <Motion><Loader2 v-if="loading" :size="20" class="animate-spin" /><ArrowUp v-else :size="22" /></Motion>
-      </button>
+        :loading="loading"
+        label="搜索词语"
+      />
     </div>
   </div>
 </template>
