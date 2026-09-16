@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.5.7',
+    date: '2026-09-17',
+    title: '支持点击空白处收起学习页输入',
+    changes: [
+      '学习页输入框聚焦后，点击页面空白区域即可取消输入并收起手机键盘。',
+      '按钮、链接和其他可交互控件的点击行为保持不变。'
+    ]
+  },
+  {
     version: '0.5.6',
     date: '2026-09-17',
     title: '统一输入栏与发送按钮高度',

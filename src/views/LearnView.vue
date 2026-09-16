@@ -38,10 +38,17 @@ function handleRelatedClick(word: string) {
 function goToSettings() {
   router.push('/profile/models')
 }
+
+function handlePagePointerDown(event: PointerEvent) {
+  const target = event.target as HTMLElement
+  if (target.closest('input, textarea, select, button, a, label, [contenteditable="true"]')) return
+  const active = document.activeElement
+  if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) active.blur()
+}
 </script>
 
 <template>
-  <div class="study-page min-h-screen px-4 pt-5 pb-4">
+  <div class="study-page min-h-screen px-4 pt-5 pb-4" @pointerdown="handlePagePointerDown">
     <!-- Search Input -->
     <div class="mb-4">
       <SearchInput
