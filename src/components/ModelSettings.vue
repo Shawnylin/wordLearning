@@ -64,7 +64,7 @@ function remove() { settings.deleteProfile(draft.id); load() }
       <label class="block text-sm">配置名称<input v-model="draft.name" placeholder="例如：DeepSeek 日常学习" /></label>
       <label class="block text-sm">API URL<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
       <p class="text-xs text-ink-mute">填写服务商 API 基础地址（按需包含 /v1），也支持完整 /chat/completions 地址。</p>
-      <label class="block text-sm">API Key<input v-model="draft.apiKey" type="password" placeholder="输入 API Key" autocomplete="off" /></label>
+      <label class="block text-sm">API Key<input v-model="draft.apiKey" type="text" placeholder="输入 API Key" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
       <button class="bg-soft text-ink-soft rounded-xl px-4 py-2 text-sm" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取模型' }}</button>
       <Motion><label v-if="draft.models.length" class="block text-sm">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label></Motion>
       <label class="block text-sm">模型名称<input v-model="draft.model" placeholder="也可手动输入模型名称" autocapitalize="off" spellcheck="false" /></label>
@@ -83,4 +83,9 @@ function remove() { settings.deleteProfile(draft.id); load() }
 input, select { display: block; width: 100%; min-width: 0; margin-top: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); color: var(--ink); font-size: 16px; }
 input:focus, select:focus { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
 fieldset:disabled { opacity: .65; }
+@media (min-width: 768px) {
+  .model-settings { padding: 20px; }
+  .model-settings :deep(label), .model-settings :deep(button), .model-settings :deep(p) { line-height: 1.35; }
+  input, select { margin-top: 4px; padding: 9px 11px; }
+}
 </style>

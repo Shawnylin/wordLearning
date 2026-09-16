@@ -3,10 +3,11 @@ export interface SpeechConfig {
   baseUrl: string
   model: string
   voice: string
+  rate: 'slow' | 'normal' | 'fast'
 }
 
 export const defaultSpeechConfig: SpeechConfig = {
-  apiKey: '', baseUrl: 'https://api.xiaomimimo.com/v1', model: 'mimo-v2.5-tts', voice: 'mimo_default'
+  apiKey: '', baseUrl: 'https://api.xiaomimimo.com/v1', model: 'mimo-v2.5-tts', voice: 'mimo_default', rate: 'normal'
 }
 
 export function speechEndpoint(config: SpeechConfig) {
@@ -23,7 +24,8 @@ export function speechChunks(text: string): string[] {
   const chars = Array.from(text.trim())
   const chunks: string[] = []
   while (chars.length) {
-    let end = Math.min(chars.length, 350)
+    // 第一段更短，让日报尽快开始播放；后续请求会在播放时预取。
+    let end = Math.min(chars.length, chunks.length ? 350 : 100)
     if (end < chars.length) {
       for (let i = end - 1; i >= 100; i--) {
         if (/[。！？；\n.!?;]/.test(chars[i]!)) { end = i + 1; break }
@@ -47,13 +49,15 @@ export async function synthesizeSpeech(text: string, config: SpeechConfig, signa
       method: 'POST', signal: controller.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey.trim()}` },
       body: JSON.stringify({ model: config.model.trim(), messages: [
-        { role: 'user', content: '请使用清晰自然的普通话，语速适中，准确朗读原文。' },
+        { role: 'user', content: config.rate === 'slow' ? '请使用清晰自然的普通话，放慢语速，准确朗读原文。' : config.rate === 'fast' ? '请使用清晰自然的普通话，以较快语速流畅、准确地朗读原文。' : '请使用清晰自然的普通话，语速适中，准确朗读原文。' },
         { role: 'assistant', content: text }
       ], audio: { format: 'wav', voice: config.voice.trim() }, stream: false })
     })
     if (!response.ok) {
       const hints: Record<number, string> = { 401: 'API Key 无效，请检查朗读设置', 402: '朗读额度不足，请检查 MiMo 账户', 403: '没有语音模型权限', 404: '接口或模型不存在，请检查朗读设置', 429: '请求频繁或额度不足，请稍后重试' }
-      throw new Error(hints[response.status] || `朗读请求失败（${response.status}），请稍后重试`)
+      let detail = ''
+      try { const body = await response.json(); detail = body?.error?.message || body?.message || '' } catch {}
+      throw new Error(hints[response.status] || (detail ? `朗读失败：${detail}` : `朗读请求失败（${response.status}），请稍后重试`))
     }
     const data = await response.json()
     const encoded = data?.choices?.[0]?.message?.audio?.data

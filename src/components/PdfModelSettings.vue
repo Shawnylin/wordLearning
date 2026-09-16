@@ -23,13 +23,13 @@ async function run(action: 'models' | 'test' | 'save') {
 }
 </script>
 <template>
-  <section class="card rounded-2xl p-6 mt-5 space-y-4 pdf-model-settings">
+  <section class="card rounded-2xl p-5 space-y-3 pdf-model-settings">
     <h3 class="font-semibold">PDF 解析模型</h3>
     <p class="text-xs text-ink-mute leading-6">只负责报纸分篇和排序，不重写正文。查词、释义和对比继续使用上方学习模型。可配置 MiMo 等兼容 Chat Completions 的服务。</p>
     <label class="flex items-center gap-2 text-sm"><input type="checkbox" v-model="settings.pdfUseLearningModel" />PDF 也使用当前学习模型（{{ settings.model }}）</label>
     <fieldset :disabled="busy" class="space-y-3">
       <label class="block text-sm">解析 API URL<input v-model="draft.baseUrl" type="url" autocomplete="off" spellcheck="false" /></label>
-      <label class="block text-sm">解析 API Key<input v-model="draft.apiKey" type="password" autocomplete="off" /></label>
+      <label class="block text-sm">解析 API Key<input v-model="draft.apiKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
       <button @click="run('models')" class="bg-soft rounded-xl px-4 py-2 text-sm">获取解析模型</button>
       <label v-if="models.length" class="block text-sm">可用解析模型<select v-model="draft.model"><option v-for="model in models" :key="model">{{ model }}</option></select></label>
       <label class="block text-sm">解析模型名称<input v-model="draft.model" placeholder="获取模型后选择，或手动输入" spellcheck="false" /></label>
@@ -43,4 +43,5 @@ async function run(action: 'models' | 'test' | 'save') {
 input:not([type=checkbox]),select { display:block; width:100%; min-width:0; margin-top:6px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--soft); color:var(--ink); font-size:16px; }
 input:focus-visible,select:focus-visible { outline:2px solid var(--zhuhong); outline-offset:2px; }
 fieldset:disabled { opacity:.65; }
+@media (min-width:768px) { input:not([type=checkbox]),select { margin-top:4px; padding:9px 11px; } }
 </style>
