@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
 import { useSettingsStore } from '../stores/settings'
+import ApiKeyInput from './ApiKeyInput.vue'
 const settings = useSettingsStore()
 const draft = reactive({ ...settings.pdfConfig })
 const models = ref<string[]>([]), busy = ref(false), message = ref(''), error = ref(false)
@@ -29,7 +30,7 @@ async function run(action: 'models' | 'test' | 'save') {
     <label class="flex items-center gap-2 text-sm"><input type="checkbox" v-model="settings.pdfUseLearningModel" />PDF 也使用当前学习模型（{{ settings.model }}）</label>
     <fieldset :disabled="busy" class="space-y-3">
       <label class="block text-sm">解析 API URL<input v-model="draft.baseUrl" type="url" autocomplete="off" spellcheck="false" /></label>
-      <label class="block text-sm">解析 API Key<input v-model="draft.apiKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+      <label class="block text-sm">解析 API Key<ApiKeyInput v-model="draft.apiKey" placeholder="输入解析 API Key" /></label>
       <button @click="run('models')" class="bg-soft rounded-xl px-4 py-2 text-sm">获取解析模型</button>
       <label v-if="models.length" class="block text-sm">可用解析模型<select v-model="draft.model"><option v-for="model in models" :key="model">{{ model }}</option></select></label>
       <label class="block text-sm">解析模型名称<input v-model="draft.model" placeholder="获取模型后选择，或手动输入" spellcheck="false" /></label>

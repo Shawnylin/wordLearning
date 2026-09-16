@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { defaultSpeechConfig, speechEndpoint } from '../api/speech'
 import { useSpeech } from '../composables/useSpeech'
 import SpeechButton from './SpeechButton.vue'
+import ApiKeyInput from './ApiKeyInput.vue'
 
 const settings = useSettingsStore()
 const draft = ref({ ...defaultSpeechConfig, ...settings.speechConfig })
@@ -27,7 +28,7 @@ function save() {
     <p class="text-xs text-ink-mute leading-6">用于词语发音和日报阅读。密钥仅保存在此浏览器，独立于学习模型配置。官方当前为限时免费，额度和价格以平台为准。</p>
     <form @submit.prevent="save" class="space-y-3">
       <label class="block text-sm">API 地址<input v-model="draft.baseUrl" type="url" required placeholder="https://api.xiaomimimo.com/v1" /></label>
-      <label class="block text-sm">API Key<input v-model="draft.apiKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="填写小米 MiMo API Key" /></label>
+      <label class="block text-sm">API Key<ApiKeyInput v-model="draft.apiKey" placeholder="填写小米 MiMo API Key" /></label>
       <label class="block text-sm">语音模型<input v-model="draft.model" required placeholder="mimo-v2.5-tts" /></label>
       <label class="block text-sm">音色<select v-model="draft.voice"><option value="mimo_default">默认音色</option><option v-for="voice in ['冰糖', '茉莉', '苏打', '白桦', 'Mia', 'Chloe', 'Milo', 'Dean']" :key="voice" :value="voice">{{ voice }}</option></select></label>
       <fieldset><legend class="text-sm mb-2">朗读语速</legend><div class="rate-options"><button v-for="option in [{ value: 'slow', label: '慢速' }, { value: 'normal', label: '标准' }, { value: 'fast', label: '快速' }]" :key="option.value" type="button" @click="draft.rate = option.value as typeof draft.rate" :class="{ active: draft.rate === option.value }" :aria-pressed="draft.rate === option.value">{{ option.label }}</button></div></fieldset>

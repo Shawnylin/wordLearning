@@ -3,6 +3,7 @@ import Motion from '../components/Motion.vue'
 import { reactive, ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
+import ApiKeyInput from './ApiKeyInput.vue'
 
 const settings = useSettingsStore()
 const draft = reactive({ id: '', name: '', apiKey: '', baseUrl: '', model: '', models: [] as string[] })
@@ -64,7 +65,7 @@ function remove() { settings.deleteProfile(draft.id); load() }
       <label class="block text-sm">配置名称<input v-model="draft.name" placeholder="例如：DeepSeek 日常学习" /></label>
       <label class="block text-sm">API URL<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
       <p class="text-xs text-ink-mute">填写服务商 API 基础地址（按需包含 /v1），也支持完整 /chat/completions 地址。</p>
-      <label class="block text-sm">API Key<input v-model="draft.apiKey" type="text" placeholder="输入 API Key" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+      <label class="block text-sm">API Key<ApiKeyInput v-model="draft.apiKey" /></label>
       <button class="bg-soft text-ink-soft rounded-xl px-4 py-2 text-sm" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取模型' }}</button>
       <Motion><label v-if="draft.models.length" class="block text-sm">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label></Motion>
       <label class="block text-sm">模型名称<input v-model="draft.model" placeholder="也可手动输入模型名称" autocapitalize="off" spellcheck="false" /></label>
