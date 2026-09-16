@@ -345,7 +345,7 @@ function doConfirmDelete() {
             v-for="record in filteredHistory"
             :key="record.id"
             @click="onIdiomRowClick(record, $event)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-zhuhong/50 transition-all duration-200 group cursor-pointer"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl card hover:border-zhuhong/50 transition-all duration-200 group cursor-pointer"
             :class="{ 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
@@ -361,9 +361,6 @@ function doConfirmDelete() {
               <Check :size="12" :stroke-width="3" />
             </div></Motion>
 
-            <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-zhuhong-soft text-zhuhong shrink-0">
-              <BookOpen :size="18" />
-            </div>
             <div class="min-w-0 flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
                 <span class="font-kai" :data-morph-word="record.word">{{ record.word }}</span>
@@ -418,7 +415,7 @@ function doConfirmDelete() {
             v-for="record in filteredCompareHistory"
             :key="record.id"
             @click="onCompareRowClick(record, $event)"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl card hover:border-dai/50 transition-all duration-200 group cursor-pointer"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl card hover:border-dai/50 transition-all duration-200 group cursor-pointer"
             :class="{ 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
             role="button"
             tabindex="0"
@@ -434,9 +431,6 @@ function doConfirmDelete() {
               <Check :size="12" :stroke-width="3" />
             </div></Motion>
 
-            <div data-row-icon class="flex items-center justify-center w-10 h-10 rounded-xl bg-dai-soft text-dai shrink-0">
-              <GitCompare :size="18" />
-            </div>
             <div class="min-w-0 flex-1 text-left">
               <CompareWords :words="record.words" variant="list" class="text-ink group-hover:text-dai" />
               <div data-row-time class="flex items-center gap-1 mt-0.5">
