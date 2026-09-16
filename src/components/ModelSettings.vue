@@ -55,28 +55,26 @@ function remove() { settings.deleteProfile(draft.id); load() }
 </script>
 
 <template>
-  <section class="card rounded-2xl p-6 space-y-4 model-settings">
-    <div><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1">兼容 OpenAI Chat Completions 接口</p></div>
-    <p class="text-sm text-ink-soft break-all">当前模型：{{ settings.model }}</p>
-    <Motion><label v-if="settings.profiles.length" class="block text-sm">切换已保存配置
+  <section class="card settings-card model-settings">
+    <header class="settings-card-header"><div><h2 class="settings-title">学习模型</h2><p class="settings-description">用于词语查询、释义和对比</p></div><span class="settings-badge break-all">{{ settings.model }}</span></header>
+    <Motion><label v-if="settings.profiles.length" class="settings-label">已保存配置
       <select :value="settings.activeProfileId" @change="select" :disabled="!!busy"><option v-for="p in settings.profiles" :key="p.id" :value="p.id">{{ p.name }} · {{ p.model }}</option></select>
     </label></Motion>
-    <fieldset :disabled="!!busy" class="space-y-3">
-      <label class="block text-sm">配置名称<input v-model="draft.name" placeholder="例如：DeepSeek 日常学习" /></label>
-      <label class="block text-sm">API URL<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
-      <p class="text-xs text-ink-mute">填写服务商 API 基础地址（按需包含 /v1），也支持完整 /chat/completions 地址。</p>
-      <label class="block text-sm">API Key<ApiKeyInput v-model="draft.apiKey" /></label>
-      <button class="bg-soft text-ink-soft rounded-xl px-4 py-2 text-sm" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取模型' }}</button>
-      <Motion><label v-if="draft.models.length" class="block text-sm">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label></Motion>
-      <label class="block text-sm">模型名称<input v-model="draft.model" placeholder="也可手动输入模型名称" autocapitalize="off" spellcheck="false" /></label>
-      <div class="flex gap-2">
-        <button class="flex-1 btn-primary rounded-xl py-2 text-sm" @click="save">保存并启用</button>
-        <button class="flex-1 bg-soft rounded-xl py-2 text-sm" @click="run('test')">{{ busy === 'test' ? '测试中…' : '测试连接' }}</button>
+    <fieldset :disabled="!!busy" class="settings-form">
+      <label class="settings-label">配置名称<input v-model="draft.name" placeholder="例如：DeepSeek 日常学习" /></label>
+      <label class="settings-label">API 地址<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /><span class="settings-help">填写服务商基础地址，也支持完整的 /chat/completions 地址</span></label>
+      <label class="settings-label">API Key<ApiKeyInput v-model="draft.apiKey" /></label>
+      <div class="settings-inline"><button class="settings-secondary" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取模型列表' }}</button></div>
+      <Motion><label v-if="draft.models.length" class="settings-label">可用模型<select v-model="draft.model"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select></label></Motion>
+      <label class="settings-label">模型名称<input v-model="draft.model" placeholder="获取后选择，或手动输入" autocapitalize="off" spellcheck="false" /></label>
+      <div class="settings-actions">
+        <button class="btn-primary" @click="save">保存并启用</button>
+        <button class="settings-secondary" @click="run('test')">{{ busy === 'test' ? '测试中…' : '测试连接' }}</button>
       </div>
-      <div class="flex justify-between text-sm"><button @click="add" class="text-dai">新增配置</button><Motion><button v-if="draft.id" @click="remove" class="text-zhuhong">删除此配置</button></Motion></div>
+      <div class="settings-text-actions"><button @click="add" class="text-dai">新增配置</button><Motion><button v-if="draft.id" @click="remove" class="text-zhuhong">删除此配置</button></Motion></div>
     </fieldset>
-    <Motion><p v-if="message" role="status" class="text-sm break-words" :class="failed ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p></Motion>
-    <p class="text-xs text-ink-mute">配置保存在此浏览器；密钥仅随请求发送到你填写的 API 地址。测试会发起一次简短请求，可能产生少量费用。</p>
+    <Motion><p v-if="message" role="status" class="settings-status break-words" :class="failed ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p></Motion>
+    <p class="settings-footnote">配置保存在此浏览器；密钥仅发往所填 API 地址。连接测试可能产生少量费用。</p>
   </section>
 </template>
 
@@ -85,8 +83,6 @@ input, select { display: block; width: 100%; min-width: 0; margin-top: 6px; padd
 input:focus, select:focus { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
 fieldset:disabled { opacity: .65; }
 @media (min-width: 768px) {
-  .model-settings { padding: 20px; }
-  .model-settings :deep(label), .model-settings :deep(button), .model-settings :deep(p) { line-height: 1.35; }
-  input, select { margin-top: 4px; padding: 9px 11px; }
+  input, select { margin-top: 4px; padding: 9px 11px; font-size: 15px; }
 }
 </style>

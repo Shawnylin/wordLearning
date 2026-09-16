@@ -23,26 +23,24 @@ function save() {
 </script>
 
 <template>
-  <section id="speech" class="card rounded-2xl p-5 space-y-3 speech-settings">
-    <h2 class="flex items-center gap-2 font-semibold"><Volume2 :size="20" />小米 MiMo 朗读</h2>
-    <p class="text-xs text-ink-mute leading-6">用于词语发音和日报阅读。密钥仅保存在此浏览器，独立于学习模型配置。官方当前为限时免费，额度和价格以平台为准。</p>
-    <form @submit.prevent="save" class="space-y-3">
-      <label class="block text-sm">API 地址<input v-model="draft.baseUrl" type="url" required placeholder="https://api.xiaomimimo.com/v1" /></label>
-      <label class="block text-sm">API Key<ApiKeyInput v-model="draft.apiKey" placeholder="填写小米 MiMo API Key" /></label>
-      <label class="block text-sm">语音模型<input v-model="draft.model" required placeholder="mimo-v2.5-tts" /></label>
-      <label class="block text-sm">音色<select v-model="draft.voice"><option value="mimo_default">默认音色</option><option v-for="voice in ['冰糖', '茉莉', '苏打', '白桦', 'Mia', 'Chloe', 'Milo', 'Dean']" :key="voice" :value="voice">{{ voice }}</option></select></label>
-      <fieldset><legend class="text-sm mb-2">朗读语速</legend><div class="rate-options"><button v-for="option in [{ value: 'slow', label: '慢速' }, { value: 'normal', label: '标准' }, { value: 'fast', label: '快速' }]" :key="option.value" type="button" @click="draft.rate = option.value as typeof draft.rate" :class="{ active: draft.rate === option.value }" :aria-pressed="draft.rate === option.value">{{ option.label }}</button></div></fieldset>
-      <p class="text-xs text-ink-mute">MiMo 通过语音指令控制语速；实际快慢会随音色和文本略有变化。</p>
-      <div class="flex items-center justify-between gap-3"><button type="submit" class="btn-primary rounded-full px-5 py-2 text-sm">保存设置</button><SpeechButton text="欢迎使用朗读。" label="试听配置" :config="draft" show-label /></div>
-      <p v-if="message" role="status" class="text-xs text-zhuhong">{{ message }}</p>
+  <section id="speech" class="card settings-card speech-settings">
+    <header class="settings-card-header"><div><h2 class="settings-title flex items-center gap-2"><Volume2 :size="17" />小米 MiMo 朗读</h2><p class="settings-description">用于词语发音和日报阅读</p></div><span class="settings-badge">限时免费</span></header>
+    <form @submit.prevent="save" class="settings-form">
+      <label class="settings-label">API 地址<input v-model="draft.baseUrl" type="url" required placeholder="https://api.xiaomimimo.com/v1" /></label>
+      <label class="settings-label">API Key<ApiKeyInput v-model="draft.apiKey" placeholder="填写小米 MiMo API Key" /></label>
+      <div class="settings-pair"><label class="settings-label">语音模型<input v-model="draft.model" required placeholder="mimo-v2.5-tts" /></label><label class="settings-label">音色<select v-model="draft.voice"><option value="mimo_default">默认音色</option><option v-for="voice in ['冰糖', '茉莉', '苏打', '白桦', 'Mia', 'Chloe', 'Milo', 'Dean']" :key="voice" :value="voice">{{ voice }}</option></select></label></div>
+      <fieldset><legend class="settings-label mb-2">朗读语速</legend><div class="rate-options"><button v-for="option in [{ value: 'slow', label: '慢速' }, { value: 'normal', label: '标准' }, { value: 'fast', label: '快速' }]" :key="option.value" type="button" @click="draft.rate = option.value as typeof draft.rate" :class="{ active: draft.rate === option.value }" :aria-pressed="draft.rate === option.value">{{ option.label }}</button></div><p class="settings-help mt-2">由 MiMo 语音指令控制，实际速度会随音色略有变化</p></fieldset>
+      <div class="settings-actions"><button type="submit" class="btn-primary">保存设置</button><SpeechButton text="欢迎使用朗读。" label="试听配置" :config="draft" show-label /></div>
+      <p v-if="message" role="status" class="settings-status text-zhuhong">{{ message }}</p>
     </form>
-    <a href="https://mimo.mi.com" target="_blank" rel="noopener noreferrer" class="inline-block text-xs text-zhuhong underline">前往小米 MiMo 开放平台获取密钥</a>
+    <p class="settings-footnote">密钥仅保存在此浏览器。<a href="https://mimo.mi.com" target="_blank" rel="noopener noreferrer" class="text-zhuhong underline">前往 MiMo 平台获取密钥</a></p>
   </section>
 </template>
 
 <style scoped>
-input,select { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); color: var(--ink); font-size: 14px; }
+input,select { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); color: var(--ink); font-size: 16px; }
 .rate-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .rate-options button { padding: 8px; border-radius: 10px; background: var(--soft); color: var(--ink-soft); font-size: 13px; }
 .rate-options button.active { background: var(--zhuhong-soft); color: var(--zhuhong); }
+@media (min-width:768px) { input,select { margin-top:4px; padding:9px 11px; font-size:15px; } }
 </style>

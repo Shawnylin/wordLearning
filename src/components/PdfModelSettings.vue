@@ -24,25 +24,24 @@ async function run(action: 'models' | 'test' | 'save') {
 }
 </script>
 <template>
-  <section class="card rounded-2xl p-5 space-y-3 pdf-model-settings">
-    <h3 class="font-semibold">PDF 解析模型</h3>
-    <p class="text-xs text-ink-mute leading-6">只负责报纸分篇和排序，不重写正文。查词、释义和对比继续使用上方学习模型。可配置 MiMo 等兼容 Chat Completions 的服务。</p>
-    <label class="flex items-center gap-2 text-sm"><input type="checkbox" v-model="settings.pdfUseLearningModel" />PDF 也使用当前学习模型（{{ settings.model }}）</label>
-    <fieldset :disabled="busy" class="space-y-3">
-      <label class="block text-sm">解析 API URL<input v-model="draft.baseUrl" type="url" autocomplete="off" spellcheck="false" /></label>
-      <label class="block text-sm">解析 API Key<ApiKeyInput v-model="draft.apiKey" placeholder="输入解析 API Key" /></label>
-      <button @click="run('models')" class="bg-soft rounded-xl px-4 py-2 text-sm">获取解析模型</button>
-      <label v-if="models.length" class="block text-sm">可用解析模型<select v-model="draft.model"><option v-for="model in models" :key="model">{{ model }}</option></select></label>
-      <label class="block text-sm">解析模型名称<input v-model="draft.model" placeholder="获取模型后选择，或手动输入" spellcheck="false" /></label>
-      <div class="flex gap-2"><button @click="run('save')" class="btn-primary flex-1 rounded-xl py-2 text-sm">保存解析配置</button><button @click="run('test')" class="bg-soft flex-1 rounded-xl py-2 text-sm">测试解析连接</button></div>
+  <section class="card settings-card pdf-model-settings">
+    <header class="settings-card-header"><div><h2 class="settings-title">PDF 解析模型</h2><p class="settings-description">只负责报纸分篇和排序，不重写正文</p></div></header>
+    <label class="settings-switch"><input type="checkbox" v-model="settings.pdfUseLearningModel" /><span>使用当前学习模型</span></label>
+    <fieldset :disabled="busy" class="settings-form" :class="{ 'settings-form-muted': settings.pdfUseLearningModel }">
+      <label class="settings-label">API 地址<input v-model="draft.baseUrl" type="url" autocomplete="off" spellcheck="false" /></label>
+      <label class="settings-label">API Key<ApiKeyInput v-model="draft.apiKey" placeholder="输入解析 API Key" /></label>
+      <div class="settings-inline"><button @click="run('models')" class="settings-secondary">获取模型列表</button></div>
+      <label v-if="models.length" class="settings-label">可用模型<select v-model="draft.model"><option v-for="model in models" :key="model">{{ model }}</option></select></label>
+      <label class="settings-label">模型名称<input v-model="draft.model" placeholder="获取后选择，或手动输入" spellcheck="false" /></label>
+      <div class="settings-actions"><button @click="run('save')" class="btn-primary">保存配置</button><button @click="run('test')" class="settings-secondary">测试连接</button></div>
     </fieldset>
-    <p v-if="message" role="status" class="text-sm break-words" :class="error ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p>
-    <p class="text-xs leading-6 text-ink-mute">密钥保存在此浏览器，仅发往对应 API。测试会产生少量费用。分篇默认关闭深度思考；实际计费以服务商为准。</p>
+    <p v-if="message" role="status" class="settings-status break-words" :class="error ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p>
+    <p class="settings-footnote">独立配置仅在关闭“使用当前学习模型”时生效。分篇默认关闭深度思考。</p>
   </section>
 </template>
 <style scoped>
 input:not([type=checkbox]),select { display:block; width:100%; min-width:0; margin-top:6px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--soft); color:var(--ink); font-size:16px; }
 input:focus-visible,select:focus-visible { outline:2px solid var(--zhuhong); outline-offset:2px; }
 fieldset:disabled { opacity:.65; }
-@media (min-width:768px) { input:not([type=checkbox]),select { margin-top:4px; padding:9px 11px; } }
+@media (min-width:768px) { input:not([type=checkbox]),select { margin-top:4px; padding:9px 11px; font-size:15px; } }
 </style>
