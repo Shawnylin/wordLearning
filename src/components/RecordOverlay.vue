@@ -217,6 +217,17 @@ onBeforeUnmount(() => {
 .record-panel .idiom-sections .grid { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .record-panel .idiom-sections .grid button { width: auto; padding: 4px 0; border-radius: 0; background: transparent; color: var(--zhuhong); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-align: left; }
 .record-panel .idiom-sections .grid button:hover { text-decoration: underline; }
+.record-panel .compare-heading { position: relative; margin: 0 24px 24px; padding: 22px 0 18px; text-align: left; background: none; border-bottom: 1px solid var(--line); }
+.record-panel .compare-heading .study-heading-row { display: block; min-height: 48px; padding-right: 44px; }
+.record-panel .compare-heading .study-heading-actions { position: absolute; top: 18px; right: -8px; }
+.record-panel .compare-heading .compare-words { justify-content: flex-start; gap: 10px 20px; color: var(--ink); font-size: clamp(40px, 11vw, 52px); font-weight: 700; letter-spacing: .06em; }
+.record-panel .compare-heading .compare-word { line-height: 1.18; }
+.record-panel .compare-heading .compare-word-divider { font-size: 14px; letter-spacing: 0; }
+.record-panel .compare-heading .token-usage { justify-content: flex-start; margin-top: 6px; }
+.record-panel .compare-sections { display: grid; gap: 24px; padding: 0 24px 28px; }
+.record-panel .compare-sections > div { min-width: 0; margin: 0; }
+.record-panel .compare-sections .pl-9 { padding-left: 0; }
+.record-panel .compare-sections p { font-size: 15px; line-height: 1.9; overflow-wrap: anywhere; }
 .record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
 .record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
 @media (min-width: 768px) {
@@ -231,7 +242,10 @@ onBeforeUnmount(() => {
   .record-panel .idiom-heading .study-heading-actions { top: 24px; }
   .record-panel .idiom-heading h1 { font-size: 56px; }
   .record-panel .idiom-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
-  .record-panel .study-sections:not(.idiom-sections) { padding: 28px; }
+  .record-panel .compare-heading { margin: 0 32px 28px; padding-top: 28px; }
+  .record-panel .compare-heading .study-heading-actions { top: 24px; }
+  .record-panel .compare-heading .compare-words { font-size: 56px; }
+  .record-panel .compare-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
   .record-back { padding: 18px 28px; }
 }
 @keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }

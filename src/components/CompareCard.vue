@@ -25,7 +25,7 @@ const sections = [
   <div class="animate-card-enter">
     <div class="rounded-3xl card glass-card overflow-hidden">
       <!-- Header -->
-      <div class="study-heading px-6 pt-8 pb-6 glass-card-header">
+      <div class="study-heading compare-heading px-6 pt-8 pb-6 glass-card-header">
         <div class="study-heading-row">
           <CompareWords :words="compare.words" />
           <div class="study-heading-actions">
@@ -48,7 +48,7 @@ const sections = [
       </div>
 
       <!-- Content sections -->
-      <div class="study-sections px-6 pb-6 space-y-5">
+      <div class="study-sections compare-sections px-6 pb-6 space-y-5">
         <div
           v-for="section in sections"
           :key="section.key"
