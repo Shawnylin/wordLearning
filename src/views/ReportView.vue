@@ -20,8 +20,9 @@ function goReview() {
   <div class="card rounded-3xl p-5">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-end gap-2">
+        <p class="text-xs text-ink-mute pb-0.5">已学</p>
         <p class="font-serif text-5xl font-bold text-ink leading-none">{{ learnedCount }}</p>
-        <p class="text-xs text-ink-mute pb-0.5">已学词语</p>
+        <p class="text-xs text-ink-mute pb-0.5">个词语</p>
       </div>
       <Motion><button
         v-if="learnedCount > 0"

@@ -30,6 +30,7 @@ const reviewStore = useReviewStore()
 
 const showClearConfirm = ref(false)
 const showClearCacheConfirm = ref(false)
+const showCleanupOptions = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)
 const daily = useDailyStore()
 
@@ -46,14 +47,14 @@ function formatBalance(balance: ApiBalance): string {
 
 async function loadBalance() {
   balances.value = []
-  if (!settings.hasApiKey()) { balanceMessage.value = '请先配置 API'; return }
+  if (!settings.hasApiKey()) { balanceMessage.value = '未配置 API'; return }
   balanceLoading.value = true
   balanceMessage.value = ''
   try {
     balances.value = await fetchBalance({ ...settings.apiConfig })
-    if (!balances.value.length) balanceMessage.value = '暂无余额信息'
+    if (!balances.value.length) balanceMessage.value = '暂无余额'
   } catch (error: any) {
-    balanceMessage.value = error.message || '余额查询失败'
+    balanceMessage.value = error.message || '查询失败'
   } finally {
     balanceLoading.value = false
   }
@@ -80,10 +81,6 @@ function handleClearCache() {
   daily.groups = []
   daily.selectedId = ''
   showClearCacheConfirm.value = false
-}
-
-function handleRefresh() {
-  location.reload()
 }
 
 function handleExport() {
@@ -129,27 +126,26 @@ function handleImport() {
   <div :class="embedded ? 'pb-4' : 'min-h-screen px-4 pt-8 pb-4'">
     <div class="settings-layout mx-auto max-w-lg space-y-4" :class="{ 'is-profile-embedded': embedded }">
 <header v-if="!embedded" class="flex items-center gap-3"><button @click="router.push('/profile')" class="p-3 rounded-full bg-soft" aria-label="返回个人">←</button><h1 class="font-kai text-3xl">设置</h1></header>
-        <!-- Token Stats -->
+        <!-- Learning Stats -->
         <div class="settings-card-token card p-5 rounded-2xl">
           <div class="flex items-center gap-2 mb-3">
             <Coins :size="16" class="text-gold" />
-            <span class="text-sm font-medium text-ink-soft">Token 消耗统计</span>
+            <span class="text-sm font-medium text-ink-soft">学习统计</span>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <p class="font-serif text-xl font-bold text-gold">{{ idiomStore.tokenStats.totalTokens.toLocaleString() }}</p>
-              <p class="text-xs text-ink-mute">总消耗 Tokens</p>
+              <p class="text-xs text-ink-mute">Tokens</p>
             </div>
             <div>
               <p class="font-serif text-xl font-bold text-gold">{{ idiomStore.tokenStats.requestCount }}</p>
-              <p class="text-xs text-ink-mute">API 调用次数</p>
+              <p class="text-xs text-ink-mute">次调用</p>
             </div>
           </div>
           <div class="mt-3 pt-3 border-t border-gold/20">
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="text-sm font-medium text-ink-soft">深度思考</p>
-                <p class="text-xs text-ink-mute mt-0.5">关闭后响应更快，开启后分析更充分</p>
               </div>
               <LiquidToggle v-model="settings.thinkingEnabled" label="深度思考" tone="gold" />
             </div>
@@ -162,7 +158,7 @@ function handleImport() {
 
           <div class="mt-3 pt-3 border-t border-gold/20 flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <p class="text-xs text-ink-mute mb-1">当前 API 余额</p>
+              <p class="text-xs text-ink-mute mb-1">API 余额</p>
               <p v-if="balances.length" class="font-serif text-lg font-bold text-gold truncate">
                 {{ balances.map(formatBalance).join(' · ') }}
               </p>
@@ -181,7 +177,7 @@ function handleImport() {
         </div>
       <button @click="router.push('/profile/models')" class="settings-card-model card rounded-2xl p-4 w-full flex items-center gap-3 text-left" aria-label="模型与 API">
         <div class="settings-theme-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0"><Key :size="20" /></div>
-        <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }} · 模型配置与 MiMo 朗读</p></div>
+        <div class="min-w-0 flex-1"><h3 class="font-semibold text-ink">模型与 API</h3><p class="text-xs text-ink-mute mt-1 truncate">{{ settings.model }}</p></div>
         <ChevronRight :size="18" class="text-ink-mute shrink-0" />
       </button>
 
@@ -192,10 +188,7 @@ function handleImport() {
             <component :is="themeStore.followSystem ? Monitor : (themeStore.theme === 'dark' ? Moon : Sun)" :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-ink">主题模式</h3>
-            <p class="text-xs text-ink-mute">
-              {{ themeStore.followSystem ? '跟随系统' : (themeStore.theme === 'dark' ? '深色模式' : '浅色模式') }}
-            </p>
+            <h3 class="font-semibold text-ink">外观</h3>
           </div>
         </div>
 
@@ -233,7 +226,7 @@ function handleImport() {
         </div></Motion>
 
         <div class="border-t border-line pt-4">
-          <p class="mb-3 text-xs font-medium text-ink-mute">主题颜色</p>
+          <p class="mb-3 text-xs font-medium text-ink-mute">颜色</p>
           <div class="grid grid-cols-4 gap-2" role="radiogroup" aria-label="主题颜色">
             <button
               v-for="option in themeColorOptions"
@@ -258,8 +251,7 @@ function handleImport() {
           <div class="flex min-w-0 items-center gap-3">
             <div class="settings-theme-icon flex items-center justify-center w-10 h-10 rounded-xl shrink-0"><Smartphone :size="20" /></div>
             <div class="min-w-0">
-              <h3 class="font-semibold text-ink">应用更新</h3>
-              <p class="text-xs text-ink-mute">当前版本 v{{ appUpdate.currentVersion }}</p>
+              <h3 class="font-semibold text-ink">版本 v{{ appUpdate.currentVersion }}</h3>
             </div>
           </div>
           <button
@@ -268,7 +260,7 @@ function handleImport() {
             @click="router.push('/profile/changelog')"
           ><FileText :size="15" />更新日志</button>
         </div>
-        <p class="mb-3 text-sm" :class="appUpdate.needRefresh ? 'text-zhuhong' : 'text-ink-mute'">{{ appUpdate.statusText }}</p>
+        <p v-if="!appUpdate.supported || appUpdate.checking || appUpdate.needRefresh || appUpdate.statusMessage" class="mb-3 text-sm" :class="appUpdate.needRefresh ? 'text-zhuhong' : 'text-ink-mute'">{{ appUpdate.statusText }}</p>
         <button
           v-if="appUpdate.needRefresh"
           class="btn-primary w-full rounded-xl py-2.5 text-sm font-medium"
@@ -290,8 +282,7 @@ function handleImport() {
             <Trash2 :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-ink">数据管理</h3>
-            <p class="text-xs text-ink-mute">导入导出与清理</p>
+            <h3 class="font-semibold text-ink">数据</h3>
           </div>
         </div>
 
@@ -302,14 +293,14 @@ function handleImport() {
               class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               <Download :size="16" />
-              导出数据
+              导出备份
             </button>
             <button
               @click="handleImport"
               class="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
             >
               <Upload :size="16" />
-              导入数据
+              导入备份
             </button>
           </div>
 
@@ -322,24 +313,23 @@ function handleImport() {
           </div></Motion>
 
           <button
-            @click="handleRefresh"
+            @click="showCleanupOptions = !showCleanupOptions"
             class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
+            :aria-expanded="showCleanupOptions"
           >
-            <RefreshCw :size="16" />
-            刷新应用
+            <Trash2 :size="16" />
+            清理数据
           </button>
-          <button
-            @click="showClearConfirm = true"
-            class="w-full py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
-          >
-            清空搜索历史
-          </button>
-          <button
-            @click="showClearCacheConfirm = true"
-            class="w-full py-2.5 rounded-xl text-sm font-medium text-zhuhong bg-zhuhong-soft hover:opacity-85 transition-colors"
-          >
-            清空所有缓存
-          </button>
+          <Motion><div v-if="showCleanupOptions" class="grid grid-cols-2 gap-2">
+            <button
+              @click="showClearConfirm = true"
+              class="py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
+            >清空搜索历史</button>
+            <button
+              @click="showClearCacheConfirm = true"
+              class="py-2.5 rounded-xl text-sm font-medium text-zhuhong bg-zhuhong-soft hover:opacity-85 transition-colors"
+            >清空全部数据</button>
+          </div></Motion>
         </div>
       </div>
     </div>
@@ -354,7 +344,7 @@ function handleImport() {
         <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
           <h3 class="text-lg font-semibold text-ink mb-2">清空搜索历史？</h3>
           <p class="text-sm text-ink-soft mb-6">
-            此操作将清空所有搜索记录，但已缓存的成语内容不会被删除。
+            已生成的学习内容不会删除。
           </p>
           <div class="flex gap-3">
             <button
@@ -367,7 +357,7 @@ function handleImport() {
               @click="handleClearHistory"
               class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
-              确认清空
+              清空
             </button>
           </div>
         </div>
@@ -382,9 +372,9 @@ function handleImport() {
         @click.self="showClearCacheConfirm = false"
       >
         <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
-          <h3 class="text-lg font-semibold text-ink mb-2">清空所有缓存？</h3>
+          <h3 class="text-lg font-semibold text-ink mb-2">清空全部数据？</h3>
           <p class="text-sm text-ink-soft mb-6">
-            此操作将删除所有已缓存的成语内容、日报和搜索记录，且不可恢复。
+            将删除成语、日报和学习记录，且无法恢复。
           </p>
           <div class="flex gap-3">
             <button
@@ -397,17 +387,13 @@ function handleImport() {
               @click="handleClearCache"
               class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
             >
-              确认清空
+              清空全部数据
             </button>
           </div>
         </div>
       </div></Motion>
     </Teleport>
 
-    <!-- Version -->
-    <div class="text-center mt-4 mb-4">
-      <p class="text-xs text-ink-mute">v{{ appUpdate.currentVersion }}</p>
-    </div>
   </div>
 </template>
 
