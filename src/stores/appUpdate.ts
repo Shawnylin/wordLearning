@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { registerSW } from 'virtual:pwa-register'
 
-const FOREGROUND_CHECK_INTERVAL = 5 * 60 * 1000
+const FOREGROUND_CHECK_INTERVAL = 30_000
 const UPDATE_INSTALL_TIMEOUT = 30_000
 const UPDATE_ACTIVATE_TIMEOUT = 12_000
 
@@ -53,19 +53,6 @@ function waitForControllerChange(timeout: number) {
   })
 }
 
-function waitForUpdateFound(swRegistration: ServiceWorkerRegistration, timeout: number) {
-  return new Promise<ServiceWorker | undefined>((resolve) => {
-    const finish = (worker?: ServiceWorker) => {
-      clearTimeout(timer)
-      swRegistration.removeEventListener('updatefound', handleUpdateFound)
-      resolve(worker)
-    }
-    const handleUpdateFound = () => finish(swRegistration.installing ?? undefined)
-    const timer = window.setTimeout(() => finish(), timeout)
-    swRegistration.addEventListener('updatefound', handleUpdateFound)
-  })
-}
-
 export const useAppUpdateStore = defineStore('app-update', () => {
   const needRefresh = ref(false)
   const offlineReady = ref(false)
@@ -98,6 +85,7 @@ export const useAppUpdateStore = defineStore('app-update', () => {
       },
       onRegisteredSW(_swUrl, swRegistration) {
         registration = swRegistration
+        checkOnForeground()
       },
       onRegisterError() {
         statusMessage.value = '更新服务暂时不可用，不影响正常使用'
@@ -123,21 +111,15 @@ export const useAppUpdateStore = defineStore('app-update', () => {
         return
       }
 
-      const updateFound = waitForUpdateFound(registration, 1500)
-      await registration.update()
+      // A downloaded update is already ready; do not wait on another network trip.
+      if (!registration.waiting && !registration.installing) await registration.update()
+      if (registration.installing) statusMessage.value = '发现新版本，正在下载…'
       let waitingWorker = await findWaitingWorker(registration)
-      if (!waitingWorker) {
-        const discoveredWorker = await updateFound
-        if (discoveredWorker) {
-          await waitForWorkerState(discoveredWorker, 'installed', UPDATE_INSTALL_TIMEOUT)
-          waitingWorker = registration.waiting
-        }
-      }
       if (waitingWorker) {
         needRefresh.value = true
         promptVisible.value = true
       }
-      statusMessage.value = needRefresh.value ? '发现新版本，立即更新' : '当前已是最新版'
+      statusMessage.value = needRefresh.value ? '发现新版本，立即更新' : registration.installing ? '新版本仍在下载，准备好后会提醒你' : '当前已是最新版'
     } catch {
       statusMessage.value = '检查更新失败，请稍后再试'
     } finally {
@@ -180,7 +162,7 @@ export const useAppUpdateStore = defineStore('app-update', () => {
   }
 
   function checkOnForeground(now = Date.now()) {
-    if (document.visibilityState !== 'visible' || now - lastForegroundCheck < FOREGROUND_CHECK_INTERVAL) return
+    if (document.visibilityState !== 'visible' || checking.value || applying.value || needRefresh.value || navigator.onLine === false || now - lastForegroundCheck < FOREGROUND_CHECK_INTERVAL) return
     lastForegroundCheck = now
     void checkForUpdate({ silent: true })
   }

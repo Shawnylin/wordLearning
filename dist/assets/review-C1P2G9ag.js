@@ -1,4 +1,4 @@
-import{c as P,X as Q,r as u,j as f}from"./index-DIDDv3eV.js";import{u as U}from"./idiom-1BBYvhMQ.js";/**
+import{c as P,X as Q,r as u,j as f}from"./index-D67pOCWZ.js";import{u as U}from"./idiom-C25LcOBt.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.

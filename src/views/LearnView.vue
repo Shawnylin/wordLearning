@@ -8,6 +8,7 @@ import StudyCommand from '../components/StudyCommand.vue'
 import GenerationStage from '../components/GenerationStage.vue'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareCard from '../components/CompareCard.vue'
+import { settleViewportAfterBlur } from '../utils/settleViewport'
 
 const store = useIdiomStore()
 const settings = useSettingsStore()
@@ -15,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const mode = ref<'idiom' | 'compare'>('idiom')
 const expanded = ref(false)
+let preparingSubmission = false
 const word = ref('')
 let nextId = 2
 const words = ref([{ id: 0, value: '' }, { id: 1, value: '' }])
@@ -70,9 +72,16 @@ function hasApiKey() {
 }
 
 async function submit() {
-  if (!canSend.value || !hasApiKey()) return
-  const active = document.activeElement
-  if (active instanceof HTMLInputElement) active.blur()
+  if (preparingSubmission || !canSend.value || !hasApiKey()) return
+  preparingSubmission = true
+  const submittedMode = mode.value
+  const submittedRoute = route.fullPath
+  try {
+    await settleViewportAfterBlur()
+  } finally {
+    preparingSubmission = false
+  }
+  if (mode.value !== submittedMode || route.fullPath !== submittedRoute || !canSend.value) return
   expanded.value = true
   if (mode.value === 'idiom') {
     await store.searchIdiom(word.value.trim(), settings.apiConfig)
@@ -98,9 +107,10 @@ async function regenerate() {
 }
 
 function closeResult() {
+  // Finish scrolling before measuring the reverse animation's destination.
+  document.getElementById('app')?.scrollTo({ top: 0, behavior: 'instant' })
   expanded.value = false
   // Closing only changes presentation; in-flight work may still finish into the cache.
-  document.getElementById('app')?.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
 }
 
 function handlePagePointerDown(event: PointerEvent) {

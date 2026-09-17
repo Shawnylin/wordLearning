@@ -13,6 +13,7 @@ watch(navCollapsed, value => {
   try { localStorage.setItem('word-learning-nav-collapsed', String(value)) } catch {}
 })
 const handleForeground = () => appUpdate.checkOnForeground()
+let updateTimer: ReturnType<typeof setInterval> | undefined
 
 // 同步初始化，避免闪烁
 themeStore.initTheme()
@@ -22,11 +23,17 @@ onMounted(() => {
   appUpdate.initialize()
   window.addEventListener('focus', handleForeground)
   document.addEventListener('visibilitychange', handleForeground)
+  window.addEventListener('pageshow', handleForeground)
+  window.addEventListener('online', handleForeground)
+  updateTimer = setInterval(handleForeground, 60_000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('focus', handleForeground)
   document.removeEventListener('visibilitychange', handleForeground)
+  window.removeEventListener('pageshow', handleForeground)
+  window.removeEventListener('online', handleForeground)
+  clearInterval(updateTimer)
 })
 </script>
 

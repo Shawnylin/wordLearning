@@ -15,6 +15,7 @@ const surface = ref<HTMLElement>()
 const stageBody = ref<HTMLElement>()
 const closing = ref(false)
 const animating = ref(false)
+const anchored = ref(false)
 const closingWidth = ref('')
 const frameMinHeight = ref('')
 const contentWidth = ref('')
@@ -29,6 +30,7 @@ function stopAnimation() {
   layoutAnimation?.cancel()
   closing.value = false
   animating.value = false
+  anchored.value = false
   contentWidth.value = ''
 }
 
@@ -41,6 +43,7 @@ watch(() => props.expanded, async expanded => {
   const fromRadius = getComputedStyle(surface.value).borderRadius
   animation?.cancel()
   layoutAnimation?.cancel()
+  anchored.value = false
   closingWidth.value = `${from.width}px`
   if (expanded) {
     // The first rectangle shares the orb's center and reaches the reading area's
@@ -51,24 +54,37 @@ watch(() => props.expanded, async expanded => {
   animating.value = true
   await nextTick()
   if (token !== revision || !surface.value || !stageBody.value) return
+  // Apply the reading width before measuring the final height (especially when
+  // reversing or when cached content replaces the loading skeleton).
+  contentWidth.value = `${expanded ? stageBody.value.clientWidth : from.width}px`
+  await nextTick()
+  if (token !== revision || !surface.value || !stageBody.value) return
   const to = surface.value.getBoundingClientRect()
   const bodyTo = stageBody.value.getBoundingClientRect()
   contentWidth.value = `${expanded ? to.width : from.width}px`
-  const centerX = expanded ? from.x + from.width / 2 : to.x + to.width / 2
-  const centerY = expanded ? from.y + from.height / 2 : to.y + to.height / 2
+  const fromCenterX = from.x + from.width / 2 - bodyFrom.x
+  const fromCenterY = from.y + from.height / 2 - bodyFrom.y
+  const toCenterX = to.x + to.width / 2 - bodyTo.x
+  const toCenterY = to.y + to.height / 2 - bodyTo.y
+  const centerX = expanded ? fromCenterX : toCenterX
+  const centerY = expanded ? fromCenterY : toCenterY
   const frameWidth = expanded ? to.width : from.width
-  const frameHeight = Math.min(expanded ? to.height : from.height, Math.max(80, 2 * (centerY - (expanded ? to.y : from.y))))
+  const frameHeight = Math.min(expanded ? to.height : from.height, Math.max(80, 2 * centerY))
   const options = { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 720, easing: 'cubic-bezier(.4,0,.2,1)' }
+  anchored.value = true
+  await nextTick()
+  if (token !== revision || !surface.value || !stageBody.value) return
   animation = surface.value.animate([
-    { offset: 0, width: `${from.width}px`, height: `${from.height}px`, transform: `translate(${from.x - to.x}px, ${from.y - to.y}px)`, borderRadius: fromRadius },
-    { offset: expanded ? .7 : .3, width: `${frameWidth}px`, height: `${frameHeight}px`, transform: `translate(${centerX - frameWidth / 2 - to.x}px, ${centerY - frameHeight / 2 - to.y}px)`, borderRadius: '24px' },
-    { offset: 1, width: `${to.width}px`, height: `${to.height}px`, transform: 'translate(0,0)', borderRadius: expanded ? '24px' : '40px' }
+    { offset: 0, width: `${from.width}px`, height: `${from.height}px`, left: `${fromCenterX}px`, top: `${fromCenterY}px`, borderRadius: fromRadius },
+    { offset: expanded ? .7 : .3, width: `${frameWidth}px`, height: `${frameHeight}px`, left: `${centerX}px`, top: `${centerY}px`, borderRadius: '24px' },
+    { offset: 1, width: `${to.width}px`, height: `${to.height}px`, left: `${toCenterX}px`, top: `${toCenterY}px`, borderRadius: expanded ? '24px' : '40px' }
   ], options)
   layoutAnimation = stageBody.value.animate([{ height: `${bodyFrom.height}px` }, { height: `${bodyTo.height}px` }], options)
   await animation.finished.catch(() => {})
   if (token !== revision) return
   closing.value = false
   animating.value = false
+  anchored.value = false
   contentWidth.value = ''
 })
 onBeforeUnmount(stopAnimation)
@@ -76,7 +92,7 @@ onDeactivated(stopAnimation)
 </script>
 
 <template>
-  <div class="generation-stage" :class="{ 'is-active': expanded, 'is-compare': kind === 'compare', 'is-morphing': animating }" :style="{ '--frame-min-height': frameMinHeight || undefined }">
+  <div class="generation-stage" :class="{ 'is-active': expanded, 'is-compare': kind === 'compare', 'is-morphing': animating, 'is-anchored': anchored }" :style="{ '--frame-min-height': frameMinHeight || undefined }">
     <div ref="stageBody" class="generation-body">
       <div class="orb-satellites" :class="{ visible: kind === 'compare' && !expanded }" :inert="kind !== 'compare' || expanded" :aria-hidden="kind !== 'compare' || expanded">
         <svg width="0" height="0" aria-hidden="true"><defs>
@@ -119,6 +135,8 @@ onDeactivated(stopAnimation)
 .is-active .generation-body { padding-top: 0; }
 .generation-surface { position: relative; left: calc(50% - 40px); z-index: 1; width: 80px; height: 80px; border-radius: 40px; overflow: hidden; transform-origin: top left; }
 .is-active .generation-surface { left: 0; width: 100%; height: auto; border-radius: 24px; }
+.is-anchored .generation-surface { position: absolute; transform: translate(-50%, -50%); }
+.generation-body { overflow-anchor: none; }
 .is-active:not(.is-morphing) .generation-surface { min-height: var(--frame-min-height, 0px); }
 .generation-result :deep(.animate-card-enter) { animation: none; }
 .generation-content { padding: clamp(20px, 3vw, 32px); min-height: var(--frame-min-height, 0px); opacity: 1; transition: opacity 220ms ease; }
