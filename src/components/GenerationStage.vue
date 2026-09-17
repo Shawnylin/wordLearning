@@ -103,7 +103,7 @@ onDeactivated(stopAnimation)
         </defs></svg>
         <div class="orb-liquid" :style="{ filter: `url(#${filterId})` }" aria-hidden="true"><i class="orb-core" /><i class="satellite-shape left" /><i class="satellite-shape right" /></div>
         <button class="satellite glass-control left" :disabled="!canAdd" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="canAdd ? '添加对比词语' : '最多四个词语，生成时不可添加'" @click="emit('add')"><Plus :size="23" /></button>
-        <button class="satellite glass-control right" :disabled="!canSend" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="loading ? '正在生成对比' : '发送对比'" @click="emit('submit')"><RefreshCw v-if="loading" :size="21" class="word-command-refresh" /><ArrowUp v-else :size="23" /></button>
+        <button class="satellite glass-control right" :class="{ ready: canSend }" :disabled="!canSend" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="loading ? '正在生成对比' : '发送对比'" @click="emit('submit')"><RefreshCw v-if="loading" :size="21" class="word-command-refresh" /><ArrowUp v-else :size="23" /></button>
       </div>
       <button class="mode-orb" :class="{ concealed: expanded || closing }" :inert="expanded || closing" :aria-hidden="expanded || closing" :tabindex="expanded || closing ? -1 : 0" :aria-label="kind === 'idiom' ? '当前学习，点击切换对比' : '当前对比，点击切换学习'" :title="kind === 'idiom' ? '切换到对比' : '切换到学习'" @click="emit('toggle')">
           <BookOpen class="mode-icon learning-icon" :size="32" /><GitCompare class="mode-icon compare-icon" :size="32" />
@@ -160,6 +160,7 @@ html.dark .generation-stage:not(.is-active) .generation-surface { --control-glas
 .satellite, .satellite-shape { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; transform: translate(0,0) scale(.68); transition: transform 700ms cubic-bezier(.16,1,.3,1), opacity 300ms ease; will-change: transform; }
 .satellite-shape { background: var(--orb-fill); }
 .satellite { display: grid; place-items: center; color: var(--ink-soft); opacity: 0; pointer-events: none; }
+.satellite.right.ready { --control-glass-fill: var(--zhuhong-solid); --control-glass-edge: color-mix(in srgb, var(--zhuhong-solid) 76%, black); color: #fff; }
 .visible .left { transform: translate(-62px,70px) scale(1); }
 .visible .right { transform: translate(62px,70px) scale(1); }
 .visible .satellite { opacity: 1; pointer-events: auto; }

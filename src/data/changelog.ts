@@ -9,6 +9,14 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.7',
+    date: '2026-09-17',
+    title: '强化对比发送状态提示',
+    changes: [
+      '对比模式输入至少两个有效词语后，右侧发送按钮立即切换为不透明主题实色，清楚提示已经可以开始对比。'
+    ]
+  },
+  {
     version: '0.6.6',
     date: '2026-09-17',
     title: '统一圆球图标与文字淡出',
