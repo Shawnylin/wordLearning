@@ -8,7 +8,7 @@ const router = useRouter()
 <template>
   <div class="min-h-screen px-4 pt-3 pb-5 settings-page">
     <div class="mx-auto max-w-6xl">
-      <header class="settings-page-header"><button @click="router.push('/profile')" class="settings-back">← 返回个人</button><div><h1>模型与 API</h1><p>管理学习、朗读和 PDF 解析服务</p></div></header>
+      <header class="settings-page-header"><button @click="router.push('/profile')" class="settings-back">← 返回</button><h1>模型与 API</h1></header>
       <div class="settings-grid">
         <ModelSettings />
         <div class="settings-side">
@@ -23,7 +23,6 @@ const router = useRouter()
 <style scoped>
 .settings-page-header { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
 .settings-page-header h1 { color:var(--ink); font-size:20px; font-weight:650; line-height:1.3; }
-.settings-page-header p { margin-top:2px; color:var(--ink-mute); font-size:12px; line-height:1.5; }
 .settings-back { flex:none; padding:8px 10px; border-radius:10px; color:var(--ink-soft); font-size:13px; }
 .settings-back:hover { background:var(--soft); }
 .settings-grid,.settings-side { display:grid; gap:14px; }
