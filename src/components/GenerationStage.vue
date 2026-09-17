@@ -105,10 +105,10 @@ onDeactivated(stopAnimation)
         <button class="satellite glass-control left" :disabled="!canAdd" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="canAdd ? '添加对比词语' : '最多四个词语，生成时不可添加'" @click="emit('add')"><Plus :size="23" /></button>
         <button class="satellite glass-control right" :disabled="!canSend" :tabindex="kind === 'compare' && !expanded ? 0 : -1" :aria-label="loading ? '正在生成对比' : '发送对比'" @click="emit('submit')"><RefreshCw v-if="loading" :size="21" class="word-command-refresh" /><ArrowUp v-else :size="23" /></button>
       </div>
-      <div ref="surface" class="generation-surface glass-control">
-        <button class="mode-orb" :class="{ concealed: expanded }" :inert="expanded" :tabindex="expanded ? -1 : 0" :aria-label="kind === 'idiom' ? '当前学习，点击切换对比' : '当前对比，点击切换学习'" :title="kind === 'idiom' ? '切换到对比' : '切换到学习'" @click="emit('toggle')">
+      <button class="mode-orb" :class="{ concealed: expanded || closing }" :inert="expanded || closing" :aria-hidden="expanded || closing" :tabindex="expanded || closing ? -1 : 0" :aria-label="kind === 'idiom' ? '当前学习，点击切换对比' : '当前对比，点击切换学习'" :title="kind === 'idiom' ? '切换到对比' : '切换到学习'" @click="emit('toggle')">
           <BookOpen class="mode-icon learning-icon" :size="32" /><GitCompare class="mode-icon compare-icon" :size="32" />
-        </button>
+      </button>
+      <div ref="surface" class="generation-surface glass-control">
         <div v-if="expanded || closing" class="generation-content" :class="{ 'is-closing': closing }" :inert="closing || animating" :style="{ width: contentWidth || (closing ? closingWidth : undefined) }">
           <div v-if="!hasContent && loading" class="generation-skeleton" role="status" aria-label="正在生成内容">
             <div class="animate-pulse-custom space-y-6">
@@ -121,7 +121,7 @@ onDeactivated(stopAnimation)
         </div>
       </div>
     </div>
-    <div class="orb-caption" :class="{ concealed: expanded }" :inert="expanded" :aria-hidden="expanded">
+    <div class="orb-caption" :class="{ concealed: expanded || closing }" :inert="expanded || closing" :aria-hidden="expanded || closing">
       <p class="text-sm text-ink-soft" aria-live="polite">{{ kind === 'idiom' ? '学习' : '对比' }}</p>
       <p class="text-xs text-ink-mute mt-2">点击圆球切换{{ kind === 'idiom' ? '对比' : '学习' }}</p>
       <slot name="empty" />
@@ -144,8 +144,8 @@ onDeactivated(stopAnimation)
 .generation-content.is-closing { position: absolute; top: 0; left: 0; }
 .generation-skeleton { min-height: 400px; }
 .generation-empty { min-height: 220px; display: grid; place-items: center; }
-.mode-orb { position: absolute; z-index: 2; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; border-radius: 50%; color: var(--ink-soft); transition: opacity 180ms ease; }
-.mode-orb.concealed { opacity: 0; pointer-events: none; }
+.mode-orb { position: absolute; z-index: 2; top: var(--orb-top); left: calc(50% - 40px); width: 80px; height: 80px; border-radius: 50%; color: var(--ink-soft); opacity: 1; visibility: visible; transition: opacity 520ms ease-in-out, visibility 0s linear 0s; }
+.mode-orb.concealed { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 520ms ease-in-out, visibility 0s linear 520ms; }
 .mode-icon { position: absolute; top: 23px; left: 23px; transition: transform 620ms cubic-bezier(.22,1,.36,1), opacity 350ms ease; }
 .compare-icon { opacity: 0; transform: rotate(-135deg) scale(.4); }
 .is-compare .learning-icon { opacity: 0; transform: rotate(135deg) scale(.4); }
@@ -164,8 +164,8 @@ onDeactivated(stopAnimation)
 .satellite:not(:disabled):hover { color: var(--zhuhong); }
 .satellite:focus-visible, .mode-orb:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: -4px; }
 .is-active .orb-satellites { opacity: 0; }
-.orb-caption { text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 180ms ease, visibility 0s linear 0s; }
+.orb-caption { position: relative; z-index: 2; text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 520ms ease-in-out, visibility 0s linear 0s; }
 .is-compare .orb-caption { padding-top: 88px; }
-.orb-caption.concealed { position: absolute; top: calc(var(--orb-top) + 80px); left: 0; width: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease, visibility 0s linear 180ms; }
-@media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+.orb-caption.concealed { position: absolute; top: calc(var(--orb-top) + 80px); left: 0; width: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 520ms ease-in-out, visibility 0s linear 520ms; }
+@media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; transition-delay: 0ms !important; animation-duration: .01ms !important; } }
 </style>

@@ -30,16 +30,33 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Node
+        id: node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+      - name: Calculate dependency cache key
+        id: dependencies
+        run: node .github/scripts/dependency-cache-key.mjs >> "$GITHUB_OUTPUT"
+      - name: Restore dependencies
+        id: dependency-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          # Match the OS image, architecture, exact Node version and dependency
+          # graph. A package version-only release keeps the same dependency key.
+          key: deps-v1-ubuntu24-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ steps.dependencies.outputs.key }}
+          # A partial hit reuses downloads only: npm ci replaces node_modules.
+          restore-keys: |
+            deps-v1-ubuntu24-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-
       - name: Install dependencies
+        if: steps.dependency-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Build current source
         run: npm run build

@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.6',
+    date: '2026-09-17',
+    title: '统一圆球图标与文字淡出',
+    changes: [
+      '圆球展开时，中央图标与下方文字保持原位，以相同节奏缓慢淡出，避免跟随卡片移动或被遮挡而突然消失。',
+      '收起完成后，图标与提示文字再在原位置淡入。'
+    ]
+  },
+  {
     version: '0.6.5',
     date: '2026-09-17',
     title: '稳定手机圆球展开与更新检查',
