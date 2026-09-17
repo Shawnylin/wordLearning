@@ -133,7 +133,7 @@ onBeforeUnmount(() =>
             { 'before-report': index < navItems.findIndex(nav => nav.name === 'report'), 'after-report': index > navItems.findIndex(nav => nav.name === 'report') },
             activeIndex === navItems.findIndex((nav) => nav.name === item.name)
               ? 'text-paper-ink'
-              : 'text-ink-mute',
+              : 'text-ink-soft',
           ]"
         >
           <component
@@ -143,7 +143,7 @@ onBeforeUnmount(() =>
               activeIndex ===
               navItems.findIndex((nav) => nav.name === item.name)
                 ? 2.4
-                : 1.8
+                : 2.1
             "
           />
           <span class="nav-label text-[11px] font-medium tracking-wide">{{
@@ -199,6 +199,9 @@ onBeforeUnmount(() =>
     opacity 0.42s ease,
     transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s ease;
+}
+.nav-item:not([aria-current="page"]) svg {
+  color: color-mix(in srgb, var(--ink) 78%, var(--ink-soft));
 }
 .nav-frame.compact .nav-item:not(.report-item) {
   flex: 0 0 0;

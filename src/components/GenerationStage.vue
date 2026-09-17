@@ -134,6 +134,8 @@ onDeactivated(stopAnimation)
 .generation-body { position: relative; padding-top: var(--orb-top); }
 .is-active .generation-body { padding-top: 0; }
 .generation-surface { position: relative; left: calc(50% - 40px); z-index: 1; width: 80px; height: 80px; border-radius: 40px; overflow: hidden; transform-origin: top left; }
+.generation-stage:not(.is-active) .generation-surface { --control-glass-fill: color-mix(in srgb, var(--card) 86%, var(--soft) 14%); --control-glass-edge: color-mix(in srgb, var(--ink) 19%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .88), inset 0 -2px 4px color-mix(in srgb, var(--ink) 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 24px -14px color-mix(in srgb, var(--ink) 38%, transparent); }
+html.dark .generation-stage:not(.is-active) .generation-surface { --control-glass-edge: rgb(255 255 255 / .2); }
 .is-active .generation-surface { left: 0; width: 100%; height: auto; border-radius: 24px; }
 .is-anchored .generation-surface { position: absolute; transform: translate(-50%, -50%); }
 .generation-body { overflow-anchor: none; }
