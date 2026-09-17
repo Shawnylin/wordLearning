@@ -124,7 +124,7 @@ onDeactivated(stopAnimation)
     <div class="orb-caption" :class="{ concealed: expanded || closing }" :inert="expanded || closing" :aria-hidden="expanded || closing">
       <p class="text-sm text-ink-soft" aria-live="polite">{{ kind === 'idiom' ? '学习' : '对比' }}</p>
       <p class="text-xs text-ink-mute mt-2">点击圆球切换{{ kind === 'idiom' ? '对比' : '学习' }}</p>
-      <slot name="empty" />
+      <div class="orb-caption-actions"><slot name="empty" /></div>
     </div>
   </div>
 </template>
@@ -169,6 +169,9 @@ html.dark .generation-stage:not(.is-active) .generation-surface { --control-glas
 .satellite:focus-visible, .mode-orb:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: -4px; }
 .is-active .orb-satellites { opacity: 0; }
 .orb-caption { position: relative; z-index: 2; text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 520ms ease-in-out, visibility 0s linear 0s; }
+/* Caption spacing overlaps the satellite controls; only slot content is interactive. */
+.orb-caption { pointer-events: none; }
+.orb-caption:not(.concealed) > .orb-caption-actions { pointer-events: auto; }
 .is-compare .orb-caption { padding-top: 88px; }
 .orb-caption.concealed { position: absolute; top: calc(var(--orb-top) + 80px); left: 0; width: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 520ms ease-in-out, visibility 0s linear 520ms; }
 @keyframes orb-liquid-release {
