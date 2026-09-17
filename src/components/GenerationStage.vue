@@ -146,8 +146,8 @@ onDeactivated(stopAnimation)
 .satellite:not(:disabled):hover { color: var(--zhuhong); }
 .satellite:focus-visible, .mode-orb:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: -4px; }
 .is-active .orb-satellites { opacity: 0; }
-.orb-caption { text-align: center; padding-top: 24px; padding-bottom: 24px; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 200ms ease; }
+.orb-caption { text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 180ms ease, visibility 0s linear 0s; }
 .is-compare .orb-caption { padding-top: 88px; }
-.orb-caption.concealed { display: none; }
+.orb-caption.concealed { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease, visibility 0s linear 180ms; }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 </style>

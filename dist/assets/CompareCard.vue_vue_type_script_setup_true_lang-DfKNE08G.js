@@ -1,4 +1,4 @@
-import{c as m,d as b,o as s,a as o,b as e,x as d,f as c,k as n,n as v,l as y,F as k,m as x,G as _,J as z,p as C,I as $,B as M}from"./index-CDwpEQ8a.js";import{S as j}from"./SpeechButton-DscKNBRS.js";import{u as F}from"./idiom-DHJR-7ul.js";import{H as S}from"./heart-BnpBuq8a.js";import{R as I}from"./refresh-cw-D9wObGD6.js";import{C as A,F as V}from"./file-text-DBK46ozP.js";/**
+import{c as m,d as b,o as s,a as o,b as e,x as d,f as c,k as n,n as v,l as y,F as k,m as x,G as _,J as z,p as C,I as $,B as M}from"./index-UlaL5h84.js";import{S as j}from"./SpeechButton-CIgXnw2s.js";import{u as F}from"./idiom-D8tn3zwi.js";import{H as S}from"./heart-iNLQgH4Q.js";import{R as I}from"./refresh-cw-BMWpXzs_.js";import{C as A,F as V}from"./file-text-BL5T-u-O.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.
