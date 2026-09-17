@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { registerSW } from 'virtual:pwa-register'
 
-const FOREGROUND_CHECK_INTERVAL = 30 * 60 * 1000
+const FOREGROUND_CHECK_INTERVAL = 5 * 60 * 1000
 const UPDATE_INSTALL_TIMEOUT = 30_000
 const UPDATE_ACTIVATE_TIMEOUT = 12_000
 

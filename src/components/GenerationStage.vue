@@ -148,6 +148,6 @@ onDeactivated(stopAnimation)
 .is-active .orb-satellites { opacity: 0; }
 .orb-caption { text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 180ms ease, visibility 0s linear 0s; }
 .is-compare .orb-caption { padding-top: 88px; }
-.orb-caption.concealed { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease, visibility 0s linear 180ms; }
+.orb-caption.concealed { position: absolute; top: calc(var(--orb-top) + 80px); left: 0; width: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease, visibility 0s linear 180ms; }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 </style>

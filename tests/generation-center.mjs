@@ -18,11 +18,13 @@ function center(box) {
 
 async function assertCenteredExpansion(trigger) {
   const surface = page.locator('.generation-surface')
+  const caption = page.locator('.orb-caption')
   await page.waitForFunction(() => {
     const element = document.querySelector('.generation-surface')
     return element && Math.abs(element.getBoundingClientRect().width - 80) < .1 && !document.querySelector('.is-morphing')
   })
   const before = await surface.boundingBox()
+  const captionBefore = await caption.boundingBox()
   assert.equal(before.width, 80)
   const origin = center(before)
   await trigger()
@@ -32,6 +34,8 @@ async function assertCenteredExpansion(trigger) {
   const current = center(during)
   assert(Math.abs(current.x - origin.x) < 1, JSON.stringify({ origin, current, before, during }))
   assert(Math.abs(current.y - origin.y) < 1, JSON.stringify({ origin, current, before, during }))
+  const captionDuring = await caption.boundingBox()
+  assert(Math.abs(captionDuring.y - captionBefore.y) < 1, JSON.stringify({ captionBefore, captionDuring }))
 }
 
 await page.goto('http://127.0.0.1:5173/wordLearning/#/learn')

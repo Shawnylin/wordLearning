@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.6.4',
+    date: '2026-09-17',
+    title: '修复手机端提示淡出并加快更新发现',
+    changes: [
+      '修复圆球展开时提示文案被长卡片推走后再消失的问题，手机端现在会在原位置直接淡出。',
+      '应用回到前台后更及时地检查新版本，并优化连续发布时 GitHub Pages 的排队和依赖安装。'
+    ]
+  },
+  {
     version: '0.6.3',
     date: '2026-09-17',
     title: '更通透的导航与学习玻璃控件',
