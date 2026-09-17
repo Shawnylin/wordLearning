@@ -97,8 +97,8 @@ onDeactivated(stopAnimation)
       <div class="orb-satellites" :class="{ visible: kind === 'compare' && !expanded }" :inert="kind !== 'compare' || expanded" :aria-hidden="kind !== 'compare' || expanded">
         <svg width="0" height="0" aria-hidden="true"><defs>
           <filter :id="filterId" x="-150%" y="-80%" width="400%" height="350%" color-interpolation-filters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
-            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9.5" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="7.5" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -11.5" />
           </filter>
         </defs></svg>
         <div class="orb-liquid" :style="{ filter: `url(#${filterId})` }" aria-hidden="true"><i class="orb-core" /><i class="satellite-shape left" /><i class="satellite-shape right" /></div>
@@ -152,9 +152,10 @@ onDeactivated(stopAnimation)
 .is-compare .compare-icon { opacity: 1; transform: rotate(0) scale(1); }
 .orb-satellites { position: absolute; top: var(--orb-top); left: calc(50% - 40px); width: 80px; height: 80px; transition: opacity 300ms ease; }
 .orb-satellites > svg { position: absolute; }
-.orb-liquid { position: absolute; inset: 0; pointer-events: none; opacity: .12; }
+.orb-liquid { position: absolute; inset: 0; pointer-events: none; opacity: .48; will-change: opacity; }
+.visible .orb-liquid { animation: orb-liquid-release 700ms cubic-bezier(.22,1,.36,1) both; }
 .orb-core { position: absolute; inset: 0; border-radius: 50%; background: var(--orb-fill); }
-.satellite, .satellite-shape { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; transform: translate(0,0) scale(.7); transition: transform 620ms cubic-bezier(.22,1,.36,1), opacity 300ms ease; }
+.satellite, .satellite-shape { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; transform: translate(0,0) scale(.68); transition: transform 700ms cubic-bezier(.16,1,.3,1), opacity 300ms ease; will-change: transform; }
 .satellite-shape { background: var(--orb-fill); }
 .satellite { display: grid; place-items: center; color: var(--ink-soft); opacity: 0; pointer-events: none; }
 .visible .left { transform: translate(-62px,70px) scale(1); }
@@ -167,5 +168,11 @@ onDeactivated(stopAnimation)
 .orb-caption { position: relative; z-index: 2; text-align: center; padding-top: 24px; padding-bottom: 24px; opacity: 1; visibility: visible; transition: padding-top 620ms cubic-bezier(.22,1,.36,1), opacity 520ms ease-in-out, visibility 0s linear 0s; }
 .is-compare .orb-caption { padding-top: 88px; }
 .orb-caption.concealed { position: absolute; top: calc(var(--orb-top) + 80px); left: 0; width: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 520ms ease-in-out, visibility 0s linear 520ms; }
-@media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; transition-delay: 0ms !important; animation-duration: .01ms !important; } }
+@keyframes orb-liquid-release {
+  0%, 34% { opacity: .48; }
+  58% { opacity: .4; }
+  76% { opacity: .2; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; transition-delay: 0ms !important; animation-duration: .01ms !important; } .orb-liquid { opacity: 0; } }
 </style>

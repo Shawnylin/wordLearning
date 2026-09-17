@@ -41,8 +41,8 @@ defineExpose({ focusWord })
   <div ref="root" class="study-command" :class="{ 'is-compare': comparing, 'has-action': actionVisible, 'has-extra': comparing && words.length > 2 }">
     <svg width="0" height="0" class="liquid-defs" aria-hidden="true"><defs>
       <filter :id="liquidId" x="-20%" y="-60%" width="140%" height="220%" color-interpolation-filters="sRGB">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
-        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9.5" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="6.5" />
+        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11" />
       </filter>
     </defs></svg>
     <div class="capsule-backgrounds" :style="{ filter: `url(#${liquidId})` }" aria-hidden="true">
@@ -86,10 +86,11 @@ defineExpose({ focusWord })
 .liquid-defs { position: absolute; pointer-events: none; }
 .input-area, .background-inputs { position: relative; width: 100%; height: 100%; transition: width var(--motion); }
 .has-action .input-area, .has-action .background-inputs { width: calc(100% - 64px); }
-.capsule-backgrounds { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .12; }
-.command-drop { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; background: var(--fill); transform: translateX(-28px); transition: transform var(--motion), opacity 300ms ease; }
+.capsule-backgrounds { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .42; contain: paint; will-change: opacity; }
+.has-action .capsule-backgrounds { animation: command-liquid-release var(--motion) both; }
+.command-drop { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; background: var(--fill); transform: translateX(-28px) scale(.72); transition: transform var(--motion), opacity 300ms ease; will-change: transform; }
 .is-compare:not(.has-action) .command-drop { opacity: 0; }
-.has-action .command-drop { transform: none; }
+.has-action .command-drop { transform: translateX(0) scale(1); }
 .capsule, .study-field { position: absolute; top: 0; height: 56px; border-radius: 28px; transition: width var(--motion), left var(--motion), transform var(--motion), opacity 300ms ease; }
 .capsule { background: var(--fill); }
 .first { left: 0; width: 100%; z-index: 1; }
@@ -101,7 +102,7 @@ defineExpose({ focusWord })
 .fourth { top: 68px; left: calc((100% + 12px) / 2); --split-x: calc(-100% - 12px); --split-y: 0px; }
 .capsule.third, .capsule.fourth { opacity: 0; transform: translate(var(--split-x), var(--split-y)) scale(.88, .72); }
 .capsule.visible { opacity: 1; transform: none; }
-.study-field { display: flex; align-items: center; padding: 0 16px; gap: 0; }
+.study-field { display: flex; align-items: center; padding: 0 16px; gap: 0; background: linear-gradient(rgb(0 0 0 / .07), rgb(0 0 0 / .07)), var(--control-glass-fill); }
 .study-field input { min-width: 0; width: 100%; height: 100%; background: none; border: 0; outline: none; color: var(--ink); font-size: 16px; }
 .study-field input::placeholder { color: var(--ink-mute); }
 .study-field button { flex: 0 0 28px; width: 28px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-mute); }
@@ -116,13 +117,19 @@ defineExpose({ focusWord })
 .remove-icon-enter-from, .remove-icon-leave-to { opacity: 0; transform: scale(.4) rotate(-60deg); flex-basis: 0 !important; width: 0 !important; }
 .study-top-action { position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-mute); opacity: 0; transform: translateX(-28px) scale(.7); pointer-events: none; transition: transform var(--motion), opacity 240ms ease, background 240ms ease; }
 .has-action .study-top-action { opacity: 1; transform: none; pointer-events: auto; }
-.study-top-action.ready { --control-glass-fill: color-mix(in srgb, var(--zhuhong-solid) 12%, transparent); color: var(--zhuhong); }
+.study-top-action.ready { --control-glass-fill: color-mix(in srgb, var(--zhuhong-solid) 26%, transparent); color: color-mix(in srgb, var(--zhuhong-solid) 84%, black); }
 .has-action .study-top-action:disabled, .study-field input:disabled, .study-field button:disabled { opacity: .55; }
 button:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
 .action-icon-enter-active, .action-icon-leave-active { transition: transform 180ms ease, opacity 180ms ease; }
 .action-icon-enter-from { opacity: 0; transform: rotate(-90deg) scale(.5); }
 .action-icon-leave-to { opacity: 0; transform: rotate(90deg) scale(.5); }
 @keyframes delete-reveal { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes command-liquid-release {
+  0%, 42% { opacity: .42; }
+  66% { opacity: .34; }
+  82% { opacity: .16; }
+  100% { opacity: 0; }
+}
 @media (max-width: 380px) { .study-field { padding-inline: 12px; } .study-field button { flex-basis: 24px; width: 24px; } }
-@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0ms !important; } .capsule-backgrounds { opacity: 0; } }
 </style>
