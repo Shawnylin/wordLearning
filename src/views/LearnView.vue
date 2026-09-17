@@ -115,6 +115,8 @@ function closeResult() {
 
 function handlePagePointerDown(event: PointerEvent) {
   const target = event.target as HTMLElement
+  const pressedButton = target.closest<HTMLButtonElement>('button:not(:disabled)')
+  if (pressedButton && event.isPrimary && event.pointerType === 'touch') navigator.vibrate?.(8)
   if (target.closest('input, textarea, select, button, a, label, [contenteditable="true"]')) return
   const active = document.activeElement
   if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) active.blur()
