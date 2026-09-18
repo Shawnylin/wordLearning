@@ -31,7 +31,7 @@ function cancelEdit() {
 </script>
 
 <template>
-  <section id="speech" class="card settings-card speech-settings">
+  <section id="speech-advanced" class="card settings-card speech-settings">
     <header class="settings-card-header"><h2 class="settings-title flex items-center gap-2"><Volume2 :size="17" />MiMo 朗读</h2></header>
     <div v-if="!editing" class="settings-summary" aria-label="当前朗读配置">
       <div class="settings-summary-row"><span>API 地址</span><strong class="break-all">{{ draft.baseUrl }}</strong></div>

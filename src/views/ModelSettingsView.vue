@@ -1,67 +1,230 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { ArrowLeft, Bot, ChevronDown, FileText, Volume2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { useSettingsStore } from '../stores/settings'
+import SpeechButton from '../components/SpeechButton.vue'
 import ModelSettings from '../components/ModelSettings.vue'
 import SpeechSettings from '../components/SpeechSettings.vue'
 import PdfModelSettings from '../components/PdfModelSettings.vue'
+
+interface ModelChoice {
+  key: string
+  profileId: string
+  provider: string
+  model: string
+  baseUrl: string
+}
+
 const router = useRouter()
+const settings = useSettingsStore()
+const showPdfAdvanced = ref(false)
+const showSpeechAdvanced = ref(false)
+
+const modelChoices = computed<ModelChoice[]>(() => {
+  const seen = new Set<string>()
+  const choices: ModelChoice[] = []
+  for (const profile of settings.profiles) {
+    const models = profile.models.length ? profile.models : [profile.model]
+    for (const model of models) {
+      const normalizedModel = model.trim()
+      if (!normalizedModel) continue
+      const key = `${profile.id}:${normalizedModel}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      choices.push({
+        key,
+        profileId: profile.id,
+        provider: profile.name || profile.model || '模型服务商',
+        model: normalizedModel,
+        baseUrl: profile.baseUrl
+      })
+    }
+  }
+  return choices
+})
+
+function findChoice(baseUrl: string, model: string) {
+  return modelChoices.value.find(choice => choice.baseUrl === baseUrl && choice.model === model)
+}
+
+const learningModelKey = computed(() => {
+  const active = settings.profiles.find(profile => profile.id === settings.activeProfileId)
+  return active ? findChoice(active.baseUrl, active.model)?.key || '' : ''
+})
+
+const pdfModelKey = computed(() => {
+  if (settings.pdfUseLearningModel) return 'learning'
+  return findChoice(settings.pdfConfig.baseUrl, settings.pdfConfig.model)?.key || ''
+})
+
+const speechModelKey = computed(() => findChoice(settings.speechConfig.baseUrl, settings.speechConfig.model)?.key || '')
+
+function getChoice(key: string) {
+  return modelChoices.value.find(choice => choice.key === key)
+}
+
+function selectLearningModel(key: string) {
+  const choice = getChoice(key)
+  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
+  if (!choice || !profile) return
+  settings.saveProfile({ ...profile, model: choice.model })
+}
+
+function selectPdfModel(key: string) {
+  if (key === 'learning') {
+    settings.pdfUseLearningModel = true
+    return
+  }
+  const choice = getChoice(key)
+  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
+  if (!choice || !profile) return
+  settings.pdfConfig = { ...settings.pdfConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model, thinkingEnabled: false }
+  settings.pdfUseLearningModel = false
+}
+
+function selectSpeechModel(key: string) {
+  const choice = getChoice(key)
+  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
+  if (!choice || !profile) return
+  settings.speechConfig = { ...settings.speechConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model }
+}
 </script>
+
 <template>
-  <div class="min-h-screen px-4 pt-3 pb-5 settings-page">
-    <div class="mx-auto max-w-6xl">
-      <header class="settings-page-header"><button @click="router.push('/profile')" class="settings-back">← 返回</button><h1>模型与 API</h1></header>
-      <div class="settings-grid">
+  <div class="settings-page min-h-screen">
+    <div class="settings-shell">
+      <header class="settings-page-header">
+        <button class="settings-back" type="button" @click="router.push('/profile')"><ArrowLeft :size="17" /><span>返回</span></button>
+        <h1>模型与 API</h1>
+        <span class="settings-header-spacer" aria-hidden="true" />
+      </header>
+
+      <main class="settings-content">
         <ModelSettings />
-        <div class="settings-side">
-          <SpeechSettings />
-          <PdfModelSettings />
-        </div>
-      </div>
+
+        <section class="settings-panel settings-role-panel" aria-labelledby="learning-model-title">
+          <div class="settings-panel-heading">
+            <div class="settings-panel-icon"><Bot :size="17" /></div>
+            <div><h2 id="learning-model-title">学习查词模型</h2><p>用于单词查询、释义生成等学习场景</p></div>
+          </div>
+          <label class="settings-select-label" for="learning-model-select">当前模型</label>
+          <div class="settings-select-wrap">
+            <Bot :size="17" aria-hidden="true" />
+            <select id="learning-model-select" :value="learningModelKey" :disabled="!modelChoices.length" @change="selectLearningModel(($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>{{ modelChoices.length ? '选择服务商与模型' : '请先添加模型服务商' }}</option>
+              <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings-panel settings-role-panel" aria-labelledby="pdf-model-title">
+          <div class="settings-panel-heading">
+            <div class="settings-panel-icon"><FileText :size="17" /></div>
+            <div><h2 id="pdf-model-title">PDF 分析模型</h2><p>用于文档解析、内容提取、问答总结等 PDF 场景</p></div>
+          </div>
+          <label class="settings-select-label" for="pdf-model-select">当前模型</label>
+          <div class="settings-select-wrap">
+            <FileText :size="17" aria-hidden="true" />
+            <select id="pdf-model-select" :value="pdfModelKey" @change="selectPdfModel(($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>选择服务商与模型</option>
+              <option value="learning">跟随学习查词模型</option>
+              <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
+            </select>
+          </div>
+          <details class="settings-advanced" :open="showPdfAdvanced" @toggle="showPdfAdvanced = ($event.target as HTMLDetailsElement).open">
+            <summary><span>独立配置与测试</span><ChevronDown :size="15" aria-hidden="true" /></summary>
+            <div class="settings-advanced-body"><PdfModelSettings /></div>
+          </details>
+        </section>
+
+        <section class="settings-panel settings-role-panel settings-voice-panel" aria-labelledby="speech-model-title">
+          <div class="settings-panel-heading">
+            <div class="settings-panel-icon"><Volume2 :size="17" /></div>
+            <div><h2 id="speech-model-title">语音模型</h2><p>用于文本朗读、发音练习等语音场景</p></div>
+          </div>
+          <label class="settings-select-label" for="speech-model-select">当前模型</label>
+          <div class="settings-select-wrap">
+            <Volume2 :size="17" aria-hidden="true" />
+            <select id="speech-model-select" :value="speechModelKey" :disabled="!modelChoices.length" @change="selectSpeechModel(($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>{{ modelChoices.length ? '选择服务商与模型' : '请先添加模型服务商' }}</option>
+              <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
+            </select>
+          </div>
+          <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
+          <p class="settings-voice-help">将使用上方选中的模型朗读一小段示例文本。</p>
+          <details id="speech" class="settings-advanced" :open="showSpeechAdvanced" @toggle="showSpeechAdvanced = ($event.target as HTMLDetailsElement).open">
+            <summary><span>语音详细设置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
+            <div class="settings-advanced-body"><SpeechSettings /></div>
+          </details>
+        </section>
+      </main>
     </div>
   </div>
 </template>
 
 <style scoped>
-.settings-page-header { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
-.settings-page-header h1 { color:var(--ink); font-size:20px; font-weight:650; line-height:1.3; }
-.settings-back { flex:none; padding:8px 10px; border-radius:10px; color:var(--ink-soft); font-size:13px; }
-.settings-back:hover { background:var(--soft); }
-.settings-grid,.settings-side { display:grid; gap:14px; }
-.settings-grid :deep(.settings-card) { display:grid; gap:14px; padding:18px; border-radius:20px; }
-.settings-grid :deep(.settings-card-header) { display:flex; min-width:0; align-items:flex-start; justify-content:space-between; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--line); }
-.settings-grid :deep(.settings-title) { color:var(--ink); font-size:15px; font-weight:650; line-height:1.4; }
-.settings-grid :deep(.settings-description) { margin-top:3px; color:var(--ink-mute); font-size:12px; line-height:1.55; }
-.settings-grid :deep(.settings-badge) { max-width:48%; padding:4px 8px; border-radius:999px; background:var(--soft); color:var(--ink-mute); font-size:10px; line-height:1.35; text-align:right; }
-.settings-grid :deep(.settings-form) { display:grid; gap:12px; }
-.settings-grid :deep(.settings-label) { display:block; color:var(--ink-soft); font-size:12px; font-weight:550; line-height:1.45; }
-.settings-grid :deep(.settings-help) { display:block; margin-top:5px; color:var(--ink-mute); font-size:10.5px; font-weight:400; line-height:1.55; }
-.settings-grid :deep(.settings-pair) { display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,.58fr); gap:10px; }
-.settings-grid :deep(.settings-inline) { display:flex; justify-content:flex-start; }
-.settings-grid :deep(.settings-actions) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding-top:2px; }
-.settings-grid :deep(.settings-actions:has(> :only-child)) { grid-template-columns:1fr; }
-.settings-grid :deep(.settings-actions > button),.settings-grid :deep(.settings-actions .speech-button) { min-height:38px; border-radius:11px; padding:8px 12px; font-size:12px; }
-.settings-grid :deep(.settings-actions .speech-control),.settings-grid :deep(.settings-actions .speech-button) { width:100%; }
-.settings-grid :deep(.settings-secondary) { border-radius:10px; padding:8px 12px; background:var(--soft); color:var(--ink-soft); font-size:12px; }
-.settings-grid :deep(.settings-text-actions) { display:flex; justify-content:space-between; font-size:11.5px; }
-.settings-grid :deep(.settings-status) { padding:8px 10px; border-radius:10px; background:var(--soft); font-size:11px; line-height:1.55; }
-.settings-grid :deep(.settings-footnote) { color:var(--ink-mute); font-size:10.5px; line-height:1.65; }
-.settings-grid :deep(.settings-switch) { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:11px; background:var(--soft); color:var(--ink-soft); font-size:12px; }
-.settings-grid :deep(.settings-form-muted) { opacity:.72; }
-.settings-grid :deep(.settings-summary) { overflow:hidden; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
-.settings-grid :deep(.settings-summary-row) { display:grid; grid-template-columns:82px minmax(0,1fr); gap:12px; align-items:start; padding:10px 12px; border-bottom:1px solid var(--line); }
-.settings-grid :deep(.settings-summary-row > span),.settings-grid :deep(.settings-summary-key > span) { color:var(--ink-mute); font-size:11px; line-height:1.55; }
-.settings-grid :deep(.settings-summary-row > strong) { color:var(--ink-soft); font-size:12px; font-weight:500; line-height:1.55; text-align:right; }
-.settings-grid :deep(.settings-summary-key) { padding:9px 12px 11px; }
-.settings-grid :deep(.settings-summary-key .api-key-field input) { margin-top:4px; border-color:transparent; background:var(--card); }
-.settings-grid :deep(.settings-model-picker) { display:grid; gap:7px; padding:11px 12px; border:1px solid var(--line); border-radius:13px; }
-.settings-grid :deep(.settings-model-picker-head) { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--ink-soft); font-size:12px; font-weight:550; }
-.settings-grid :deep(.settings-text-button) { color:var(--zhuhong); font-size:11px; font-weight:500; }
-.settings-grid :deep(.settings-text-button:disabled) { color:var(--ink-mute); }
-.settings-grid :deep(.settings-model-current) { display:flex; min-width:0; align-items:center; justify-content:space-between; gap:10px; color:var(--ink); font-size:13px; }
-.settings-grid :deep(.settings-model-current span) { flex:none; color:var(--ink-mute); font-size:10px; }
-@media (min-width:768px) {
-  .settings-page { padding-inline:24px; }
-  .settings-grid { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr); align-items:start; }
-  .settings-page-header { margin-bottom:16px; }
-}
-@media (min-width:1180px) { .settings-grid { grid-template-columns:minmax(0,1fr) minmax(420px,.82fr); gap:20px; } }
+.settings-page { background: var(--paper); color: var(--ink); }
+.settings-shell { width: min(100%, 620px); margin: 0 auto; padding: 12px 18px calc(88px + env(safe-area-inset-bottom)); }
+.settings-page-header { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; min-height: 44px; align-items: center; margin-bottom: 16px; }
+.settings-page-header h1 { grid-column: 2; color: var(--ink); font-size: 17px; font-weight: 650; line-height: 1.3; white-space: nowrap; }
+.settings-back { display: inline-flex; grid-column: 1; width: fit-content; align-items: center; gap: 4px; min-height: 40px; padding: 8px 4px; color: var(--ink-soft); font-size: 13px; }
+.settings-back:hover { color: var(--zhuhong); }
+.settings-header-spacer { grid-column: 3; }
+.settings-content { display: grid; gap: 12px; }
+.settings-content :deep(.settings-card) { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 26px rgb(49 39 26 / 4%); }
+.settings-content :deep(.settings-card-header) { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 0 0 13px; border-bottom: 1px solid var(--line); }
+.settings-content :deep(.settings-overline) { margin-bottom: 2px; color: var(--ink-mute); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.settings-content :deep(.settings-title) { color: var(--ink); font-size: 18px; font-weight: 650; line-height: 1.35; }
+.settings-content :deep(.settings-description) { max-width: 34ch; margin-top: 4px; color: var(--ink-mute); font-size: 11px; line-height: 1.55; }
+.settings-content :deep(.settings-icon-button) { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
+.settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-deep); }
+.settings-content :deep(.settings-provider-list) { overflow: hidden; border-top: 1px solid var(--line); }
+.settings-content :deep(.settings-provider-row) { display: flex; min-width: 0; align-items: center; gap: 8px; min-height: 68px; border-bottom: 1px solid var(--line); }
+.settings-content :deep(.settings-provider-row:last-child) { border-bottom: 0; }
+.settings-content :deep(.settings-provider-main) { display: flex; min-width: 0; flex: 1; align-items: center; gap: 11px; min-height: 64px; padding: 8px 0; color: var(--ink); text-align: left; }
+.settings-content :deep(.settings-provider-icon), .settings-content :deep(.settings-panel-icon) { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 11px; background: var(--soft); color: var(--zhuhong); }
+.settings-content :deep(.settings-provider-copy) { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.settings-content :deep(.settings-provider-copy strong) { overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.settings-content :deep(.settings-provider-copy small) { overflow: hidden; color: var(--ink-mute); font-size: 10px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.settings-content :deep(.settings-provider-state) { flex: none; color: var(--bamboo); font-size: 10px; }
+.settings-content :deep(.settings-provider-actions) { display: flex; flex: none; gap: 2px; }
+.settings-content :deep(.settings-row-icon) { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: var(--ink-mute); }
+.settings-content :deep(.settings-row-icon:hover) { background: var(--soft); color: var(--ink); }
+.settings-content :deep(.settings-row-icon-danger:hover) { color: var(--zhuhong); }
+.settings-content :deep(.settings-empty-row) { display: flex; align-items: center; gap: 11px; min-height: 56px; color: var(--ink-mute); font-size: 12px; }
+.settings-content :deep(.settings-editor) { display: grid; gap: 12px; padding-top: 2px; border-top: 1px solid var(--line); }
+.settings-content :deep(.settings-editor-heading) { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 12px; }
+.settings-content :deep(.settings-form) { display: grid; gap: 11px; }
+.settings-content :deep(.settings-label), .settings-content :deep(.settings-select-label) { display: block; color: var(--ink-soft); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.settings-content :deep(.settings-label input), .settings-content :deep(.settings-label select), .settings-content :deep(.settings-form input), .settings-content :deep(.settings-form select) { width: 100%; min-width: 0; }
+.settings-content :deep(.settings-actions) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.settings-content :deep(.settings-actions > button) { min-height: 40px; border-radius: 11px; padding: 9px 10px; font-size: 12px; }
+.settings-content :deep(.settings-secondary) { border-radius: 11px; background: var(--soft); color: var(--ink-soft); }
+.settings-content :deep(.settings-text-button) { color: var(--zhuhong); font-size: 11px; }
+.settings-content :deep(.settings-model-picker) { display: grid; gap: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--soft); }
+.settings-content :deep(.settings-model-picker-head) { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 11px; font-weight: 600; }
+.settings-content :deep(.settings-model-picker select), .settings-content :deep(.settings-select-wrap select) { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
+.settings-content :deep(.settings-status) { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; }
+.settings-content :deep(.settings-footnote) { color: var(--ink-mute); font-size: 10px; line-height: 1.6; }
+.settings-panel { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 26px rgb(49 39 26 / 4%); }
+.settings-panel-heading { display: flex; min-width: 0; align-items: center; gap: 11px; }
+.settings-panel-heading h2 { color: var(--ink); font-size: 15px; font-weight: 650; line-height: 1.4; }
+.settings-panel-heading p { margin-top: 3px; color: var(--ink-mute); font-size: 11px; line-height: 1.5; }
+.settings-select-label { margin-top: 2px; }
+.settings-select-wrap { position: relative; display: flex; align-items: center; }
+.settings-select-wrap > svg { position: absolute; left: 14px; z-index: 1; color: var(--zhuhong); pointer-events: none; }
+.settings-select-wrap select { width: 100%; min-height: 50px; padding: 10px 38px 10px 44px; font-size: 13px; }
+.settings-select-wrap select:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
+.settings-voice-panel :deep(.speech-button) { width: 100%; min-height: 46px; border-radius: 12px; background: var(--zhuhong); color: var(--paper); font-size: 13px; }
+.settings-voice-panel :deep(.speech-button:hover) { background: var(--zhuhong-deep); }
+.settings-voice-help { color: var(--ink-mute); font-size: 10.5px; line-height: 1.55; }
+.settings-advanced { overflow: hidden; margin-top: 2px; border-top: 1px solid var(--line); }
+.settings-advanced summary { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 10px; color: var(--ink-soft); cursor: pointer; font-size: 11px; font-weight: 600; list-style: none; }
+.settings-advanced summary::-webkit-details-marker { display: none; }
+.settings-advanced[open] summary > svg { transform: rotate(180deg); }
+.settings-advanced-body { padding-top: 8px; }
+.settings-advanced-body :deep(.settings-card) { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+@media (min-width: 520px) { .settings-shell { padding-inline: 24px; } }
+@media (prefers-reduced-motion: reduce) { .settings-advanced summary > svg { transition: none; } }
 </style>
