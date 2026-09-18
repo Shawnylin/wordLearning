@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
-  KeyRound, LoaderCircle, LogIn, LogOut, Mail, RotateCcw, ShieldCheck
+  ImagePlus, KeyRound, LoaderCircle, LogIn, LogOut, Mail, RotateCcw, ShieldCheck
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 
@@ -19,6 +19,10 @@ const confirmPassword = ref('')
 const verificationCode = ref('')
 const notice = ref('')
 const errorMessage = ref('')
+const avatarError = ref('')
+const avatarDataUrl = ref('')
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarStorageKey = 'word-learning-profile-avatar'
 
 const pendingVerification = computed(() => auth.registrationPending || auth.resetPending)
 const submitLabel = computed(() => {
@@ -27,7 +31,48 @@ const submitLabel = computed(() => {
   return '登录'
 })
 
-onMounted(() => { void auth.initialize() })
+onMounted(() => {
+  void auth.initialize()
+  try {
+    avatarDataUrl.value = localStorage.getItem(avatarStorageKey) ?? ''
+  } catch {
+    avatarDataUrl.value = ''
+  }
+})
+
+function openAvatarPicker() {
+  avatarInput.value?.click()
+}
+
+function handleAvatarChange(event: Event) {
+  const input = event.target
+  if (!(input instanceof HTMLInputElement)) return
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    avatarError.value = '请选择图片文件'
+    return
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    avatarError.value = '头像需小于 4 MB'
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    if (typeof reader.result !== 'string') return
+    try {
+      localStorage.setItem(avatarStorageKey, reader.result)
+      avatarDataUrl.value = reader.result
+      avatarError.value = ''
+    } catch {
+      avatarError.value = '头像保存失败，请换一张图片'
+    }
+  }
+  reader.onerror = () => { avatarError.value = '头像读取失败，请重试' }
+  reader.readAsDataURL(file)
+}
 
 function switchMode(nextMode: AuthMode) {
   auth.cancelPending()
@@ -122,14 +167,19 @@ async function handleSignOut() {
 
 <template>
   <section :class="props.compact ? 'auth-panel auth-panel-compact' : 'auth-panel card rounded-2xl p-5'" data-testid="auth-panel">
-    <div v-if="props.compact && auth.currentUser" class="profile-account-header">
-      <div class="profile-account-avatar" aria-hidden="true">{{ auth.currentUser.displayName.slice(0, 1) }}</div>
+    <div v-if="props.compact" class="profile-account-header">
+      <button class="profile-account-avatar" type="button" aria-label="更换头像" @click="openAvatarPicker">
+        <img v-if="avatarDataUrl" :src="avatarDataUrl" alt="" />
+        <span v-else>{{ auth.currentUser?.displayName.slice(0, 1) || '我' }}</span>
+        <span class="profile-avatar-edit" aria-hidden="true"><ImagePlus :size="13" /></span>
+      </button>
       <div class="min-w-0 flex-1">
-        <p class="profile-eyebrow">已登录</p>
-        <h2 class="truncate text-lg font-semibold text-ink">{{ auth.currentUser.displayName }}</h2>
-        <p class="truncate text-xs text-ink-mute">{{ auth.currentUser.email || auth.currentUser.id }}</p>
+        <p class="profile-eyebrow">{{ auth.currentUser ? '已登录' : '个人信息' }}</p>
+        <h2 class="truncate text-lg font-semibold text-ink">{{ auth.currentUser?.displayName || '本机学习空间' }}</h2>
+        <p class="truncate text-xs text-ink-mute">{{ auth.currentUser?.email || '头像仅保存在本机' }}</p>
       </div>
       <button
+        v-if="auth.currentUser"
         class="profile-account-action"
         :disabled="auth.loading"
         type="button"
@@ -139,9 +189,12 @@ async function handleSignOut() {
         <LogOut v-else :size="15" />
         退出
       </button>
+      <button v-else class="profile-account-action" type="button" @click="showAuthForm = true">登录 / 注册</button>
     </div>
 
-    <div v-if="!(props.compact && auth.currentUser)" class="flex items-start justify-between gap-4">
+    <p v-if="props.compact && avatarError" class="mt-3 rounded-xl bg-zhuhong-soft p-3 text-sm leading-6 text-zhuhong" role="alert">{{ avatarError }}</p>
+
+    <div v-if="!props.compact" class="flex items-start justify-between gap-4">
       <div class="flex min-w-0 items-start gap-3">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zhuhong-soft text-zhuhong">
           <ShieldCheck :size="20" />
@@ -182,10 +235,7 @@ async function handleSignOut() {
 
     <div v-else-if="auth.currentUser && props.compact" class="hidden" />
 
-    <div v-else-if="props.compact && !showAuthForm" class="profile-auth-collapsed">
-      <span>未登录</span>
-      <button class="profile-account-action" type="button" @click="showAuthForm = true">登录 / 注册</button>
-    </div>
+    <div v-else-if="props.compact && !showAuthForm" class="hidden" />
 
     <div v-else class="mt-4">
       <div class="mb-4 flex gap-2 rounded-xl bg-soft p-1" role="tablist" aria-label="认证方式">
@@ -287,5 +337,7 @@ async function handleSignOut() {
         <span class="text-right">登录后可在云同步中自行选择数据去向</span>
       </div>
     </div>
+
+    <input ref="avatarInput" class="sr-only" type="file" accept="image/*" @change="handleAvatarChange" />
   </section>
 </template>

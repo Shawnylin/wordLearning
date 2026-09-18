@@ -9,6 +9,26 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.7.0',
+    date: '2026-09-18',
+    title: '个人页重新整理',
+    changes: [
+      '个人页移除重复的词语记录和已学词语入口，保留必要的学习统计。',
+      '个人信息与云同步合并为一张卡片，头像支持从本机图片更换。',
+      '记录页新增复习入口，个人页设置板块在 iPad 横屏下采用更宽的双列排布。'
+    ]
+  },
+  {
+    version: '0.6.9',
+    date: '2026-09-18',
+    title: '账户与云同步补齐',
+    changes: [
+      '新增 CloudBase 账户登录、注册和退出，保留本机学习数据。',
+      '新增学习记录云同步，可手动下载、上传或合并本机与云端数据。',
+      '整理模型与 API 配置入口，补齐模型选择、语音和 PDF 解析配置。'
+    ]
+  },
+  {
     version: '0.6.8',
     date: '2026-09-17',
     title: '修复对比按钮触控',

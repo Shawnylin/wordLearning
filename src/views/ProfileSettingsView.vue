@@ -133,7 +133,7 @@ function handleImport() {
         <h1 class="font-kai text-3xl text-ink">设置</h1>
       </header>
 
-      <section class="profile-section" aria-labelledby="profile-stats-title">
+      <section class="profile-section profile-stats-section" aria-labelledby="profile-stats-title">
         <div class="profile-section-heading"><h2 id="profile-stats-title">学习与统计</h2></div>
         <div class="profile-list">
           <div class="profile-list-row profile-settings-row">
@@ -165,7 +165,7 @@ function handleImport() {
         </div>
       </section>
 
-      <section class="profile-section" aria-labelledby="profile-settings-title">
+      <section class="profile-section profile-app-settings-section" aria-labelledby="profile-settings-title">
         <div class="profile-section-heading"><h2 id="profile-settings-title">应用设置</h2></div>
         <div class="profile-list">
           <button class="profile-list-row" type="button" aria-label="模型与 API" @click="router.push('/profile/models')">
@@ -194,7 +194,7 @@ function handleImport() {
         </div>
       </section>
 
-      <section class="profile-section" aria-labelledby="profile-app-title">
+      <section class="profile-section profile-version-section" aria-labelledby="profile-app-title">
         <div class="profile-section-heading"><h2 id="profile-app-title">版本与数据</h2></div>
         <div class="profile-list">
           <button class="profile-list-row" type="button" :aria-expanded="showUpdateOptions" @click="showUpdateOptions = !showUpdateOptions">

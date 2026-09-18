@@ -7,7 +7,7 @@ import { useSettingsStore } from '../stores/settings'
 import type { SearchRecord, CompareRecord } from '../types/idiom'
 import {
   Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare,
-  AlertCircle, Heart, ListChecks, Check, X
+  AlertCircle, Heart, ListChecks, Check, Shuffle, X
 } from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareWords from '../components/CompareWords.vue'
@@ -250,17 +250,27 @@ function doConfirmDelete() {
     <div :inert="!!detailMode">
       <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
         <h1 class="font-kai text-3xl text-ink leading-tight">学习记录</h1>
-        <Motion><button
-          v-if="hasAnyRecord"
-          @click="toggleEditMode"
-          class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          :class="editMode
-            ? 'btn-primary'
-            : 'bg-soft text-ink-soft border border-line'"
-        >
-          <component :is="editMode ? X : ListChecks" :size="16" />
-          {{ editMode ? '完成' : '管理' }}
-        </button></Motion>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded-full border border-zhuhong/25 bg-zhuhong-soft px-3.5 py-2 text-sm font-medium text-zhuhong transition-colors hover:bg-zhuhong hover:text-paper-ink"
+            @click="router.push('/review')"
+          >
+            <Shuffle :size="16" />
+            复习
+          </button>
+          <Motion><button
+            v-if="hasAnyRecord"
+            @click="toggleEditMode"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            :class="editMode
+              ? 'btn-primary'
+              : 'bg-soft text-ink-soft border border-line'"
+          >
+            <component :is="editMode ? X : ListChecks" :size="16" />
+            {{ editMode ? '完成' : '管理' }}
+          </button></Motion>
+        </div>
       </div>
 
       <!-- Tab switcher -->
