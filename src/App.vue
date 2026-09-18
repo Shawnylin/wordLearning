@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useThemeStore } from './stores/theme'
 import { useAppUpdateStore } from './stores/appUpdate'
 import { useAuthStore } from './stores/auth'
+import { useCloudSyncStore } from './stores/cloudSync'
 import BottomNav from './components/BottomNav.vue'
 import AppUpdatePrompt from './components/AppUpdatePrompt.vue'
 import CloudSyncPrompt from './components/CloudSyncPrompt.vue'
@@ -10,12 +11,16 @@ import CloudSyncPrompt from './components/CloudSyncPrompt.vue'
 const themeStore = useThemeStore()
 const appUpdate = useAppUpdateStore()
 const authStore = useAuthStore()
+const cloudSync = useCloudSyncStore()
 const navCollapsed = ref(false)
 try { navCollapsed.value = localStorage.getItem('word-learning-nav-collapsed') === 'true' } catch {}
 watch(navCollapsed, value => {
   try { localStorage.setItem('word-learning-nav-collapsed', String(value)) } catch {}
 })
-const handleForeground = () => appUpdate.checkOnForeground()
+const handleForeground = () => {
+  appUpdate.checkOnForeground()
+  cloudSync.handleForeground()
+}
 let updateTimer: ReturnType<typeof setInterval> | undefined
 
 // 同步初始化，避免闪烁

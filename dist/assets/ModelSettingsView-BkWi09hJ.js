@@ -1,4 +1,4 @@
-import{c as F,d as A,W as Z,o,a as i,n as x,H as K,I as V,b as s,p as z,k as h,Y as G,r as _,_ as S,q as N,f as $,g as B,A as b,F as I,m as w,x as m,l as y,Z as L,V as T,$ as W,a0 as H,M as R,E as J,i as Q,C as X}from"./index-Dr_ziYzy.js";import{_ as O}from"./Motion.vue_vue_type_script_setup_true_lang-CoyX2Ce1.js";import{u as D,d as j,s as ee}from"./settings-DREuqQmc.js";import{V as se,S as q,u as te}from"./SpeechButton-2BYjrawd.js";import{_ as le}from"./LiquidToggle.vue_vue_type_script_setup_true_lang-BhNyZjCh.js";/**
+import{c as F,d as A,W as Z,o,a as i,n as x,H as K,I as V,b as s,p as z,k as h,Y as G,r as _,_ as S,q as N,f as $,g as B,A as b,F as I,m as w,x as m,l as y,Z as L,V as T,$ as W,a0 as H,M as R,E as J,i as Q,C as X}from"./index-DnQfLCep.js";import{_ as O}from"./Motion.vue_vue_type_script_setup_true_lang-CoMhcTJg.js";import{u as D,d as j,s as ee}from"./settings-BfX0Q9Io.js";import{V as se,S as q,u as te}from"./SpeechButton-BgzQS5_O.js";import{_ as le}from"./LiquidToggle.vue_vue_type_script_setup_true_lang-BXXLXuec.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.

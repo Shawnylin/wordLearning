@@ -9,6 +9,10 @@ type AuthMode = 'login' | 'register' | 'reset'
 
 const auth = useAuthStore()
 const mode = ref<AuthMode>('login')
+const props = withDefaults(defineProps<{ compact?: boolean }>(), {
+  compact: false
+})
+const showAuthForm = ref(false)
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -117,15 +121,34 @@ async function handleSignOut() {
 </script>
 
 <template>
-  <section class="auth-panel card rounded-2xl p-5" data-testid="auth-panel">
-    <div class="flex items-start justify-between gap-4">
+  <section :class="props.compact ? 'auth-panel auth-panel-compact' : 'auth-panel card rounded-2xl p-5'" data-testid="auth-panel">
+    <div v-if="props.compact && auth.currentUser" class="profile-account-header">
+      <div class="profile-account-avatar" aria-hidden="true">{{ auth.currentUser.displayName.slice(0, 1) }}</div>
+      <div class="min-w-0 flex-1">
+        <p class="profile-eyebrow">已登录</p>
+        <h2 class="truncate text-lg font-semibold text-ink">{{ auth.currentUser.displayName }}</h2>
+        <p class="truncate text-xs text-ink-mute">{{ auth.currentUser.email || auth.currentUser.id }}</p>
+      </div>
+      <button
+        class="profile-account-action"
+        :disabled="auth.loading"
+        type="button"
+        @click="handleSignOut"
+      >
+        <LoaderCircle v-if="auth.loading" :size="15" class="animate-spin" />
+        <LogOut v-else :size="15" />
+        退出
+      </button>
+    </div>
+
+    <div v-if="!(props.compact && auth.currentUser)" class="flex items-start justify-between gap-4">
       <div class="flex min-w-0 items-start gap-3">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zhuhong-soft text-zhuhong">
           <ShieldCheck :size="20" />
         </div>
         <div class="min-w-0">
-          <h2 class="font-semibold text-ink">CloudBase 身份</h2>
-          <p class="mt-1 text-xs leading-5 text-ink-mute">登录是可选的，不会覆盖本地学习数据</p>
+          <h2 class="font-semibold text-ink">账号</h2>
+          <p class="mt-1 text-xs leading-5 text-ink-mute">登录可使用云同步，本机数据不受影响</p>
         </div>
       </div>
       <span v-if="auth.signedIn" class="shrink-0 rounded-full bg-bamboo-soft px-2.5 py-1 text-xs text-bamboo">已登录</span>
@@ -140,7 +163,7 @@ async function handleSignOut() {
       <LoaderCircle :size="16" class="animate-spin" />正在检查登录状态…
     </div>
 
-    <div v-else-if="auth.currentUser" class="mt-4 flex items-center justify-between gap-3 rounded-xl bg-soft p-3">
+    <div v-else-if="auth.currentUser && !props.compact" class="mt-4 flex items-center justify-between gap-3 rounded-xl bg-soft p-3">
       <div class="min-w-0">
         <p class="truncate text-sm font-medium text-ink">{{ auth.currentUser.displayName }}</p>
         <p class="mt-1 truncate text-xs text-ink-mute">{{ auth.currentUser.email || auth.currentUser.id }}</p>
@@ -155,6 +178,13 @@ async function handleSignOut() {
         <LogOut v-else :size="15" />
         退出
       </button>
+    </div>
+
+    <div v-else-if="auth.currentUser && props.compact" class="hidden" />
+
+    <div v-else-if="props.compact && !showAuthForm" class="profile-auth-collapsed">
+      <span>未登录</span>
+      <button class="profile-account-action" type="button" @click="showAuthForm = true">登录 / 注册</button>
     </div>
 
     <div v-else class="mt-4">
