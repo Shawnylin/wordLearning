@@ -2,11 +2,13 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useThemeStore } from './stores/theme'
 import { useAppUpdateStore } from './stores/appUpdate'
+import { useAuthStore } from './stores/auth'
 import BottomNav from './components/BottomNav.vue'
 import AppUpdatePrompt from './components/AppUpdatePrompt.vue'
 
 const themeStore = useThemeStore()
 const appUpdate = useAppUpdateStore()
+const authStore = useAuthStore()
 const navCollapsed = ref(false)
 try { navCollapsed.value = localStorage.getItem('word-learning-nav-collapsed') === 'true' } catch {}
 watch(navCollapsed, value => {
@@ -20,6 +22,7 @@ themeStore.initTheme()
 
 onMounted(() => {
   themeStore.watchSystemTheme()
+  void authStore.initialize()
   appUpdate.initialize()
   window.addEventListener('focus', handleForeground)
   document.addEventListener('visibilitychange', handleForeground)

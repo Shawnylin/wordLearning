@@ -13,6 +13,7 @@
     "worker:deploy": "npx --yes wrangler@4.37.1 deploy"
   },
   "dependencies": {
+    "@cloudbase/js-sdk": "3.10.0",
     "lucide-vue-next": "^0.462.0",
     "pdfjs-dist": "^5.4.624",
     "pinia": "^2.3.0",

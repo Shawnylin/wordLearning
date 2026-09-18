@@ -3,6 +3,7 @@ node_modules
 *.local
 .env
 .env.*
+!.env.example
 .claude
 .claude.json
 测试问题汇总.md

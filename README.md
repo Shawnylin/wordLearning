@@ -42,6 +42,17 @@ npm run dev
 npm run build
 ```
 
+### 可选的 CloudBase 邮箱登录
+
+登录不会覆盖或清理本机学习记录；没有 CloudBase 配置时，应用仍可使用本地模式。需要启用邮箱注册/登录时，将 `.env.example` 复制为 `.env.local`，填入 CloudBase 控制台生成的 publishable key，然后重新启动或构建：
+
+```bash
+cp .env.example .env.local
+npm run dev
+```
+
+`VITE_CLOUDBASE_PUBLISHABLE_KEY` 是 Web 客户端配置项，不要把 API secret、数据库凭据或其他服务端密钥填入前端环境变量。注册和重置密码会通过 CloudBase 邮箱验证码完成。
+
 ## 使用说明
 
 ### 设置 API Key
@@ -125,7 +136,7 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 - 本机开发：`npm run dev` 自动提供读取接口。
 - 本机生产预览：`npm run build` 后执行 `npm run serve`，打开 `http://127.0.0.1:4173/wordLearning/`。`npm run preview` 也已接入读取接口。
 - 服务器部署：部署 `dist/`、`server/`、`package.json`，使用 Node.js 20+ 执行 `npm run serve`，由 HTTPS 反向代理转发应用与 API。可用 `HOST`、`PORT` 修改监听地址。
-- GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 只允许 `https://shawnylin.github.io` 调用，不接收或保存模型 API Key。
+- GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 只允许现有 GitHub Pages 和 CloudBase 静态托管域名调用，不接收或保存模型 API Key。
 
 读取服务接受公开文章域名，每次重定向都会重新校验；本机、内网、测试域名、IP 地址以及带账号密码或非标准端口的链接会被拒绝。它不转发 API Key 或浏览器 Cookie，并限制读取大小和短时缓存。网页读取失败不会调用模型。
 

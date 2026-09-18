@@ -30,3 +30,13 @@ test('worker returns article HTML to the GitHub Pages origin', async () => {
   assert.equal(response.headers.get('access-control-allow-origin'), 'https://shawnylin.github.io')
   assert.equal(data.html, '<html><body>文章正文</body></html>')
 })
+
+test('worker allows the CloudBase static hosting origin', async () => {
+  const origin = 'https://cooh-d1gj7cmvs2469a250-1351557942.tcloudbaseapp.com'
+  const response = await worker.fetch(new Request('https://reader.example/api/article-reader', {
+    method: 'OPTIONS',
+    headers: { Origin: origin, 'Access-Control-Request-Method': 'GET' }
+  }))
+  assert.equal(response.status, 204)
+  assert.equal(response.headers.get('access-control-allow-origin'), origin)
+})

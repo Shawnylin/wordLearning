@@ -1,4 +1,9 @@
-const allowedOrigin = 'https://shawnylin.github.io'
+const allowedOrigins = new Set([
+  'https://shawnylin.github.io',
+  'https://cooh-d1gj7cmvs2469a250-1351557942.tcloudbaseapp.com'
+])
+
+function isAllowedOrigin(origin) { return allowedOrigins.has(origin) }
 
 function articleUrl(input) {
   const url = new URL(input)
@@ -9,11 +14,12 @@ function articleUrl(input) {
 }
 
 function headers(origin) {
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : ''
   return {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'public, max-age=300',
     'X-Content-Type-Options': 'nosniff',
-    ...(origin === allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin, 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', Vary: 'Origin' } : {})
+    ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin, 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', Vary: 'Origin' } : {})
   }
 }
 
@@ -45,7 +51,7 @@ export default {
   async fetch(request) {
     const requestUrl = new URL(request.url)
     const origin = request.headers.get('Origin') || ''
-    if (origin && origin !== allowedOrigin) return json({ error: '不允许的网页来源' }, 403, origin)
+    if (origin && !isAllowedOrigin(origin)) return json({ error: '不允许的网页来源' }, 403, origin)
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: headers(origin) })
     if (request.method !== 'GET' || requestUrl.pathname !== '/api/article-reader') return json({ error: 'Not found' }, 404, origin)
     try { return json(await fetchArticle(requestUrl.searchParams.get('url') || ''), 200, origin) }
