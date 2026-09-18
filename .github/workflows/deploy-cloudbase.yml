@@ -61,9 +61,23 @@ jobs:
 
       - name: Deploy static assets
         run: >-
-          tcb hosting deploy ./dist /wordLearning
+          tcb hosting deploy ./dist wordLearning
           --env-id "$CLOUDBASE_ENV_ID"
           --safe
-          --verify
           --json
 
+      - name: Verify public CloudBase release
+        env:
+          SITE_URL: https://cooh-d1gj7cmvs2469a250-1351557942.tcloudbaseapp.com/wordLearning
+        run: |
+          set -euo pipefail
+          asset_path="$(grep -o '/wordLearning/assets/index-[^\"]*\.js' dist/index.html | head -n 1 | sed 's#^/wordLearning/##')"
+          test -n "$asset_path"
+          cache_buster="${GITHUB_SHA:-manual}"
+          curl --fail --silent --show-error --location --retry 10 --retry-delay 3 --retry-all-errors \
+            "$SITE_URL/index.html?version=$cache_buster" \
+            -o /tmp/cloudbase-index.html
+          grep -Fq "/wordLearning/$asset_path" /tmp/cloudbase-index.html
+          curl --fail --silent --show-error --location --retry 10 --retry-delay 3 --retry-all-errors \
+            "$SITE_URL/$asset_path?version=$cache_buster" \
+            -o /dev/null

@@ -99,7 +99,7 @@ git commit -m "描述本次修改"
 git push origin master
 ```
 
-部署失败时 workflow 会在上传前停止；发布使用 `--safe --verify`，不会执行 `--prune`，不会删除 CloudBase 上其他路径的文件。
+密钥检查或构建失败时 workflow 会在上传前停止；CloudBase 发布使用 `--safe`，并在上传后通过线上首页和当前哈希资源做公开访问校验，不会执行 `--prune`，不会删除 CloudBase 上其他路径的文件。
 
 ## 项目结构
 
