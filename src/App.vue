@@ -19,9 +19,21 @@ watch(navCollapsed, value => {
 })
 const handleForeground = () => {
   appUpdate.checkOnForeground()
-  cloudSync.handleForeground()
+  cloudSync.handleForeground('foreground')
 }
-let updateTimer: ReturnType<typeof setInterval> | undefined
+const handleResume = () => {
+  appUpdate.checkOnForeground()
+  cloudSync.handleForeground('resume')
+}
+const handleVisibilityChange = () => {
+  appUpdate.checkOnForeground()
+  if (document.hidden) cloudSync.handleBackground()
+  else cloudSync.handleForeground('resume')
+}
+const handleOnline = () => {
+  appUpdate.checkOnForeground()
+  cloudSync.handleForeground('online')
+}
 
 // 同步初始化，避免闪烁
 themeStore.initTheme()
@@ -31,18 +43,16 @@ onMounted(() => {
   void authStore.initialize()
   appUpdate.initialize()
   window.addEventListener('focus', handleForeground)
-  document.addEventListener('visibilitychange', handleForeground)
-  window.addEventListener('pageshow', handleForeground)
-  window.addEventListener('online', handleForeground)
-  updateTimer = setInterval(handleForeground, 60_000)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('pageshow', handleResume)
+  window.addEventListener('online', handleOnline)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('focus', handleForeground)
-  document.removeEventListener('visibilitychange', handleForeground)
-  window.removeEventListener('pageshow', handleForeground)
-  window.removeEventListener('online', handleForeground)
-  clearInterval(updateTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('pageshow', handleResume)
+  window.removeEventListener('online', handleOnline)
 })
 </script>
 

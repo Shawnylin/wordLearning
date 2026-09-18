@@ -4,6 +4,18 @@ import type { CompareRecord, IdiomData, SearchRecord, TokenStats } from './idiom
 
 export type SyncChoice = 'no-upload' | 'download' | 'merge-local-to-cloud' | 'merge-cloud-to-local'
 
+export type SyncDomain = 'idiom' | 'review' | 'daily'
+
+export interface SyncState {
+  pendingDomains: SyncDomain[]
+  lastLocalChangeAt: number
+  lastSyncAt: number
+  lastRemoteUpdatedAt: string
+  retryCount: number
+  nextRetryAt: number
+  lastError: string
+}
+
 export interface IdiomSyncData {
   idiomCache: Record<string, IdiomData>
   searchHistory: SearchRecord[]
