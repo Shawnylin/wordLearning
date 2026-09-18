@@ -14,6 +14,12 @@ import type {
 
 const TABLE_NAME = 'user_sync_snapshots'
 
+export interface RemoteSyncSnapshot {
+  payload: LocalSyncPayload
+  updatedAt: string
+  localUpdatedAt: number
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -173,32 +179,39 @@ export function applyLocalSyncPayload(payload: LocalSyncPayload) {
   useDailyStore().restoreSyncData(clone(payload.daily))
 }
 
-export async function loadRemoteSyncPayload(userId: string): Promise<LocalSyncPayload | null> {
+export async function loadRemoteSyncPayload(userId: string, sinceUpdatedAt?: string): Promise<RemoteSyncSnapshot | null> {
   if (!cloudbaseRdb) throw new Error('当前构建未配置 CloudBase 数据服务')
-  const result = await cloudbaseRdb
+  let query = cloudbaseRdb
     .from(TABLE_NAME)
     .select('payload, schema_version, local_updated_at, updated_at')
     .eq('user_id', userId)
-    .limit(1)
+  if (sinceUpdatedAt) query = query.gt('updated_at', sinceUpdatedAt)
+  const result = await query.limit(1)
   if (result.error) throw new Error(messageFrom(result.error, '读取云端学习数据失败'))
   const rows: unknown = result.data
   if (!Array.isArray(rows) || rows.length === 0) return null
   const row = rows[0]
   if (!isRecord(row) || !isSyncPayload(row.payload)) throw new Error('云端学习数据格式无法识别，为保护本机数据，本次未执行同步')
-  return clone(row.payload)
+  return {
+    payload: clone(row.payload),
+    updatedAt: readString(row.updated_at) || '',
+    localUpdatedAt: typeof row.local_updated_at === 'number' ? row.local_updated_at : Number(row.local_updated_at) || 0
+  }
 }
 
-export async function saveRemoteSyncPayload(userId: string, payload: LocalSyncPayload): Promise<void> {
+export async function saveRemoteSyncPayload(userId: string, payload: LocalSyncPayload): Promise<RemoteSyncSnapshot> {
   if (!cloudbaseRdb) throw new Error('当前构建未配置 CloudBase 数据服务')
+  const updatedAt = new Date().toISOString()
   const record = {
     user_id: userId,
     payload: clone(payload),
     schema_version: 1,
     local_updated_at: payload.capturedAt,
-    updated_at: new Date().toISOString()
+    updated_at: updatedAt
   }
   const result = await cloudbaseRdb
     .from(TABLE_NAME)
     .upsert(record, { onConflict: 'user_id' })
   if (result.error) throw new Error(messageFrom(result.error, '保存云端学习数据失败'))
+  return { payload: clone(payload), updatedAt, localUpdatedAt: payload.capturedAt }
 }

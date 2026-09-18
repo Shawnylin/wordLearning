@@ -44,7 +44,7 @@ function formatTime(value: number) {
           class="profile-sync-action"
           data-testid="cloud-download-button"
           type="button"
-          :disabled="sync.preparing || sync.syncing || sync.remoteLoadFailed"
+          :disabled="sync.preparing || sync.syncing"
           @click="sync.downloadNow"
         >
           <LoaderCircle v-if="sync.syncing" :size="16" class="animate-spin" />
@@ -55,7 +55,7 @@ function formatTime(value: number) {
           class="profile-sync-action profile-sync-action-primary"
           data-testid="cloud-upload-button"
           type="button"
-          :disabled="sync.preparing || sync.syncing || sync.remoteLoadFailed"
+          :disabled="sync.preparing || sync.syncing"
           @click="sync.uploadNow"
         >
           <LoaderCircle v-if="sync.syncing" :size="16" class="animate-spin" />
