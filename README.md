@@ -81,6 +81,26 @@ npm run dev
 2. 将 `dist` 目录上传到 EdgeOne Pages
 3. 配置自定义域名（可选）
 
+## GitHub 自动部署到 CloudBase
+
+仓库中的 `.github/workflows/deploy-cloudbase.yml` 会在 `master` 分支收到推送后自动执行构建，并将 `dist/` 安全发布到 CloudBase 的 `/wordLearning/` 路径。GitHub Pages 和 CloudBase 会并行更新。
+
+首次使用前，在 GitHub 仓库的 `Settings → Secrets and variables → Actions` 添加以下 Secrets：
+
+- `TCB_SECRET_ID`：仅供 GitHub Actions 登录 CloudBase CLI
+- `TCB_SECRET_KEY`：仅供 GitHub Actions 登录 CloudBase CLI
+- `CLOUDBASE_PUBLISHABLE_KEY`：前端 CloudBase Web 认证所需的 publishable key
+
+这些值不会写入仓库。前两个是部署凭据，最后一个会随前端构建进入浏览器代码，不要将任何数据库密码、AI API Key 或其他服务端 Secret 填入其中。完成配置后，日常只需提交并推送：
+
+```bash
+git add -A
+git commit -m "描述本次修改"
+git push origin master
+```
+
+部署失败时 workflow 会在上传前停止；发布使用 `--safe --verify`，不会执行 `--prune`，不会删除 CloudBase 上其他路径的文件。
+
 ## 项目结构
 
 ```
