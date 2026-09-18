@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { IdiomData, SearchRecord, CompareRecord, TokenStats } from '../types/idiom'
+import type { IdiomSyncData } from '../types/sync'
 import { type ApiConfig, generateIdiomContent, generateComparison } from '../api/deepseek'
 
 export const useIdiomStore = defineStore('idiom', () => {
@@ -488,6 +489,31 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
+  function exportSyncData(): IdiomSyncData {
+    return {
+      idiomCache: idiomCache.value,
+      searchHistory: searchHistory.value,
+      compareCache: compareCache.value,
+      compareHistory: compareHistory.value,
+      tokenStats: tokenStats.value,
+      favorites: favorites.value,
+      queryCounts: queryCounts.value
+    }
+  }
+
+  function restoreSyncData(data: IdiomSyncData) {
+    idiomCache.value = data.idiomCache
+    searchHistory.value = data.searchHistory
+    compareCache.value = data.compareCache
+    compareHistory.value = data.compareHistory
+    tokenStats.value = data.tokenStats
+    favorites.value = data.favorites
+    queryCounts.value = data.queryCounts
+    currentIdiom.value = null
+    currentCompare.value = null
+    clearError()
+  }
+
   return {
     addTokenUsage,
     idiomCache,
@@ -523,7 +549,9 @@ export const useIdiomStore = defineStore('idiom', () => {
     toggleFavorite,
     isFavorite,
     exportData,
-    importData
+    importData,
+    exportSyncData,
+    restoreSyncData
   }
 }, {
   persist: {

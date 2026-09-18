@@ -2,6 +2,7 @@
 import ReportView from './ReportView.vue'
 import ProfileSettingsView from './ProfileSettingsView.vue'
 import AuthPanel from '../components/AuthPanel.vue'
+import CloudSyncPanel from '../components/CloudSyncPanel.vue'
 </script>
 
 <template>
@@ -11,6 +12,7 @@ import AuthPanel from '../components/AuthPanel.vue'
         <h1 class="font-kai text-3xl">个人</h1>
       </header>
       <AuthPanel />
+      <CloudSyncPanel />
       <ReportView />
       <ProfileSettingsView embedded />
     </div>

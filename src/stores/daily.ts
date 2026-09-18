@@ -8,6 +8,7 @@ import {
 import { generateDailyFromLink } from "../api/dailyLink";
 import type { ApiConfig } from "../api/deepseek";
 import { useIdiomStore } from "./idiom";
+import type { DailySyncData } from '../types/sync'
 
 export interface DailyGroup {
   id: string;
@@ -247,6 +248,18 @@ export const useDailyStore = defineStore(
     function cancel() {
       controller?.abort();
     }
+
+    function exportSyncData(): DailySyncData {
+      return { issues: issues.value, groups: groups.value, selectedId: selectedId.value };
+    }
+
+    function restoreSyncData(data: DailySyncData) {
+      issues.value = data.issues;
+      groups.value = data.groups;
+      selectedId.value = data.selectedId;
+      ensureGroups();
+    }
+
     return {
       issues,
       groups,
@@ -268,6 +281,8 @@ export const useDailyStore = defineStore(
       toggleGroup,
       moveIssue,
       restoreGroups,
+      exportSyncData,
+      restoreSyncData,
     };
   },
   { persist: { key: "daily-store", paths: ["issues", "selectedId", "groups"] } },

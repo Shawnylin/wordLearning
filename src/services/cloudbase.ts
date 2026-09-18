@@ -14,6 +14,8 @@ const config = envId && publishableKey
   : null
 
 export const cloudbaseConfigured = config !== null
-export const cloudbaseAuth = config
-  ? cloudbase.init(config).auth({ persistence: 'local' })
+export const cloudbaseApp = config ? cloudbase.init(config) : null
+export const cloudbaseAuth = cloudbaseApp
+  ? cloudbaseApp.auth({ persistence: 'local' })
   : null
+export const cloudbaseRdb = cloudbaseApp ? cloudbaseApp.rdb() : null

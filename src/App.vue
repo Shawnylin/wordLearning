@@ -5,6 +5,7 @@ import { useAppUpdateStore } from './stores/appUpdate'
 import { useAuthStore } from './stores/auth'
 import BottomNav from './components/BottomNav.vue'
 import AppUpdatePrompt from './components/AppUpdatePrompt.vue'
+import CloudSyncPrompt from './components/CloudSyncPrompt.vue'
 
 const themeStore = useThemeStore()
 const appUpdate = useAppUpdateStore()
@@ -53,6 +54,7 @@ onBeforeUnmount(() => {
     </main>
     <BottomNav :collapsed="navCollapsed" @toggle="navCollapsed = !navCollapsed" />
     <AppUpdatePrompt />
+    <CloudSyncPrompt />
   </div>
 </template>
 

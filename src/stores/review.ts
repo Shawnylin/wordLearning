@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useIdiomStore } from './idiom'
+import type { ReviewSyncData } from '../types/sync'
 
 export type ReviewPhase = 'idle' | 'reviewing' | 'finished'
 
@@ -254,6 +255,43 @@ export const useReviewStore = defineStore('review', () => {
     }
   }
 
+  function exportSyncData(): ReviewSyncData {
+    return {
+      phase: phase.value,
+      queue: queue.value,
+      done: done.value,
+      levels: levels.value,
+      thresholds: thresholds.value,
+      wrongToday: wrongToday.value,
+      history: history.value,
+      target: target.value,
+      startedAt: startedAt.value,
+      elapsedMs: elapsedMs.value,
+      lastResult: lastResult.value,
+      finishedToday: finishedToday.value,
+      lastFinishedDay: lastFinishedDay.value,
+      wordStats: wordStats.value
+    }
+  }
+
+  function restoreSyncData(data: ReviewSyncData) {
+    phase.value = data.phase
+    queue.value = data.queue
+    done.value = data.done
+    levels.value = data.levels
+    thresholds.value = data.thresholds
+    wrongToday.value = data.wrongToday
+    history.value = data.history
+    target.value = data.target
+    startedAt.value = data.startedAt
+    elapsedMs.value = data.elapsedMs
+    lastTick.value = 0
+    lastResult.value = data.lastResult
+    finishedToday.value = data.finishedToday
+    lastFinishedDay.value = data.lastFinishedDay
+    wordStats.value = data.wordStats
+  }
+
   return {
     phase,
     queue,
@@ -283,7 +321,9 @@ export const useReviewStore = defineStore('review', () => {
     resetSession,
     resetAll,
     pause,
-    resumeClock
+    resumeClock,
+    exportSyncData,
+    restoreSyncData
   }
 }, {
   persist: {

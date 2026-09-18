@@ -60,7 +60,7 @@ async function handleSubmit() {
     if (mode.value === 'login') {
       if (!validatePassword(password.value)) return
       await auth.signIn(email.value.trim(), password.value)
-      notice.value = '登录成功，当前使用本地学习数据'
+      notice.value = '登录成功，请选择学习数据的同步方式'
       return
     }
 
@@ -71,14 +71,14 @@ async function handleSubmit() {
           return
         }
         await auth.verifyRegistration(verificationCode.value.trim())
-        notice.value = '注册成功，当前使用本地学习数据'
+        notice.value = '注册成功，请选择学习数据的同步方式'
         return
       }
       if (!validatePassword(password.value)) return
       const result = await auth.beginRegistration(email.value.trim(), password.value)
       notice.value = result === 'verification-required'
         ? '验证码已发送到邮箱，请输入后完成注册'
-        : '注册成功，当前使用本地学习数据'
+        : '注册成功，请选择学习数据的同步方式'
       return
     }
 
@@ -254,7 +254,7 @@ async function handleSignOut() {
       <div class="mt-3 flex items-center justify-between gap-3 text-xs text-ink-mute">
         <button v-if="mode === 'login'" class="hover:text-zhuhong" type="button" @click="switchMode('reset')">忘记密码？</button>
         <button v-else class="hover:text-zhuhong" type="button" @click="switchMode('login')">返回登录</button>
-        <span class="text-right">学习内容仍只保存在本机</span>
+        <span class="text-right">登录后可在云同步中自行选择数据去向</span>
       </div>
     </div>
   </section>
