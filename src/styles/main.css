@@ -806,21 +806,6 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   object-fit: cover;
 }
 
-.profile-avatar-edit {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--card);
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--paper);
-}
-
 .profile-account-action,
 .profile-back-button {
   display: inline-flex;
@@ -878,7 +863,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 
 .profile-identity-card {
   margin-top: 18px;
-  padding: 16px 18px 0;
+  padding: 16px 18px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -890,8 +875,24 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   padding-top: 0;
 }
 
-.profile-identity-card .cloud-sync-heading {
-  padding-top: 16px;
+.profile-account-edit-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.profile-account-edit-link:hover {
+  color: var(--zhuhong);
+}
+
+.profile-account-edit-link:active {
+  transform: scale(.985);
 }
 
 .profile-section-heading {
@@ -1241,6 +1242,90 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   color: var(--zhuhong);
 }
 
+.profile-account-page {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.profile-account-layout {
+  display: grid;
+  gap: 20px;
+  max-width: 640px;
+  min-width: 0;
+}
+
+.profile-account-editor {
+  margin-top: 0;
+}
+
+.profile-account-avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0 18px;
+}
+
+.profile-account-avatar-large {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  font-size: 34px;
+}
+
+.profile-account-form {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.profile-form-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-form-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  color: var(--ink);
+  outline: none;
+  padding: 0 13px;
+  transition: border-color 180ms ease, opacity 180ms ease;
+}
+
+.profile-form-input:focus {
+  border-color: var(--zhuhong);
+}
+
+.profile-form-input:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.profile-form-hint {
+  color: var(--ink-mute);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.profile-account-save {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 @media (max-width: 360px) {
   .profile-sync-summary,
   .profile-sync-policy {
@@ -1260,7 +1345,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 
 @media (min-width: 768px) {
   .profile-shell {
-    max-width: 760px;
+    max-width: 900px;
   }
 
   .profile-shell > .profile-settings {
@@ -1272,12 +1357,59 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1199px) {
+  .profile-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "identity"
+      "sync"
+      "settings";
+    row-gap: 0;
+  }
+
+  .profile-shell > .profile-title-row {
+    grid-area: title;
+  }
+
+  .profile-shell > .profile-identity-card {
+    grid-area: identity;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-sync-card {
+    grid-area: sync;
+    margin-top: 16px;
+  }
+
+  .profile-shell > .profile-settings {
+    grid-area: settings;
+    margin-top: 20px;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .profile-shell > .profile-settings > .profile-settings-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .profile-shell > .profile-settings .profile-section {
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-settings .profile-stats-section {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1200px) {
   .profile-shell {
     grid-template-columns: minmax(250px, .78fr) minmax(0, 1.62fr);
     grid-template-areas:
       "title title"
-      "identity settings";
+      "identity settings"
+      "sync settings";
     align-items: start;
     column-gap: 28px;
     row-gap: 20px;
@@ -1290,6 +1422,11 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 
   .profile-shell > .profile-identity-card {
     grid-area: identity;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-sync-card {
+    grid-area: sync;
     margin-top: 0;
   }
 

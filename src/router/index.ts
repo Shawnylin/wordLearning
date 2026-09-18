@@ -38,6 +38,11 @@ const router = createRouter({
       component: () => import('../views/ModelSettingsView.vue')
     },
     {
+      path: '/profile/account',
+      name: 'account',
+      component: () => import('../views/ProfileAccountView.vue')
+    },
+    {
       path: '/profile/changelog',
       name: 'changelog',
       component: () => import('../views/ChangelogView.vue')

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
-  ImagePlus, KeyRound, LoaderCircle, LogIn, LogOut, Mail, RotateCcw, ShieldCheck
+  ChevronRight, KeyRound, LoaderCircle, LogIn, LogOut, Mail, RotateCcw, ShieldCheck
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
+import { readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
 
 type AuthMode = 'login' | 'register' | 'reset'
 
@@ -22,7 +23,6 @@ const errorMessage = ref('')
 const avatarError = ref('')
 const avatarDataUrl = ref('')
 const avatarInput = ref<HTMLInputElement | null>(null)
-const avatarStorageKey = 'word-learning-profile-avatar'
 
 const pendingVerification = computed(() => auth.registrationPending || auth.resetPending)
 const submitLabel = computed(() => {
@@ -33,11 +33,7 @@ const submitLabel = computed(() => {
 
 onMounted(() => {
   void auth.initialize()
-  try {
-    avatarDataUrl.value = localStorage.getItem(avatarStorageKey) ?? ''
-  } catch {
-    avatarDataUrl.value = ''
-  }
+  avatarDataUrl.value = readProfileAvatar()
 })
 
 function openAvatarPicker() {
@@ -62,11 +58,10 @@ function handleAvatarChange(event: Event) {
   const reader = new FileReader()
   reader.onload = () => {
     if (typeof reader.result !== 'string') return
-    try {
-      localStorage.setItem(avatarStorageKey, reader.result)
+    if (saveProfileAvatar(reader.result)) {
       avatarDataUrl.value = reader.result
       avatarError.value = ''
-    } catch {
+    } else {
       avatarError.value = '头像保存失败，请换一张图片'
     }
   }
@@ -171,7 +166,6 @@ async function handleSignOut() {
       <button class="profile-account-avatar" type="button" aria-label="更换头像" @click="openAvatarPicker">
         <img v-if="avatarDataUrl" :src="avatarDataUrl" alt="" />
         <span v-else>{{ auth.currentUser?.displayName.slice(0, 1) || '我' }}</span>
-        <span class="profile-avatar-edit" aria-hidden="true"><ImagePlus :size="13" /></span>
       </button>
       <div class="min-w-0 flex-1">
         <p class="profile-eyebrow">{{ auth.currentUser ? '已登录' : '个人信息' }}</p>
@@ -193,6 +187,11 @@ async function handleSignOut() {
     </div>
 
     <p v-if="props.compact && avatarError" class="mt-3 rounded-xl bg-zhuhong-soft p-3 text-sm leading-6 text-zhuhong" role="alert">{{ avatarError }}</p>
+
+    <RouterLink v-if="props.compact" class="profile-account-edit-link" to="/profile/account">
+      <span>设置名称和头像</span>
+      <ChevronRight :size="17" aria-hidden="true" />
+    </RouterLink>
 
     <div v-if="!props.compact" class="flex items-start justify-between gap-4">
       <div class="flex min-w-0 items-start gap-3">
@@ -338,6 +337,6 @@ async function handleSignOut() {
       </div>
     </div>
 
-    <input ref="avatarInput" class="sr-only" type="file" accept="image/*" @change="handleAvatarChange" />
+    <input v-if="props.compact" ref="avatarInput" class="sr-only" type="file" accept="image/*" @change="handleAvatarChange" />
   </section>
 </template>

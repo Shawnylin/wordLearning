@@ -66,6 +66,12 @@ export const useAuthStore = defineStore('auth', () => {
     return user !== null
   }
 
+  function setUser(rawUser: unknown): boolean {
+    const user = normalizeUser({ user: rawUser })
+    currentUser.value = user
+    return user !== null
+  }
+
   function requireAuth() {
     const auth = cloudbaseAuth
     if (!auth) {
@@ -117,6 +123,27 @@ export const useAuthStore = defineStore('auth', () => {
       const result = await requireAuth().signInWithPassword({ email, password })
       if (result.error) throw new Error(messageFrom(result.error, '登录失败'))
       if (!setSession(result.data?.session)) throw new Error('登录未建立有效会话，请稍后重试')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateProfileName(name: string) {
+    const normalizedName = name.trim()
+    if (!normalizedName) throw new Error('请输入名称')
+    if (normalizedName.length > 32) throw new Error('名称不能超过 32 个字符')
+
+    await initialize()
+    if (!currentUser.value) throw new Error('请先登录后再设置名称')
+
+    loading.value = true
+    try {
+      const result = await requireAuth().updateUser({ username: normalizedName })
+      if (result.error) throw new Error(messageFrom(result.error, '名称保存失败'))
+
+      const refreshed = await requireAuth().getUser()
+      if (refreshed.error) throw new Error(messageFrom(refreshed.error, '名称已保存，但刷新资料失败'))
+      if (!setUser(refreshed.data?.user)) throw new Error('名称已保存，但未能刷新当前用户资料')
     } finally {
       loading.value = false
     }
@@ -225,6 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
     resetPending,
     initialize,
     signIn,
+    updateProfileName,
     beginRegistration,
     verifyRegistration,
     beginPasswordReset,

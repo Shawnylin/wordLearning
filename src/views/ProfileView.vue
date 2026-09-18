@@ -15,6 +15,9 @@ import CloudSyncPanel from '../components/CloudSyncPanel.vue'
 
       <section class="profile-section profile-identity-card" aria-label="个人信息">
         <AuthPanel compact />
+      </section>
+
+      <section class="profile-section profile-sync-card" aria-label="云同步">
         <CloudSyncPanel compact />
       </section>
 
