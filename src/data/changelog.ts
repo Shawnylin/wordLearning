@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.7.2',
+    date: '2026-09-20',
+    title: '修复 CloudBase 更新下载问题',
+    changes: [
+      '修复在 CloudBase 默认域名检查更新后，点击更新可能下载 index.html 而不是重新打开应用的问题。',
+      '保留 Service Worker 的更新激活与本地数据，不影响学习记录和设置。'
+    ]
+  },
+  {
     version: '0.7.1',
     date: '2026-09-19',
     title: '修复卡片内连续搜词',

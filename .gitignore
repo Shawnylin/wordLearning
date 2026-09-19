@@ -4,6 +4,7 @@ node_modules
 .env
 .env.*
 !.env.example
+docs/.local/
 .claude
 .claude.json
 测试问题汇总.md
