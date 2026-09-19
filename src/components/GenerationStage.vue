@@ -117,7 +117,7 @@ onDeactivated(stopAnimation)
             </div>
           </div>
           <div v-else-if="hasContent" class="generation-result"><slot /></div>
-          <p v-else class="generation-empty text-ink-mute">暂未生成内容，请收起卡片后重试。</p>
+          <p v-else class="generation-empty text-ink-mute">暂无可显示内容，请点击发送按钮重试。</p>
         </div>
       </div>
     </div>

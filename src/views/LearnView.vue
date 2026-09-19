@@ -26,6 +26,18 @@ const loading = computed(() => mode.value === 'idiom' ? store.idiomLoading : sto
 const error = computed(() => mode.value === 'idiom' ? store.idiomError : store.compareError)
 const hasContent = computed(() => mode.value === 'idiom' ? !!store.currentIdiom : !!store.currentCompare)
 const canSend = computed(() => !loading.value && (mode.value === 'idiom' ? !!word.value.trim() : words.value.filter(w => w.value.trim()).length >= 2))
+const inputWords = computed(() => words.value.map(item => item.value.trim()).filter(Boolean))
+const hasQueryChanges = computed(() => {
+  if (!expanded.value) return false
+  if (mode.value === 'idiom') {
+    const input = word.value.trim()
+    return !!input && input !== (store.currentIdiom?.word.trim() || '')
+  }
+
+  const currentWords = store.currentCompare?.words.map(value => value.trim()).filter(Boolean) || []
+  return inputWords.value.length >= 2
+    && (inputWords.value.length !== currentWords.length || inputWords.value.some((value, index) => value !== currentWords[index]))
+})
 
 // Old comparison links and review links now open the shared workspace.
 watch(() => [route.path, route.query.mode, route.query.loadId, route.query.word], () => {
@@ -76,12 +88,18 @@ async function submit() {
   preparingSubmission = true
   const submittedMode = mode.value
   const submittedRoute = route.fullPath
+  const wasExpanded = expanded.value
   try {
-    await settleViewportAfterBlur()
+    if (wasExpanded) {
+      const active = document.activeElement
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) active.blur()
+    } else {
+      await settleViewportAfterBlur()
+    }
   } finally {
     preparingSubmission = false
   }
-  if (mode.value !== submittedMode || route.fullPath !== submittedRoute || !canSend.value) return
+  if (mode.value !== submittedMode || route.fullPath !== submittedRoute || !canSend.value || (wasExpanded && !expanded.value)) return
   expanded.value = true
   if (mode.value === 'idiom') {
     await store.searchIdiom(word.value.trim(), settings.apiConfig)
@@ -125,7 +143,7 @@ function handlePagePointerDown(event: PointerEvent) {
 
 <template>
   <div class="study-page unified-study min-h-screen px-4 pt-6 pb-4" @pointerdown="handlePagePointerDown">
-    <StudyCommand ref="command" v-model="word" :words="words" :mode="mode" :expanded="expanded" :loading="loading" :can-send="canSend"
+    <StudyCommand ref="command" v-model="word" :words="words" :mode="mode" :expanded="expanded" :loading="loading" :can-send="canSend" :has-query-changes="hasQueryChanges"
       @update-word="(id, value) => { const item = words.find(w => w.id === id); if (item) item.value = value }"
       @remove="removeWord" @submit="submit" @close="closeResult" />
 

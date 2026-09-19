@@ -8,6 +8,7 @@ const props = defineProps<{
   expanded: boolean
   loading: boolean
   canSend: boolean
+  hasQueryChanges: boolean
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -20,6 +21,8 @@ const root = ref<HTMLElement>()
 const focused = ref(false)
 const comparing = computed(() => props.mode === 'compare')
 const actionVisible = computed(() => props.expanded || (!comparing.value && (focused.value || !!props.modelValue.trim() || props.loading)))
+const submitLabel = computed(() => comparing.value ? '发送对比' : '发送词语')
+const submitAction = computed(() => !props.expanded || (!props.loading && props.canSend && props.hasQueryChanges))
 const liquidId = `study-input-${useId()}`
 const firstValue = computed(() => comparing.value ? props.words[0]?.value || '' : props.modelValue)
 function updateFirst(event: Event) {
@@ -28,7 +31,7 @@ function updateFirst(event: Event) {
   else emit('update:modelValue', value)
 }
 function enter(event: KeyboardEvent) {
-  if (event.isComposing || props.expanded) return
+  if (event.isComposing || props.loading || (props.expanded && !submitAction.value)) return
   emit('submit')
 }
 function focusWord(id: number) {
@@ -70,9 +73,9 @@ defineExpose({ focusWord })
         </label>
       </TransitionGroup>
     </div>
-    <button class="study-top-action glass-control" :class="{ ready: canSend || expanded }" :inert="!actionVisible" :tabindex="actionVisible ? 0 : -1" :disabled="!expanded && !canSend" :aria-label="expanded ? '收起卡片' : loading ? '正在生成' : '发送词语'" @pointerdown.prevent @click="expanded ? emit('close') : emit('submit')">
+    <button class="study-top-action glass-control" :class="{ ready: submitAction && canSend }" :inert="!actionVisible" :tabindex="actionVisible ? 0 : -1" :disabled="submitAction ? !canSend : false" :aria-label="submitAction ? (loading ? (comparing ? '正在生成对比' : '正在生成') : submitLabel) : '收起卡片'" @pointerdown.prevent @click="submitAction ? emit('submit') : emit('close')">
       <Transition name="action-icon" mode="out-in">
-        <X v-if="expanded" key="close" :size="22" />
+        <X v-if="expanded && !submitAction" key="close" :size="22" />
         <RefreshCw v-else-if="loading" key="loading" :size="20" class="word-command-refresh" />
         <ArrowUp v-else key="send" :size="22" />
       </Transition>

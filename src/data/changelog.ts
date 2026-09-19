@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.7.1',
+    date: '2026-09-19',
+    title: '修复卡片内连续搜词',
+    changes: [
+      '卡片已有内容时切换词语会保留当前内容，避免流式生成期间出现空卡片。',
+      '卡片展开时修改词语后直接显示发送按钮，无需先收起卡片；输入框回车也可以重新发送。'
+    ]
+  },
+  {
     version: '0.7.0',
     date: '2026-09-18',
     title: '个人页重新整理',

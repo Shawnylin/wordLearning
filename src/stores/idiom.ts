@@ -73,6 +73,17 @@ export const useIdiomStore = defineStore('idiom', () => {
     tokenStats.value.requestCount += 1
   }
 
+  function streamingIdiom(word: string, draft: Partial<IdiomData>): IdiomData | null {
+    const hasVisibleContent = [draft.pinyin, draft.explanation, draft.origin, draft.example, draft.usage]
+      .some(value => typeof value === 'string' && value.trim()) || !!draft.relatedIdioms?.length
+    if (!hasVisibleContent) return null
+    return {
+      id: 'streaming', word, pinyin: draft.pinyin || '', explanation: draft.explanation || '',
+      origin: draft.origin || '', example: draft.example || '', usage: draft.usage || '',
+      relatedIdioms: draft.relatedIdioms || [], createdAt: Date.now()
+    }
+  }
+
   /**
    * 搜索成语
    */
@@ -98,10 +109,11 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     try {
       const result = await generateIdiomContent(trimmedWord, { ...config }, draft => {
-        currentIdiom.value = {
-          id: 'streaming', word: trimmedWord, pinyin: draft.pinyin || '', explanation: draft.explanation || '',
-          origin: draft.origin || '', example: draft.example || '', usage: draft.usage || '',
-          relatedIdioms: draft.relatedIdioms || [], createdAt: Date.now()
+        // Keep a usable card on screen while replacing an existing result.
+        // A leading JSON fragment is not content and must not replace it with a blank card.
+        if (!previousIdiom) {
+          const streaming = streamingIdiom(trimmedWord, draft)
+          if (streaming) currentIdiom.value = streaming
         }
       })
 
@@ -147,10 +159,9 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     try {
       const result = await generateIdiomContent(trimmedWord, { ...config }, draft => {
-        currentIdiom.value = {
-          id: 'streaming', word: trimmedWord, pinyin: draft.pinyin || '', explanation: draft.explanation || '',
-          origin: draft.origin || '', example: draft.example || '', usage: draft.usage || '',
-          relatedIdioms: draft.relatedIdioms || [], createdAt: Date.now()
+        if (!previousIdiom) {
+          const streaming = streamingIdiom(trimmedWord, draft)
+          if (streaming) currentIdiom.value = streaming
         }
       })
 
@@ -207,10 +218,12 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     try {
       const result = await generateComparison(trimmedWords, { ...config }, draft => {
-        currentCompare.value = {
-          id: 'streaming', words: trimmedWords,
-          content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
-          tokenUsage: 0, createdAt: Date.now()
+        if (!previousCompare && Object.values(draft).some(value => typeof value === 'string' && value.trim())) {
+          currentCompare.value = {
+            id: 'streaming', words: trimmedWords,
+            content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
+            tokenUsage: 0, createdAt: Date.now()
+          }
         }
       })
       addTokenUsage(result.tokenUsage)
@@ -256,10 +269,12 @@ export const useIdiomStore = defineStore('idiom', () => {
 
     try {
       const result = await generateComparison(trimmedWords, { ...config }, draft => {
-        currentCompare.value = {
-          id: 'streaming', words: trimmedWords,
-          content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
-          tokenUsage: 0, createdAt: Date.now()
+        if (!previousCompare && Object.values(draft).some(value => typeof value === 'string' && value.trim())) {
+          currentCompare.value = {
+            id: 'streaming', words: trimmedWords,
+            content: { meaningDiff: draft.meaningDiff || '', usageDiff: draft.usageDiff || '', scenarios: draft.scenarios || '', confusionPoints: draft.confusionPoints || '' },
+            tokenUsage: 0, createdAt: Date.now()
+          }
         }
       })
       addTokenUsage(result.tokenUsage)
