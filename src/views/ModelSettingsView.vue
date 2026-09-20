@@ -19,7 +19,7 @@ interface ModelChoice {
 const router = useRouter()
 const settings = useSettingsStore()
 const showPdfAdvanced = ref(false)
-const showSpeechAdvanced = ref(false)
+const showSpeechAdvanced = ref(true)
 
 const modelChoices = computed<ModelChoice[]>(() => {
   const seen = new Set<string>()
@@ -58,8 +58,6 @@ const pdfModelKey = computed(() => {
   return findChoice(settings.pdfConfig.baseUrl, settings.pdfConfig.model)?.key || ''
 })
 
-const speechModelKey = computed(() => findChoice(settings.speechConfig.baseUrl, settings.speechConfig.model)?.key || '')
-
 function getChoice(key: string) {
   return modelChoices.value.find(choice => choice.key === key)
 }
@@ -83,12 +81,6 @@ function selectPdfModel(key: string) {
   settings.pdfUseLearningModel = false
 }
 
-function selectSpeechModel(key: string) {
-  const choice = getChoice(key)
-  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
-  if (!choice || !profile) return
-  settings.speechConfig = { ...settings.speechConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model }
-}
 </script>
 
 <template>
@@ -143,18 +135,9 @@ function selectSpeechModel(key: string) {
             <div class="settings-panel-icon"><Volume2 :size="17" /></div>
             <div><h2 id="speech-model-title">语音模型</h2><p>用于文本朗读、发音练习等语音场景</p></div>
           </div>
-          <label class="settings-select-label" for="speech-model-select">当前模型</label>
-          <div class="settings-select-wrap">
-            <Volume2 :size="17" aria-hidden="true" />
-            <select id="speech-model-select" :value="speechModelKey" :disabled="!modelChoices.length" @change="selectSpeechModel(($event.target as HTMLSelectElement).value)">
-              <option value="" disabled>{{ modelChoices.length ? '选择服务商与模型' : '请先添加模型服务商' }}</option>
-              <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
-            </select>
-          </div>
           <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
-          <p class="settings-voice-help">将使用上方选中的模型朗读一小段示例文本。</p>
           <details id="speech" class="settings-advanced" :open="showSpeechAdvanced" @toggle="showSpeechAdvanced = ($event.target as HTMLDetailsElement).open">
-            <summary><span>语音详细设置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
+            <summary><span>MiMo 朗读设置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
             <div class="settings-advanced-body"><SpeechSettings /></div>
           </details>
         </section>
