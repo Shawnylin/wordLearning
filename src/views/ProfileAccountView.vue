@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, LoaderCircle, Save } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import AuthPanel from '../components/AuthPanel.vue'
 import { useAuthStore } from '../stores/auth'
-import { readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
+import { PROFILE_IDENTITY_CHANGED_EVENT, prepareProfileAvatar, readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -16,10 +16,16 @@ const avatarError = ref('')
 const errorMessage = ref('')
 const notice = ref('')
 
+function refreshAvatar() {
+  avatarDataUrl.value = readProfileAvatar()
+}
+
 onMounted(() => {
   void auth.initialize()
-  avatarDataUrl.value = readProfileAvatar()
+  refreshAvatar()
+  window.addEventListener(PROFILE_IDENTITY_CHANGED_EVENT, refreshAvatar)
 })
+onBeforeUnmount(() => window.removeEventListener(PROFILE_IDENTITY_CHANGED_EVENT, refreshAvatar))
 
 watch(() => auth.currentUser, (user) => {
   name.value = user?.username ?? ''
@@ -29,7 +35,7 @@ function openAvatarPicker() {
   avatarInput.value?.click()
 }
 
-function handleAvatarChange(event: Event) {
+async function handleAvatarChange(event: Event) {
   const input = event.target
   if (!(input instanceof HTMLInputElement)) return
   const file = input.files?.[0]
@@ -44,18 +50,17 @@ function handleAvatarChange(event: Event) {
     return
   }
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    if (typeof reader.result !== 'string') return
-    if (!saveProfileAvatar(reader.result)) {
+  try {
+    const dataUrl = await prepareProfileAvatar(file)
+    if (!saveProfileAvatar(dataUrl)) {
       avatarError.value = '头像保存失败，请换一张图片'
       return
     }
-    avatarDataUrl.value = reader.result
+    avatarDataUrl.value = dataUrl
     avatarError.value = ''
+  } catch {
+    avatarError.value = '头像读取失败，请重试'
   }
-  reader.onerror = () => { avatarError.value = '头像读取失败，请重试' }
-  reader.readAsDataURL(file)
 }
 
 async function saveName() {
@@ -92,7 +97,7 @@ async function saveName() {
           </button>
           <div>
             <p class="profile-row-title">头像</p>
-            <p class="profile-row-caption">点击头像更换，仅保存在本机</p>
+            <p class="profile-row-caption">点击更换；开启云同步后会同步到其他设备</p>
           </div>
         </div>
         <p v-if="avatarError" class="profile-inline-feedback is-error" role="alert">{{ avatarError }}</p>
@@ -102,7 +107,7 @@ async function saveName() {
             <span>名称</span>
             <input v-model="name" class="profile-form-input" maxlength="32" placeholder="例如：小林" type="text" :disabled="!auth.signedIn" />
           </label>
-          <p class="profile-form-hint">{{ auth.signedIn ? '名称会保存到账号，并在登录后保持同步。' : '登录后可以设置并同步账号名称。' }}</p>
+          <p class="profile-form-hint">{{ auth.signedIn ? '名称与头像会作为同一份个人资料同步。' : '登录后可以同步名称和头像。' }}</p>
           <p v-if="errorMessage" class="profile-inline-feedback is-error" role="alert">{{ errorMessage }}</p>
           <p v-if="notice" class="profile-inline-feedback is-success" role="status">{{ notice }}</p>
           <button class="btn-primary profile-account-save" type="submit" :disabled="auth.loading || !auth.signedIn || !name.trim()">

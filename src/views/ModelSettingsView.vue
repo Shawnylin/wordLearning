@@ -19,7 +19,7 @@ interface ModelChoice {
 const router = useRouter()
 const settings = useSettingsStore()
 const showPdfAdvanced = ref(false)
-const showSpeechAdvanced = ref(true)
+const showSpeechAdvanced = ref(false)
 
 const modelChoices = computed<ModelChoice[]>(() => {
   const seen = new Set<string>()
@@ -98,7 +98,7 @@ function selectPdfModel(key: string) {
         <section class="settings-panel settings-role-panel" aria-labelledby="learning-model-title">
           <div class="settings-panel-heading">
             <div class="settings-panel-icon"><Bot :size="17" /></div>
-            <div><h2 id="learning-model-title">学习查词模型</h2><p>用于单词查询、释义生成等学习场景</p></div>
+            <div><h2 id="learning-model-title">学习模型</h2><p>查词与内容生成</p></div>
           </div>
           <label class="settings-select-label" for="learning-model-select">当前模型</label>
           <div class="settings-select-wrap">
@@ -113,7 +113,7 @@ function selectPdfModel(key: string) {
         <section class="settings-panel settings-role-panel" aria-labelledby="pdf-model-title">
           <div class="settings-panel-heading">
             <div class="settings-panel-icon"><FileText :size="17" /></div>
-            <div><h2 id="pdf-model-title">PDF 分析模型</h2><p>用于文档解析、内容提取、问答总结等 PDF 场景</p></div>
+            <div><h2 id="pdf-model-title">PDF 模型</h2><p>默认跟随学习模型</p></div>
           </div>
           <label class="settings-select-label" for="pdf-model-select">当前模型</label>
           <div class="settings-select-wrap">
@@ -125,7 +125,7 @@ function selectPdfModel(key: string) {
             </select>
           </div>
           <details class="settings-advanced" :open="showPdfAdvanced" @toggle="showPdfAdvanced = ($event.target as HTMLDetailsElement).open">
-            <summary><span>独立配置与测试</span><ChevronDown :size="15" aria-hidden="true" /></summary>
+            <summary><span>独立配置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
             <div class="settings-advanced-body"><PdfModelSettings /></div>
           </details>
         </section>
@@ -133,7 +133,7 @@ function selectPdfModel(key: string) {
         <section class="settings-panel settings-role-panel settings-voice-panel" aria-labelledby="speech-model-title">
           <div class="settings-panel-heading">
             <div class="settings-panel-icon"><Volume2 :size="17" /></div>
-            <div><h2 id="speech-model-title">语音模型</h2><p>用于文本朗读、发音练习等语音场景</p></div>
+            <div><h2 id="speech-model-title">语音</h2><p>MiMo 朗读与试听</p></div>
           </div>
           <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
           <details id="speech" class="settings-advanced" :open="showSpeechAdvanced" @toggle="showSpeechAdvanced = ($event.target as HTMLDetailsElement).open">

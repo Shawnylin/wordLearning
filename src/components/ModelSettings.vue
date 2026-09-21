@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
 import { nextTick, reactive, ref, watch } from 'vue'
-import { Bot, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
+import { Bot, Pencil, Plus, X } from 'lucide-vue-next'
 import { useSettingsStore } from '../stores/settings'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
 import ApiKeyInput from './ApiKeyInput.vue'
@@ -11,7 +11,6 @@ const draft = reactive({ id: '', name: '', apiKey: '', baseUrl: '', model: '', m
 const busy = ref('')
 const message = ref('')
 const failed = ref(false)
-const editing = ref(false)
 const providerOpen = ref(false)
 const providerMounted = ref(false)
 const addTrigger = ref<HTMLButtonElement>()
@@ -24,7 +23,6 @@ let providerContentAnimation: Animation | undefined
 function loadActiveProfile() {
   const profile = settings.profiles.find(p => p.id === settings.activeProfileId)
   Object.assign(draft, profile ? { ...profile, models: [...profile.models] } : { ...settings.apiConfig, id: '', name: 'DeepSeek', models: [] })
-  editing.value = false
   message.value = ''
 }
 loadActiveProfile()
@@ -45,7 +43,9 @@ function positionProvider(source?: HTMLElement) {
 }
 async function openEditor(source?: HTMLElement) {
   positionProvider(source)
+  providerOpen.value = false
   providerMounted.value = true
+  await nextTick()
   providerOpen.value = true
   await nextTick()
   providerDialog.value?.focus()
@@ -53,27 +53,17 @@ async function openEditor(source?: HTMLElement) {
 function editProfile(id: string, event?: Event) {
   settings.selectProfile(id)
   loadActiveProfile()
-  editing.value = true
   void openEditor(event?.currentTarget instanceof HTMLElement ? event.currentTarget : undefined)
 }
 function add(event: Event) {
   Object.assign(draft, { id: '', name: '', apiKey: '', baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash', models: [] })
-  editing.value = true
   message.value = ''
   void openEditor(event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined)
 }
 function closeEditor() {
   if (draft.id) loadActiveProfile()
-  else { message.value = ''; editing.value = false }
+  else message.value = ''
   providerOpen.value = false
-}
-function persistModel(text = '模型已切换') {
-  if (!draft.id) return
-  const profile = settings.profiles.find(p => p.id === draft.id)
-  if (!profile) return
-  settings.saveProfile({ ...profile, model: draft.model, models: [...draft.models] })
-  failed.value = false
-  message.value = text
 }
 async function run(action: 'models' | 'test') {
   busy.value = action
@@ -84,8 +74,7 @@ async function run(action: 'models' | 'test') {
     if (action === 'models') {
       draft.models = await fetchModels(config)
       if (!draft.models.includes(draft.model)) draft.model = draft.models[0]
-      if (!editing.value && draft.id) persistModel(`已获取 ${draft.models.length} 个模型，当前为 ${draft.model}`)
-      else message.value = `已获取 ${draft.models.length} 个模型`
+      message.value = `已获取 ${draft.models.length} 个模型`
     } else message.value = await testConnection(config)
   } catch (error) {
     failed.value = true
@@ -99,17 +88,12 @@ function save() {
     const id = draft.id || crypto.randomUUID()
     settings.saveProfile({ ...draft, id, name: draft.name.trim() || draft.model.trim(), apiKey: draft.apiKey.trim(), baseUrl: draft.baseUrl.trim(), model: draft.model.trim(), models: [...draft.models] })
     draft.id = id
-    editing.value = false
     failed.value = false
     message.value = '已保存并启用'
     providerOpen.value = false
   } catch (error) { failed.value = true; message.value = (error as Error).message }
 }
 function remove() { settings.deleteProfile(draft.id); loadActiveProfile(); providerOpen.value = false }
-function removeProfile(id: string) {
-  settings.deleteProfile(id)
-  if (draft.id === id || !settings.profiles.length) loadActiveProfile()
-}
 function providerKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.preventDefault()
@@ -161,9 +145,8 @@ function providerMorph(el: Element, done: () => void, leaving = false) {
   <section class="card settings-card model-settings">
     <header class="settings-card-header">
       <div>
-        <p class="settings-overline">服务商</p>
-        <h2 class="settings-title">模型</h2>
-        <p class="settings-description">配置可用于学习、PDF 和语音功能的模型服务商</p>
+        <h2 class="settings-title">模型服务商</h2>
+        <p class="settings-description">统一管理 API 地址、密钥与模型</p>
       </div>
       <button ref="addTrigger" class="settings-icon-button settings-add-button" type="button" aria-label="添加模型服务商" @click="add"><Plus :size="18" /></button>
     </header>
@@ -172,26 +155,18 @@ function providerMorph(el: Element, done: () => void, leaving = false) {
       <div v-for="profile in settings.profiles" :key="profile.id" class="settings-provider-row">
         <button class="settings-provider-main" type="button" @click="selectProvider(profile.id)">
           <span class="settings-provider-icon"><Bot :size="17" /></span>
-          <span class="settings-provider-copy"><strong>{{ profile.name || profile.model }}</strong><small class="break-all">{{ profile.baseUrl }}</small></span>
+          <span class="settings-provider-copy"><strong>{{ profile.name || profile.model }}</strong><small class="break-all">{{ profile.model }}</small></span>
           <span v-if="profile.id === settings.activeProfileId" class="settings-provider-state">使用中</span>
         </button>
         <div class="settings-provider-actions">
           <button class="settings-row-icon" type="button" aria-label="编辑模型服务商" @click="editProfile(profile.id, $event)"><Pencil :size="16" /></button>
-          <button class="settings-row-icon settings-row-icon-danger" type="button" aria-label="删除模型服务商" @click="removeProfile(profile.id)"><Trash2 :size="16" /></button>
         </div>
       </div>
     </div>
     <div v-else class="settings-empty-row">
       <span class="settings-provider-icon"><Bot :size="17" /></span>
-      <span>还没有模型服务商，请点击右上角添加</span>
+      <span>点击右上角添加服务商</span>
     </div>
-
-    <div v-if="!providerOpen && draft.id" class="settings-model-picker">
-      <div class="settings-model-picker-head"><span>模型</span><button class="settings-text-button" :disabled="!!busy" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取列表' }}</button></div>
-      <select v-if="draft.models.length" v-model="draft.model" :disabled="!!busy" @change="!editing && persistModel()"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select>
-      <p v-else class="settings-model-current break-all">{{ draft.model }}<span>未获取列表</span></p>
-    </div>
-    <Motion><p v-if="message" role="status" class="settings-status break-words" :class="failed ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p></Motion>
     <p class="settings-footnote">配置仅保存在本机；密钥只发送至所填地址。测试可能产生费用。</p>
   </section>
 
@@ -217,19 +192,18 @@ function providerMorph(el: Element, done: () => void, leaving = false) {
         >
           <div class="provider-editor-content">
             <header class="provider-editor-heading">
-              <div><p class="settings-overline">模型与 API</p><h2>{{ draft.id ? '编辑模型服务商' : '新增模型服务商' }}</h2><p>配置后可供学习、PDF 和 MiMo 朗读共同使用。</p></div>
+              <div><h2>{{ draft.id ? '编辑服务商' : '添加服务商' }}</h2><p>保存后可在学习、PDF 和朗读中选择。</p></div>
               <button class="provider-editor-close" type="button" aria-label="关闭模型服务商配置" @click="closeEditor"><X :size="18" /></button>
             </header>
             <fieldset :disabled="!!busy" class="settings-form">
               <label class="settings-label">名称<input v-model="draft.name" placeholder="例如：DeepSeek 或 小米 MiMo" /></label>
               <label class="settings-label">API 地址<input v-model="draft.baseUrl" type="url" placeholder="https://api.deepseek.com" autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
               <label class="settings-label">API Key<ApiKeyInput v-model="draft.apiKey" /></label>
-              <label class="settings-label">模型<input v-model="draft.model" placeholder="选择或输入模型" autocapitalize="off" spellcheck="false" /></label>
             </fieldset>
             <div class="settings-model-picker">
-              <div class="settings-model-picker-head"><span>模型列表</span><button class="settings-text-button" :disabled="!!busy" type="button" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取列表' }}</button></div>
+              <div class="settings-model-picker-head"><span>模型</span><button class="settings-text-button" :disabled="!!busy" type="button" @click="run('models')">{{ busy === 'models' ? '获取中…' : '获取列表' }}</button></div>
               <select v-if="draft.models.length" v-model="draft.model" :disabled="!!busy"><option v-for="model in draft.models" :key="model" :value="model">{{ model }}</option></select>
-              <p v-else class="settings-model-current break-all">{{ draft.model || '填写 API 后获取模型列表' }}<span>也可以手动填写</span></p>
+              <input v-else v-model="draft.model" placeholder="获取列表或手动填写" autocapitalize="off" spellcheck="false" />
             </div>
             <div class="settings-actions provider-editor-actions">
               <button class="btn-primary" type="button" @click="save">保存并启用</button>

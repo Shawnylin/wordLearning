@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import {
   applyLocalSyncPayload,
   buildLocalSyncPayload,
+  hasSameSyncContent,
   loadRemoteSyncPayload,
   mergeSyncPayload,
   saveRemoteSyncPayload,
@@ -13,6 +14,7 @@ import type { LocalSyncPayload, SyncChoice, SyncDomain, SyncState, SyncSummary }
 import { useDailyStore } from './daily'
 import { useIdiomStore } from './idiom'
 import { useReviewStore } from './review'
+import { PROFILE_IDENTITY_CHANGED_EVENT } from '../utils/profileAvatar'
 
 interface SyncDecisionRecord {
   choice: SyncChoice
@@ -26,7 +28,7 @@ const DECISION_PREFIX = 'word-learning-cloud-sync:'
 const STATE_PREFIX = 'word-learning-cloud-sync-state:'
 const AUTO_CHANGE_DELAY = 45_000
 const RETRY_DELAYS = [30_000, 120_000, 600_000] as const
-const SYNC_DOMAINS: SyncDomain[] = ['idiom', 'review', 'daily']
+const SYNC_DOMAINS: SyncDomain[] = ['profile', 'idiom', 'review', 'daily']
 
 export const syncChoiceLabels: Record<SyncChoice, string> = {
   'no-upload': '仅在本机',
@@ -74,7 +76,7 @@ function readDecision(userId: string): SyncDecisionRecord | null {
     const choice = value.choice
     if (typeof choice !== 'string' || !Object.prototype.hasOwnProperty.call(syncChoiceLabels, choice)) return null
     return {
-      choice: choice as SyncChoice,
+      choice: choice === 'no-upload' ? 'no-upload' : 'merge-local-to-cloud',
       completedAt: numberOr(value.completedAt, 0)
     }
   } catch {
@@ -156,7 +158,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
   const autoSyncLabel = computed(() => {
     if (!decision.value) return '首次同步后设置'
     if (decision.value.choice === 'no-upload') return '已关闭'
-    return '变更后 45 秒 · 后台补同步 · 失败递增退避'
+    return '资料或学习记录变更后自动合并'
   })
   const lastCompletedAt = computed(() => syncState.value.lastSyncAt || decision.value?.completedAt || 0)
 
@@ -214,7 +216,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
 
   function startAutoSync() {
     stopAutoSync()
+    const profileChanged = () => markLocalMutation('profile')
+    window.addEventListener(PROFILE_IDENTITY_CHANGED_EVENT, profileChanged)
     autoUnsubscribers = [
+      () => window.removeEventListener(PROFILE_IDENTITY_CHANGED_EVENT, profileChanged),
       useIdiomStore().$subscribe(() => markLocalMutation('idiom')),
       useReviewStore().$subscribe(() => markLocalMutation('review')),
       useDailyStore().$subscribe(() => markLocalMutation('daily'))
@@ -289,7 +294,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         }
         applyingLocalSync = true
         try {
-          applyLocalSyncPayload(result)
+          await applyLocalSyncPayload(result)
         } finally {
           applyingLocalSync = false
         }
@@ -344,12 +349,15 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     error.value = ''
     notice.value = ''
     remoteLoadFailed.value = false
+    remoteSnapshot.value = null
+    remoteSummary.value = null
     const storedDecision = readDecision(userId)
     const storedState = readSyncState(userId, storedDecision?.completedAt || 0)
     syncState.value = storedState
     decision.value = storedDecision
     try {
-      const remoteRecord = await loadRemoteSyncPayload(userId, storedState.lastRemoteUpdatedAt || undefined)
+      const remoteRecord = await loadRemoteSyncPayload(userId)
+      let reconciledRecord: RemoteSyncSnapshot | null = null
       const local = buildLocalSyncPayload()
       localSnapshot.value = local
       localSummary.value = summarizeSyncPayload(local)
@@ -359,31 +367,41 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       }
       prepared.value = true
 
-      if (decision.value && remoteSnapshot.value && decision.value.choice !== 'no-upload') {
+      if (decision.value && remoteRecord && decision.value.choice !== 'no-upload') {
         const merged = mergeSyncPayload(
           local,
-          remoteSnapshot.value,
+          remoteRecord.payload,
           decision.value.choice === 'merge-cloud-to-local' ? 'remote' : 'local'
         )
         applyingLocalSync = true
         try {
-          applyLocalSyncPayload(merged)
+          await applyLocalSyncPayload(merged)
         } finally {
           applyingLocalSync = false
         }
+        if (decision.value.choice === 'merge-local-to-cloud' && !hasSameSyncContent(merged, remoteRecord.payload)) {
+          reconciledRecord = await saveRemoteSyncPayload(userId, merged)
+          remoteSnapshot.value = reconciledRecord.payload
+          remoteSummary.value = summarizeSyncPayload(reconciledRecord.payload)
+        }
         localSnapshot.value = buildLocalSyncPayload()
         localSummary.value = summarizeSyncPayload(localSnapshot.value)
+      } else if (decision.value?.choice === 'merge-local-to-cloud') {
+        reconciledRecord = await saveRemoteSyncPayload(userId, local)
+        remoteSnapshot.value = reconciledRecord.payload
+        remoteSummary.value = summarizeSyncPayload(reconciledRecord.payload)
       }
 
       const completedAt = Date.now()
       patchSyncState({
         lastSyncAt: completedAt,
-        lastRemoteUpdatedAt: remoteRecord?.updatedAt || storedState.lastRemoteUpdatedAt,
+        lastRemoteUpdatedAt: reconciledRecord?.updatedAt || remoteRecord?.updatedAt || storedState.lastRemoteUpdatedAt,
         retryCount: 0,
         nextRetryAt: 0,
         lastError: ''
       })
       if (!decision.value && !force) open.value = true
+      if (!decision.value) selectedChoice.value = 'merge-local-to-cloud'
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : '读取云端学习数据失败'
       remoteLoadFailed.value = true
@@ -395,6 +413,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       error.value = message
       recordFailure(message, false)
       if (!decision.value && !force) open.value = true
+      if (!decision.value) selectedChoice.value = 'no-upload'
     } finally {
       preparing.value = false
       if (prepared.value) startAutoSync()
@@ -405,7 +424,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     if (!activeUserId.value) return
     open.value = true
     await prepare(activeUserId.value, true)
-    selectedChoice.value = null
+    selectedChoice.value = decision.value?.choice || (canUseCloudChoices.value ? 'merge-local-to-cloud' : 'no-upload')
     notice.value = ''
   }
 

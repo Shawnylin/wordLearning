@@ -143,9 +143,9 @@ function handleImport() {
           </div>
 
           <div class="profile-list-row profile-settings-row">
-            <span class="profile-row-icon text-gold"><Gauge :size="18" /></span>
+            <span class="profile-row-icon text-zhuhong"><Gauge :size="18" /></span>
             <span class="profile-row-main"><span class="profile-row-title">深度思考</span><span class="profile-row-caption">{{ settings.thinkingEnabled ? '已开启' : '已关闭' }}</span></span>
-            <LiquidToggle v-model="settings.thinkingEnabled" label="深度思考" tone="gold" />
+            <LiquidToggle v-model="settings.thinkingEnabled" label="深度思考" />
           </div>
           <Motion><div v-if="settings.thinkingEnabled" class="profile-inline-panel profile-effort-panel">
             <span class="profile-row-caption">强度</span>

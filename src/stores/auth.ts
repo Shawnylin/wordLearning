@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { ResetPasswordForEmailRes, SignUpRes } from '@cloudbase/js-sdk/auth'
 import { cloudbaseAuth, cloudbaseConfigured } from '../services/cloudbase'
+import { saveProfileName } from '../utils/profileAvatar'
 
 export interface CloudbaseUser {
   id: string
@@ -128,7 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updateProfileName(name: string) {
+  async function updateProfileName(name: string, updatedAt = Date.now()) {
     const normalizedName = name.trim()
     if (!normalizedName) throw new Error('请输入名称')
     if (normalizedName.length > 32) throw new Error('名称不能超过 32 个字符')
@@ -144,6 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
       const refreshed = await requireAuth().getUser()
       if (refreshed.error) throw new Error(messageFrom(refreshed.error, '名称已保存，但刷新资料失败'))
       if (!setUser(refreshed.data?.user)) throw new Error('名称已保存，但未能刷新当前用户资料')
+      saveProfileName(normalizedName, updatedAt)
     } finally {
       loading.value = false
     }

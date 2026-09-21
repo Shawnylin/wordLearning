@@ -1,12 +1,15 @@
 import { useDailyStore } from '../stores/daily'
 import { useIdiomStore } from '../stores/idiom'
 import { useReviewStore } from '../stores/review'
+import { useAuthStore } from '../stores/auth'
 import { cloudbaseRdb } from './cloudbase'
+import { readProfileIdentity, saveProfileIdentity } from '../utils/profileAvatar'
 import type { CompareRecord } from '../types/idiom'
 import type {
   DailySyncData,
   IdiomSyncData,
   LocalSyncPayload,
+  ProfileSyncData,
   ReviewSyncData,
   ReviewSyncWordStat,
   SyncSummary
@@ -40,16 +43,23 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-function isSyncPayload(value: unknown): value is LocalSyncPayload {
-  if (!isRecord(value) || value.version !== 1 || typeof value.capturedAt !== 'number') return false
+function parseSyncPayload(value: unknown): LocalSyncPayload | null {
+  if (!isRecord(value) || ![1, 2].includes(Number(value.version)) || typeof value.capturedAt !== 'number') return null
   const idiom = value.idiom
   const review = value.review
   const daily = value.daily
-  if (!isRecord(idiom) || !isRecord(review) || !isRecord(daily)) return false
-  if (!isRecord(idiom.idiomCache) || !Array.isArray(idiom.searchHistory) || !isRecord(idiom.compareCache) || !Array.isArray(idiom.compareHistory) || !isRecord(idiom.tokenStats) || !Array.isArray(idiom.favorites) || !isRecord(idiom.queryCounts)) return false
-  if (!['idle', 'reviewing', 'finished'].includes(String(review.phase)) || !Array.isArray(review.queue) || !Array.isArray(review.done) || !isRecord(review.levels) || !isRecord(review.thresholds) || !isRecord(review.wrongToday) || !Array.isArray(review.history) || !isRecord(review.wordStats)) return false
-  if (!Array.isArray(daily.issues) || !Array.isArray(daily.groups) || typeof daily.selectedId !== 'string') return false
-  return true
+  if (!isRecord(idiom) || !isRecord(review) || !isRecord(daily)) return null
+  if (!isRecord(idiom.idiomCache) || !Array.isArray(idiom.searchHistory) || !isRecord(idiom.compareCache) || !Array.isArray(idiom.compareHistory) || !isRecord(idiom.tokenStats) || !Array.isArray(idiom.favorites) || !isRecord(idiom.queryCounts)) return null
+  if (!['idle', 'reviewing', 'finished'].includes(String(review.phase)) || !Array.isArray(review.queue) || !Array.isArray(review.done) || !isRecord(review.levels) || !isRecord(review.thresholds) || !isRecord(review.wrongToday) || !Array.isArray(review.history) || !isRecord(review.wordStats)) return null
+  if (!Array.isArray(daily.issues) || !Array.isArray(daily.groups) || typeof daily.selectedId !== 'string') return null
+  const rawProfile = isRecord(value.profile) ? value.profile : {}
+  const profile: ProfileSyncData = {
+    name: typeof rawProfile.name === 'string' ? rawProfile.name.trim() : '',
+    nameUpdatedAt: typeof rawProfile.nameUpdatedAt === 'number' ? rawProfile.nameUpdatedAt : 0,
+    avatarDataUrl: typeof rawProfile.avatarDataUrl === 'string' ? rawProfile.avatarDataUrl : '',
+    avatarUpdatedAt: typeof rawProfile.avatarUpdatedAt === 'number' ? rawProfile.avatarUpdatedAt : 0
+  }
+  return clone({ ...value, version: 2 as const, profile }) as LocalSyncPayload
 }
 
 function chooseByTime<T>(local: T | undefined, remote: T | undefined, getTime: (value: T) => number, preferRemote: boolean): T | undefined {
@@ -134,6 +144,16 @@ export function summarizeSyncPayload(payload: LocalSyncPayload): SyncSummary {
 
 export function mergeSyncPayload(local: LocalSyncPayload, remote: LocalSyncPayload, prefer: 'local' | 'remote' = 'local'): LocalSyncPayload {
   const preferRemote = prefer === 'remote'
+  const profile: ProfileSyncData = {
+    name: remote.profile.nameUpdatedAt > local.profile.nameUpdatedAt || (remote.profile.nameUpdatedAt === local.profile.nameUpdatedAt && preferRemote)
+      ? remote.profile.name
+      : local.profile.name,
+    nameUpdatedAt: Math.max(local.profile.nameUpdatedAt, remote.profile.nameUpdatedAt),
+    avatarDataUrl: remote.profile.avatarUpdatedAt > local.profile.avatarUpdatedAt || (remote.profile.avatarUpdatedAt === local.profile.avatarUpdatedAt && preferRemote)
+      ? remote.profile.avatarDataUrl
+      : local.profile.avatarDataUrl,
+    avatarUpdatedAt: Math.max(local.profile.avatarUpdatedAt, remote.profile.avatarUpdatedAt)
+  }
   const idiom: IdiomSyncData = {
     idiomCache: mergeMap(local.idiom.idiomCache, remote.idiom.idiomCache, item => item.createdAt, preferRemote),
     searchHistory: mergeList(local.idiom.searchHistory, remote.idiom.searchHistory, item => item.word, item => item.timestamp, preferRemote),
@@ -152,8 +172,9 @@ export function mergeSyncPayload(local: LocalSyncPayload, remote: LocalSyncPaylo
     selectedId: preferRemote && remote.daily.selectedId ? remote.daily.selectedId : local.daily.selectedId || remote.daily.selectedId
   }
   return {
-    version: 1,
+    version: 2,
     capturedAt: Math.max(local.capturedAt, remote.capturedAt),
+    profile,
     idiom,
     review: mergeReview(local.review, remote.review, preferRemote),
     daily
@@ -164,19 +185,31 @@ export function buildLocalSyncPayload(): LocalSyncPayload {
   const idiom = useIdiomStore()
   const review = useReviewStore()
   const daily = useDailyStore()
+  const auth = useAuthStore()
   return clone({
-    version: 1 as const,
+    version: 2 as const,
     capturedAt: Date.now(),
+    profile: readProfileIdentity(auth.currentUser?.username),
     idiom: idiom.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData()
   })
 }
 
-export function applyLocalSyncPayload(payload: LocalSyncPayload) {
+export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
   useIdiomStore().restoreSyncData(clone(payload.idiom))
   useReviewStore().restoreSyncData(clone(payload.review))
   useDailyStore().restoreSyncData(clone(payload.daily))
+  if (!saveProfileIdentity(payload.profile)) throw new Error('个人资料无法保存到本机，请检查浏览器存储空间')
+  const auth = useAuthStore()
+  if (auth.currentUser && payload.profile.name && auth.currentUser.username !== payload.profile.name) {
+    await auth.updateProfileName(payload.profile.name, payload.profile.nameUpdatedAt)
+  }
+}
+
+export function hasSameSyncContent(left: LocalSyncPayload, right: LocalSyncPayload): boolean {
+  return JSON.stringify({ profile: left.profile, idiom: left.idiom, review: left.review, daily: left.daily })
+    === JSON.stringify({ profile: right.profile, idiom: right.idiom, review: right.review, daily: right.daily })
 }
 
 export async function loadRemoteSyncPayload(userId: string, sinceUpdatedAt?: string): Promise<RemoteSyncSnapshot | null> {
@@ -191,9 +224,11 @@ export async function loadRemoteSyncPayload(userId: string, sinceUpdatedAt?: str
   const rows: unknown = result.data
   if (!Array.isArray(rows) || rows.length === 0) return null
   const row = rows[0]
-  if (!isRecord(row) || !isSyncPayload(row.payload)) throw new Error('云端学习数据格式无法识别，为保护本机数据，本次未执行同步')
+  if (!isRecord(row)) throw new Error('云端学习数据格式无法识别，为保护本机数据，本次未执行同步')
+  const payload = parseSyncPayload(row.payload)
+  if (!payload) throw new Error('云端学习数据格式无法识别，为保护本机数据，本次未执行同步')
   return {
-    payload: clone(row.payload),
+    payload,
     updatedAt: readString(row.updated_at) || '',
     localUpdatedAt: typeof row.local_updated_at === 'number' ? row.local_updated_at : Number(row.local_updated_at) || 0
   }
@@ -205,7 +240,7 @@ export async function saveRemoteSyncPayload(userId: string, payload: LocalSyncPa
   const record = {
     user_id: userId,
     payload: clone(payload),
-    schema_version: 1,
+    schema_version: 2,
     local_updated_at: payload.capturedAt,
     updated_at: updatedAt
   }

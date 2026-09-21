@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { Cloud, Download, LoaderCircle, Merge, ShieldCheck, Upload, X } from 'lucide-vue-next'
+import { Cloud, LoaderCircle, ShieldCheck, Sparkles, X } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 import { syncChoiceLabels, useCloudSyncStore } from '../stores/cloudSync'
 import type { SyncChoice } from '../types/sync'
@@ -8,11 +8,9 @@ import type { SyncChoice } from '../types/sync'
 const auth = useAuthStore()
 const sync = useCloudSyncStore()
 
-const choices: Array<{ id: SyncChoice; title: string; description: string; icon: typeof Download; accent: string }> = [
-  { id: 'no-upload', title: '仅在本机', description: '只在本机学习，云端不写入。', icon: ShieldCheck, accent: 'border-line' },
-  { id: 'download', title: '下载到本机', description: '用云端快照替换本机；本机不上传。', icon: Download, accent: 'border-dai' },
-  { id: 'merge-local-to-cloud', title: '合并到云端', description: '合并两边记录，本机较新的内容优先并写回云端。', icon: Upload, accent: 'border-bamboo' },
-  { id: 'merge-cloud-to-local', title: '合并到本机', description: '合并两边记录，云端较新的内容优先，只更新本机。', icon: Merge, accent: 'border-gold' }
+const choices: Array<{ id: SyncChoice; title: string; description: string; icon: typeof ShieldCheck }> = [
+  { id: 'merge-local-to-cloud', title: '开启云同步', description: '自动合并两边数据，各项保留较新的版本。', icon: Sparkles },
+  { id: 'no-upload', title: '仅在本机', description: '暂不上传，之后仍可在个人页开启。', icon: ShieldCheck }
 ]
 
 const localCountLabel = computed(() => {
@@ -70,9 +68,9 @@ function isDisabled(choice: SyncChoice) {
               </div>
               <p class="mt-8 text-xs uppercase tracking-[.2em] text-paper/55">{{ sync.firstChoice ? '第一次登录' : '数据管理' }}</p>
               <h2 id="cloud-sync-title" class="mt-2 font-kai text-3xl leading-tight tracking-wide">数据同步</h2>
-              <p class="mt-4 text-sm leading-7 text-paper/70">选择数据去向，确认后才会修改。API 密钥和密码不会同步。</p>
+              <p class="mt-4 text-sm leading-7 text-paper/70">系统会安全合并两边数据，无需判断上传或下载。API 密钥和密码不会同步。</p>
               <div class="mt-auto hidden border-t border-paper/15 pt-5 md:block">
-                <p class="text-xs leading-6 text-paper/55">仅同步学习记录。</p>
+                <p class="text-xs leading-6 text-paper/55">同步学习记录、名称和头像。</p>
               </div>
             </div>
           </aside>
@@ -102,15 +100,13 @@ function isDisabled(choice: SyncChoice) {
             <p v-if="sync.error" class="mt-4 rounded-2xl bg-zhuhong-soft px-4 py-3 text-sm leading-6 text-zhuhong" role="alert">{{ sync.error }}</p>
             <p v-if="sync.remoteLoadFailed" class="mt-3 rounded-2xl bg-gold-soft px-4 py-3 text-xs leading-5 text-gold">云端数据暂时无法读取。为避免覆盖未知数据，目前只允许选择“不上传数据”。</p>
 
-            <div class="mt-5 space-y-2" role="radiogroup" aria-label="云同步方式">
+            <div class="mt-5 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="云同步方式">
               <button
-                v-for="(choice, index) in choices"
+                v-for="choice in choices"
                 :key="choice.id"
                 class="cloud-sync-option group relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border bg-card px-4 py-3.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-45"
                 :class="[
-                  choice.accent,
                   sync.selectedChoice === choice.id ? 'ring-2 ring-ink/70 ring-offset-2 ring-offset-card' : 'border-line',
-                  index === 0 ? 'md:translate-x-1' : index === 3 ? 'md:-translate-x-1' : ''
                 ]"
                 :data-testid="`sync-choice-${choice.id}`"
                 :aria-checked="sync.selectedChoice === choice.id"
@@ -125,7 +121,7 @@ function isDisabled(choice: SyncChoice) {
                 <span class="min-w-0 flex-1">
                   <span class="flex items-center justify-between gap-3">
                     <span class="text-sm font-semibold text-ink">{{ choice.title }}</span>
-                    <span class="font-mono text-[10px] text-ink-mute">0{{ index + 1 }}</span>
+                    <span v-if="choice.id === 'merge-local-to-cloud'" class="text-[10px] text-bamboo">推荐</span>
                   </span>
                   <span class="mt-1 block text-xs leading-5 text-ink-soft">{{ choice.description }}</span>
                 </span>
@@ -133,12 +129,12 @@ function isDisabled(choice: SyncChoice) {
             </div>
 
             <div class="mt-5 flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p class="text-xs leading-5 text-ink-mute">确认后可在个人页手动下载或上传</p>
+              <p class="text-xs leading-5 text-ink-mute">开启后会在数据变化时自动同步</p>
               <div class="flex gap-2 sm:shrink-0">
                 <button class="rounded-xl px-3.5 py-2.5 text-sm text-ink-soft transition-colors hover:bg-soft" type="button" :disabled="sync.syncing" @click="sync.closeWizard">稍后处理</button>
                 <button class="btn-primary inline-flex min-w-28 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-45" type="button" :disabled="!sync.selectedChoice || sync.syncing" @click="sync.confirmChoice">
                   <LoaderCircle v-if="sync.syncing" :size="16" class="animate-spin" />
-                  {{ sync.syncing ? '处理中…' : sync.selectedChoice ? syncChoiceLabels[sync.selectedChoice] : '请选择一种方式' }}
+                  {{ sync.syncing ? '处理中…' : sync.selectedChoice === 'merge-local-to-cloud' ? '开启云同步' : sync.selectedChoice ? syncChoiceLabels[sync.selectedChoice] : '请选择一种方式' }}
                 </button>
               </div>
             </div>

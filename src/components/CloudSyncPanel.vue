@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Cloud, Download, LoaderCircle, RefreshCw, ShieldCheck, Upload } from 'lucide-vue-next'
+import { Cloud, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 import { useCloudSyncStore } from '../stores/cloudSync'
 
@@ -22,7 +22,7 @@ function formatTime(value: number) {
         <span class="profile-row-icon bg-dai-soft text-dai"><Cloud :size="18" /></span>
         <div class="min-w-0">
           <h2 class="font-semibold text-ink">云同步</h2>
-          <p class="mt-0.5 text-xs text-ink-mute">学习记录，不含 API 密钥</p>
+          <p class="mt-0.5 text-xs text-ink-mute">学习记录与个人资料，不含 API 密钥</p>
         </div>
       </div>
       <span v-if="auth.signedIn" class="profile-row-value text-bamboo">{{ sync.statusLabel }}</span>
@@ -30,7 +30,7 @@ function formatTime(value: number) {
 
     <div v-if="!auth.signedIn" class="profile-sync-unauth">
       <ShieldCheck :size="17" class="shrink-0 text-ink-mute" />
-      <p>登录后可手动下载、上传或合并学习数据；未登录时继续使用本机模式。</p>
+      <p>登录后自动安全合并本机与云端数据；未登录时继续使用本机模式。</p>
     </div>
 
     <div v-else class="profile-sync-body">
@@ -41,26 +41,15 @@ function formatTime(value: number) {
 
       <div class="profile-sync-actions">
         <button
-          class="profile-sync-action"
-          data-testid="cloud-download-button"
-          type="button"
-          :disabled="sync.preparing || sync.syncing"
-          @click="sync.downloadNow"
-        >
-          <LoaderCircle v-if="sync.syncing" :size="16" class="animate-spin" />
-          <Download v-else :size="16" />
-          从云端下载
-        </button>
-        <button
           class="profile-sync-action profile-sync-action-primary"
-          data-testid="cloud-upload-button"
+          data-testid="cloud-sync-now-button"
           type="button"
           :disabled="sync.preparing || sync.syncing"
           @click="sync.uploadNow"
         >
           <LoaderCircle v-if="sync.syncing" :size="16" class="animate-spin" />
-          <Upload v-else :size="16" />
-          上传到云端
+          <RefreshCw v-else :size="16" />
+          {{ sync.syncing ? '正在同步…' : '立即同步' }}
         </button>
       </div>
 
@@ -75,7 +64,7 @@ function formatTime(value: number) {
       <button class="profile-sync-settings" type="button" :disabled="sync.preparing || sync.syncing" @click="sync.openWizard">
         <LoaderCircle v-if="sync.preparing" :size="15" class="animate-spin" />
         <RefreshCw v-else :size="15" />
-        同步设置
+        同步方式
       </button>
     </div>
   </section>

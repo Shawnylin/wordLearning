@@ -13,7 +13,6 @@
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
   transition: background-color 180ms ease, border-color 180ms ease;
 }
-.liquid-toggle.is-gold { --liquid-toggle-accent: var(--gold); }
 .liquid-toggle.is-checked {
   border-color: transparent;
   background: var(--liquid-toggle-accent);
@@ -1066,9 +1065,13 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
   padding: 0 8px;
 }
 
-.profile-effort-options button.is-selected,
+.profile-effort-options button.is-selected {
+  background: var(--zhuhong-solid);
+  color: var(--paper-ink);
+}
+
 .profile-data-actions button.is-selected {
-  background: var(--gold);
+  background: var(--zhuhong-solid);
   color: var(--paper-ink);
 }
 

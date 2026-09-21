@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   ChevronRight, KeyRound, LoaderCircle, LogIn, LogOut, Mail, RotateCcw, ShieldCheck
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
-import { readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
+import { PROFILE_IDENTITY_CHANGED_EVENT, prepareProfileAvatar, readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
 
 type AuthMode = 'login' | 'register' | 'reset'
 
@@ -31,16 +31,22 @@ const submitLabel = computed(() => {
   return '登录'
 })
 
+function refreshAvatar() {
+  avatarDataUrl.value = readProfileAvatar()
+}
+
 onMounted(() => {
   void auth.initialize()
-  avatarDataUrl.value = readProfileAvatar()
+  refreshAvatar()
+  window.addEventListener(PROFILE_IDENTITY_CHANGED_EVENT, refreshAvatar)
 })
+onBeforeUnmount(() => window.removeEventListener(PROFILE_IDENTITY_CHANGED_EVENT, refreshAvatar))
 
 function openAvatarPicker() {
   avatarInput.value?.click()
 }
 
-function handleAvatarChange(event: Event) {
+async function handleAvatarChange(event: Event) {
   const input = event.target
   if (!(input instanceof HTMLInputElement)) return
   const file = input.files?.[0]
@@ -55,18 +61,17 @@ function handleAvatarChange(event: Event) {
     return
   }
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    if (typeof reader.result !== 'string') return
-    if (saveProfileAvatar(reader.result)) {
-      avatarDataUrl.value = reader.result
+  try {
+    const dataUrl = await prepareProfileAvatar(file)
+    if (saveProfileAvatar(dataUrl)) {
+      avatarDataUrl.value = dataUrl
       avatarError.value = ''
     } else {
       avatarError.value = '头像保存失败，请换一张图片'
     }
+  } catch {
+    avatarError.value = '头像读取失败，请重试'
   }
-  reader.onerror = () => { avatarError.value = '头像读取失败，请重试' }
-  reader.readAsDataURL(file)
 }
 
 function switchMode(nextMode: AuthMode) {
@@ -170,7 +175,7 @@ async function handleSignOut() {
       <div class="min-w-0 flex-1">
         <p class="profile-eyebrow">{{ auth.currentUser ? '已登录' : '个人信息' }}</p>
         <h2 class="truncate text-lg font-semibold text-ink">{{ auth.currentUser?.displayName || '本机学习空间' }}</h2>
-        <p class="truncate text-xs text-ink-mute">{{ auth.currentUser?.email || '头像仅保存在本机' }}</p>
+        <p class="truncate text-xs text-ink-mute">{{ auth.currentUser?.email || '登录后同步名称和头像' }}</p>
       </div>
       <button
         v-if="auth.currentUser"

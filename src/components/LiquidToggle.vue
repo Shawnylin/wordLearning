@@ -5,12 +5,10 @@ const props = withDefaults(defineProps<{
   modelValue: boolean
   label: string
   disabled?: boolean
-  tone?: 'accent' | 'gold'
   speed?: number
   stretch?: number
 }>(), {
   disabled: false,
-  tone: 'accent',
   speed: 50,
   stretch: 47
 })
@@ -29,7 +27,7 @@ watch(() => props.modelValue, value => {
   <button
     type="button"
     class="liquid-toggle"
-    :class="[`is-${tone}`, { 'is-checked': modelValue, 'moves-on': motion === 'on', 'moves-off': motion === 'off' }]"
+    :class="{ 'is-checked': modelValue, 'moves-on': motion === 'on', 'moves-off': motion === 'off' }"
     :style="{ '--liquid-speed': duration, '--liquid-stretch': stretchScale }"
     role="switch"
     :aria-checked="modelValue"

@@ -4,7 +4,7 @@ import type { CompareRecord, IdiomData, SearchRecord, TokenStats } from './idiom
 
 export type SyncChoice = 'no-upload' | 'download' | 'merge-local-to-cloud' | 'merge-cloud-to-local'
 
-export type SyncDomain = 'idiom' | 'review' | 'daily'
+export type SyncDomain = 'profile' | 'idiom' | 'review' | 'daily'
 
 export interface SyncState {
   pendingDomains: SyncDomain[]
@@ -71,9 +71,17 @@ export interface DailySyncData {
   selectedId: string
 }
 
+export interface ProfileSyncData {
+  name: string
+  nameUpdatedAt: number
+  avatarDataUrl: string
+  avatarUpdatedAt: number
+}
+
 export interface LocalSyncPayload {
-  version: 1
+  version: 2
   capturedAt: number
+  profile: ProfileSyncData
   idiom: IdiomSyncData
   review: ReviewSyncData
   daily: DailySyncData
