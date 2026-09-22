@@ -33,11 +33,19 @@ export interface ReviewSyncSnapshot {
   levels: Record<string, number>
   thresholds: Record<string, number>
   wrongToday: Record<string, number>
+  wordStats?: Record<string, ReviewSyncWordStat>
 }
 
 export interface ReviewSyncWordStat {
-  wrong: number
-  lastAt: number
+  state: 'new' | 'learning' | 'review' | 'mastered'
+  nextReviewAt: number
+  interval: number
+  correctCount: number
+  wrongCount: number
+  lastReviewedAt: number
+  /** v0.9.3 及更早版本兼容字段，仅用于迁移旧快照 */
+  wrong?: number
+  lastAt?: number
 }
 
 export interface ReviewSyncResult {

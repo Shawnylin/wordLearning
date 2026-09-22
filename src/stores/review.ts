@@ -4,12 +4,20 @@ import { useIdiomStore } from './idiom'
 import type { ReviewSyncData } from '../types/sync'
 
 export type ReviewPhase = 'idle' | 'reviewing' | 'finished'
+export type ReviewState = 'new' | 'learning' | 'review' | 'mastered'
 
-interface ReviewWordStat {
-  /** 历史累计答错次数（跨会话，用于选词优先级） */
-  wrong: number
-  /** 最近一次复习时间 */
-  lastAt: number
+export interface ReviewWordStat {
+  state: ReviewState
+  /** 下次应复习的时间戳 */
+  nextReviewAt: number
+  /** 当前复习间隔，单位：天 */
+  interval: number
+  /** 成功完成复习的累计次数 */
+  correctCount: number
+  /** 历史累计答错次数 */
+  wrongCount: number
+  /** 最近一次完成复习的时间戳 */
+  lastReviewedAt: number
 }
 
 interface ReviewSnapshot {
@@ -18,6 +26,7 @@ interface ReviewSnapshot {
   levels: Record<string, number>
   thresholds: Record<string, number>
   wrongToday: Record<string, number>
+  wordStats?: Record<string, ReviewWordStat>
 }
 
 export interface ReviewResult {
@@ -27,6 +36,115 @@ export interface ReviewResult {
   wrongCount: number
   elapsedMs: number
   perfect: boolean
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const MAX_REVIEW_INTERVAL = 30
+const MAX_MASTERED_INTERVAL = 60
+
+function safeCount(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0
+}
+
+function safeTimestamp(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
+function safeInterval(value: unknown): number {
+  return Math.min(MAX_MASTERED_INTERVAL, safeCount(value))
+}
+
+export function createReviewWordStat(now = Date.now()): ReviewWordStat {
+  return {
+    state: 'new',
+    nextReviewAt: now,
+    interval: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    lastReviewedAt: 0
+  }
+}
+
+/** 将旧版 { wrong, lastAt } 与不完整数据迁移到当前 schema。 */
+export function normalizeReviewWordStat(value: unknown, now = Date.now()): ReviewWordStat {
+  if (!value || typeof value !== 'object') return createReviewWordStat(now)
+  const raw = value as Record<string, unknown>
+  const lastReviewedAt = safeTimestamp(raw.lastReviewedAt) || safeTimestamp(raw.lastAt)
+  const wrongCount = safeCount(raw.wrongCount) || safeCount(raw.wrong)
+  const interval = safeInterval(raw.interval)
+  const rawState = raw.state
+  const state: ReviewState = rawState === 'new' || rawState === 'learning' || rawState === 'review' || rawState === 'mastered'
+    ? rawState
+    : lastReviewedAt > 0
+      ? 'learning'
+      : 'new'
+  const nextReviewAt = safeTimestamp(raw.nextReviewAt) || (lastReviewedAt > 0 ? lastReviewedAt : now)
+  return {
+    state,
+    nextReviewAt,
+    interval,
+    correctCount: safeCount(raw.correctCount),
+    wrongCount,
+    lastReviewedAt
+  }
+}
+
+export function scheduleReviewWord(stat: ReviewWordStat, wrongCount: number, now = Date.now()): ReviewWordStat {
+  const current = normalizeReviewWordStat(stat, now)
+  const misses = safeCount(wrongCount)
+  if (misses > 0) {
+    return {
+      ...current,
+      state: 'learning',
+      interval: 1,
+      wrongCount: current.wrongCount + misses,
+      lastReviewedAt: now,
+      nextReviewAt: now + DAY_MS
+    }
+  }
+
+  const correctCount = current.correctCount + 1
+  let state: ReviewState = current.state
+  let interval = current.interval
+  if (current.state === 'new') {
+    state = 'learning'
+    interval = 1
+  } else if (current.state === 'learning') {
+    state = 'review'
+    interval = 3
+  } else if (current.state === 'review') {
+    interval = Math.min(MAX_REVIEW_INTERVAL, Math.max(3, current.interval > 0 ? current.interval * 2 : 3))
+    if (interval >= 14 && correctCount >= 4) {
+      state = 'mastered'
+      interval = MAX_REVIEW_INTERVAL
+    }
+  } else {
+    state = 'mastered'
+    interval = Math.min(MAX_MASTERED_INTERVAL, Math.max(MAX_REVIEW_INTERVAL, current.interval) * 2)
+  }
+
+  return {
+    ...current,
+    state,
+    interval,
+    correctCount,
+    lastReviewedAt: now,
+    nextReviewAt: now + interval * DAY_MS
+  }
+}
+
+export function relearnReviewWord(stat: ReviewWordStat, now = Date.now()): ReviewWordStat {
+  const current = normalizeReviewWordStat(stat, now)
+  return {
+    ...current,
+    state: 'learning',
+    interval: 1,
+    nextReviewAt: now
+  }
+}
+
+export function isReviewDue(stat: ReviewWordStat, now = Date.now()): boolean {
+  return normalizeReviewWordStat(stat, now).nextReviewAt <= now
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -87,22 +205,50 @@ export const useReviewStore = defineStore('review', () => {
       done: [...done.value],
       levels: { ...levels.value },
       thresholds: { ...thresholds.value },
-      wrongToday: { ...wrongToday.value }
+      wrongToday: { ...wrongToday.value },
+      wordStats: Object.fromEntries(
+        Object.entries(wordStats.value).map(([word, stat]) => [word, { ...normalizeReviewWordStat(stat) }])
+      )
     }
+  }
+
+  function migrateWordStats(now = Date.now()) {
+    wordStats.value = Object.fromEntries(
+      Object.entries(wordStats.value).map(([word, stat]) => [word, normalizeReviewWordStat(stat, now)])
+    )
+  }
+
+  function ensureWord(word: string, now = Date.now()): ReviewWordStat | null {
+    const normalized = word.trim()
+    if (!normalized) return null
+    const existing = wordStats.value[normalized]
+    const stat = existing ? normalizeReviewWordStat(existing, now) : createReviewWordStat(now)
+    wordStats.value[normalized] = stat
+    return stat
+  }
+
+  function relearnWord(word: string, now = Date.now()): ReviewWordStat | null {
+    const normalized = word.trim()
+    const stat = ensureWord(normalized, now)
+    if (!stat) return null
+    const next = relearnReviewWord(stat, now)
+    wordStats.value[normalized] = next
+    return next
   }
 
   /**
    * 开始一组复习：n 为数量（0 表示全部）。
    * 选词策略：优先挑选历史答错过的词（约 60% 名额），其余随机补齐，最后打乱顺序。
    */
-  function startSession(n: number): boolean {
+  function startSession(n: number, now = Date.now()): boolean {
     const idiomStore = useIdiomStore()
     const pool = Object.keys(idiomStore.idiomCache)
     if (pool.length === 0) return false
+    for (const word of pool) ensureWord(word, now)
 
     const size = n > 0 ? Math.min(n, pool.length) : pool.length
-    const weak = pool.filter(w => (wordStats.value[w]?.wrong || 0) > 0)
-    const strong = pool.filter(w => (wordStats.value[w]?.wrong || 0) === 0)
+    const weak = pool.filter(w => (wordStats.value[w]?.wrongCount || 0) > 0)
+    const strong = pool.filter(w => (wordStats.value[w]?.wrongCount || 0) === 0)
     const weakSlots = Math.min(weak.length, Math.ceil(size * 0.6))
     const picks = [
       ...shuffle(weak).slice(0, weakSlots),
@@ -120,15 +266,15 @@ export const useReviewStore = defineStore('review', () => {
       thresholds.value[w] = 2
     }
     target.value = queue.value.length
-    startedAt.value = Date.now()
+    startedAt.value = now
     elapsedMs.value = 0
-    lastTick.value = Date.now()
+    lastTick.value = now
     phase.value = 'reviewing'
     return true
   }
 
   /** 判定当前卡片：known=true 认识，false 不熟 */
-  function judge(known: boolean) {
+  function judge(known: boolean, now = Date.now()) {
     if (phase.value !== 'reviewing' || queue.value.length === 0) return
     const w = queue.value[0]
     history.value.push(snapshot())
@@ -137,10 +283,9 @@ export const useReviewStore = defineStore('review', () => {
       levels.value[w] = (levels.value[w] || 0) + 1
       queue.value.shift()
       const passed = levels.value[w] >= thresholds.value[w]
-      const st = wordStats.value[w] || { wrong: 0, lastAt: 0 }
-      st.lastAt = Date.now()
-      wordStats.value[w] = st
       if (passed) {
+        const stat = ensureWord(w, now)!
+        wordStats.value[w] = scheduleReviewWord(stat, wrongToday.value[w] || 0, now)
         done.value.push(w)
       } else {
         // 还没连对够次数：排到队尾稍后重现
@@ -150,16 +295,12 @@ export const useReviewStore = defineStore('review', () => {
       levels.value[w] = 0
       thresholds.value[w] = Math.min((thresholds.value[w] || 2) + 1, 4)
       wrongToday.value[w] = (wrongToday.value[w] || 0) + 1
-      const st = wordStats.value[w] || { wrong: 0, lastAt: 0 }
-      st.wrong++
-      st.lastAt = Date.now()
-      wordStats.value[w] = st
       queue.value.shift()
       // 答错后尽快重现（插到第 2 位，避免立刻连续出现）
       queue.value.splice(Math.min(2, queue.value.length), 0, w)
     }
 
-    if (queue.value.length === 0) finishSession()
+    if (queue.value.length === 0) finishSession(now)
   }
 
   /** 左右滑动浏览：不判定，仅轮转卡片顺序 */
@@ -181,6 +322,7 @@ export const useReviewStore = defineStore('review', () => {
     levels.value = s.levels
     thresholds.value = s.thresholds
     wrongToday.value = s.wrongToday
+    if (s.wordStats) wordStats.value = s.wordStats
   }
 
   /** 跳过当前卡片（例如缓存被清掉后兜底），不做判定 */
@@ -190,8 +332,8 @@ export const useReviewStore = defineStore('review', () => {
     if (queue.value.length === 0) finishSession()
   }
 
-  function finishSession() {
-    const today = new Date().toDateString()
+  function finishSession(now = Date.now()) {
+    const today = new Date(now).toDateString()
     if (lastFinishedDay.value !== today) {
       lastFinishedDay.value = today
       finishedToday.value = 1
@@ -203,9 +345,9 @@ export const useReviewStore = defineStore('review', () => {
       .sort((a, b) => b[1] - a[1])
       .map(([w]) => w)
     const wrongCount = Object.values(wrongToday.value).reduce((s, c) => s + c, 0)
-    elapsedMs.value += Math.max(0, Date.now() - lastTick.value)
+    elapsedMs.value += Math.max(0, now - lastTick.value)
     lastResult.value = {
-      reviewedAt: Date.now(),
+      reviewedAt: now,
       words: [...done.value],
       wrongWords,
       wrongCount,
@@ -256,6 +398,7 @@ export const useReviewStore = defineStore('review', () => {
   }
 
   function exportSyncData(): ReviewSyncData {
+    migrateWordStats()
     return {
       phase: phase.value,
       queue: queue.value,
@@ -281,7 +424,12 @@ export const useReviewStore = defineStore('review', () => {
     levels.value = data.levels
     thresholds.value = data.thresholds
     wrongToday.value = data.wrongToday
-    history.value = data.history
+    history.value = data.history.map(item => ({
+      ...item,
+      wordStats: item.wordStats
+        ? Object.fromEntries(Object.entries(item.wordStats).map(([word, stat]) => [word, normalizeReviewWordStat(stat)]))
+        : undefined
+    }))
     target.value = data.target
     startedAt.value = data.startedAt
     elapsedMs.value = data.elapsedMs
@@ -289,7 +437,9 @@ export const useReviewStore = defineStore('review', () => {
     lastResult.value = data.lastResult
     finishedToday.value = data.finishedToday
     lastFinishedDay.value = data.lastFinishedDay
-    wordStats.value = data.wordStats
+    wordStats.value = Object.fromEntries(
+      Object.entries(data.wordStats || {}).map(([word, stat]) => [word, normalizeReviewWordStat(stat)])
+    )
   }
 
   return {
@@ -305,6 +455,7 @@ export const useReviewStore = defineStore('review', () => {
     elapsedMs,
     lastResult,
     finishedToday,
+    lastFinishedDay,
     wordStats,
     currentWord,
     remaining,
@@ -313,6 +464,9 @@ export const useReviewStore = defineStore('review', () => {
     progressRatio,
     levelOfCurrent,
     thresholdOfCurrent,
+    ensureWord,
+    relearnWord,
+    migrateWordStats,
     startSession,
     judge,
     browse,

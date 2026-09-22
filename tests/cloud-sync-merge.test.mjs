@@ -49,3 +49,22 @@ test('equal-time conflicts follow the selected preference; capturedAt alone is n
   assert(hasSameSyncContent(local, { ...local, capturedAt: 999 }))
   assert(!hasSameSyncContent(local, remote))
 })
+test('review scheduling sync accepts legacy stats and preserves the newest schedule plus maximum counters', () => {
+  const local = snapshot(), remote = snapshot()
+  local.review.wordStats = {
+    甲: { state: 'review', nextReviewAt: 500, interval: 12, correctCount: 4, wrongCount: 1, lastReviewedAt: 100 },
+    旧词: { wrong: 3, lastAt: 80 }
+  }
+  remote.review.wordStats = {
+    甲: { state: 'learning', nextReviewAt: 900, interval: 1, correctCount: 2, wrongCount: 5, lastReviewedAt: 200 }
+  }
+  const merged = mergeSyncPayload(local, remote)
+  assert.deepEqual(merged.review.wordStats.甲, {
+    state: 'learning', nextReviewAt: 900, interval: 1,
+    correctCount: 4, wrongCount: 5, lastReviewedAt: 200
+  })
+  assert.deepEqual(merged.review.wordStats.旧词, {
+    state: 'learning', nextReviewAt: 80, interval: 0,
+    correctCount: 0, wrongCount: 3, lastReviewedAt: 80
+  })
+})

@@ -106,20 +106,56 @@ function compareKey(record: CompareRecord): string {
   return [...record.words].sort().join('|')
 }
 
+function syncCount(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0
+}
+
+function syncTimestamp(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
+function normalizeSyncReviewWordStat(value: ReviewSyncWordStat): ReviewSyncWordStat {
+  const legacy = value as ReviewSyncWordStat & { wrong?: number; lastAt?: number }
+  const lastReviewedAt = syncTimestamp(legacy.lastReviewedAt) || syncTimestamp(legacy.lastAt)
+  const state = ['new', 'learning', 'review', 'mastered'].includes(legacy.state)
+    ? legacy.state
+    : lastReviewedAt > 0
+      ? 'learning'
+      : 'new'
+  return {
+    state,
+    nextReviewAt: syncTimestamp(legacy.nextReviewAt) || lastReviewedAt,
+    interval: Math.min(60, syncCount(legacy.interval)),
+    correctCount: syncCount(legacy.correctCount),
+    wrongCount: syncCount(legacy.wrongCount) || syncCount(legacy.wrong),
+    lastReviewedAt
+  }
+}
+
 function reviewActivity(review: ReviewSyncData): number {
-  return Math.max(review.startedAt, review.lastResult?.reviewedAt || 0, review.elapsedMs)
+  const latestWordReview = Object.values(review.wordStats).reduce(
+    (latest, stat) => Math.max(latest, normalizeSyncReviewWordStat(stat).lastReviewedAt),
+    0
+  )
+  return Math.max(review.startedAt, review.lastResult?.reviewedAt || 0, latestWordReview)
 }
 
 function mergeReview(local: ReviewSyncData, remote: ReviewSyncData, preferRemote: boolean): ReviewSyncData {
   const current = chooseByTime(local, remote, reviewActivity, preferRemote) || local
   const wordStats: Record<string, ReviewSyncWordStat> = {}
   for (const word of new Set([...Object.keys(local.wordStats), ...Object.keys(remote.wordStats)])) {
-    const left = local.wordStats[word]
-    const right = remote.wordStats[word]
-    if (!left) wordStats[word] = clone(right)
-    else if (!right) wordStats[word] = clone(left)
-    else if (right.lastAt > left.lastAt) wordStats[word] = clone(right)
-    else wordStats[word] = { wrong: Math.max(left.wrong, right.wrong), lastAt: left.lastAt }
+    const left = local.wordStats[word] ? normalizeSyncReviewWordStat(local.wordStats[word]) : undefined
+    const right = remote.wordStats[word] ? normalizeSyncReviewWordStat(remote.wordStats[word]) : undefined
+    if (!left && right) wordStats[word] = clone(right)
+    else if (left && !right) wordStats[word] = clone(left)
+    else if (left && right) {
+      const selected = chooseByTime(left, right, stat => stat.lastReviewedAt, preferRemote) || left
+      wordStats[word] = {
+        ...clone(selected),
+        correctCount: Math.max(left.correctCount, right.correctCount),
+        wrongCount: Math.max(left.wrongCount, right.wrongCount)
+      }
+    }
   }
   const latestDay = remote.lastFinishedDay > local.lastFinishedDay ? remote.lastFinishedDay : local.lastFinishedDay
   return {
