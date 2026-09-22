@@ -31,6 +31,7 @@ function formatSummary(summary: typeof sync.localSummary) {
 
         </div>
       </div>
+      <span v-if="auth.signedIn" class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
     </div>
 
     <div v-if="!auth.signedIn" class="profile-sync-unauth">
@@ -45,7 +46,6 @@ function formatSummary(summary: typeof sync.localSummary) {
       </div>
 
       <div class="profile-sync-actions">
-        <span class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
         <button
           class="profile-sync-action profile-sync-action-primary"
           data-testid="cloud-sync-now-button"
@@ -69,12 +69,13 @@ function formatSummary(summary: typeof sync.localSummary) {
 
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
-.profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 14px; }
-.profile-sync-summary { display: grid; justify-items: start; gap: 4px; padding: 10px 0; color: var(--ink-mute); font-size: 11px; text-align: left; }
-.profile-sync-summary span { display: flex; gap: 7px; }
+.profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 14px; }
+.profile-sync-summary { display: grid; justify-items: stretch; color: var(--ink-mute); font-size: 11px; text-align: left; }
+.profile-sync-summary span { display: flex; min-height: 56px; align-items: center; gap: 7px; border-bottom: 1px solid var(--line); }
+.profile-sync-summary span:last-child { border-bottom: 0; }
 .profile-sync-summary strong { min-width: 24px; color: var(--ink-soft); font-weight: 600; }
 .profile-sync-time { color: var(--ink-mute); }
-.profile-sync-actions { display: grid; justify-items: end; gap: 3px; min-width: 104px; }
+.profile-sync-actions { display: grid; justify-items: end; min-width: 104px; }
 .profile-sync-time { font-size: 11px; line-height: 1.45; white-space: nowrap; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
 .profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; grid-column: 1 / -1; }
