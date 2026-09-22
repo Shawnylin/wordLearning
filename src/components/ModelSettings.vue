@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
-import { nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { Pencil, Plus, X } from 'lucide-vue-next'
 import { useSettingsStore } from '../stores/settings'
 import { apiEndpoint, fetchModels } from '../api/deepseek'
+import { useMorphOverlay } from '../composables/useMorphOverlay'
 import ApiKeyInput from './ApiKeyInput.vue'
 
 const settings = useSettingsStore()
@@ -11,16 +12,18 @@ const draft = reactive({ id: '', name: '', apiKey: '', baseUrl: '', model: '', e
 const busy = ref('')
 const message = ref('')
 const failed = ref(false)
-const providerOpen = ref(false)
-const providerMounted = ref(false)
 const addTrigger = ref<HTMLButtonElement>()
 const providerDialog = ref<HTMLElement>()
-const providerPlacement = ref({ left: '0px', top: '0px', width: '520px' })
-const providerMorphing = ref(false)
-let providerSource: HTMLElement | undefined
-let providerOrigin: DOMRect | undefined
-let providerAnimation: Animation | undefined
-let providerContentAnimation: Animation | undefined
+const {
+  isOpen: providerOpen, mounted: providerMounted, morphing: providerMorphing,
+  placement: providerPlacement, open: openEditor, close: closeEditor,
+  morph: providerMorph, keydown: providerKeydown, afterLeave: providerAfterLeave,
+} = useMorphOverlay({
+  trigger: addTrigger, panel: providerDialog, maxWidth: 520, initialWidth: 520,
+  topLimit: height => height - Math.min(640, height - 24),
+  stagedMount: true, sourceBackground: true, hideSource: true, fill: 'both',
+  focusOptions: { preventScroll: true },
+})
 
 function loadActiveProfile() {
   const profile = settings.profiles.find(p => p.id === settings.activeProfileId)
@@ -29,26 +32,6 @@ function loadActiveProfile() {
 }
 loadActiveProfile()
 watch(() => [draft.baseUrl, draft.apiKey], () => { draft.models = []; message.value = '' }, { flush: 'sync' })
-function positionProvider(source?: HTMLElement) {
-  providerSource = source || addTrigger.value
-  providerOrigin = source?.getBoundingClientRect() || addTrigger.value?.getBoundingClientRect()
-  if (!providerOrigin) return
-  const width = Math.min(520, innerWidth - 24)
-  providerPlacement.value = {
-    left: `${Math.max(12, Math.min(providerOrigin.right - width, innerWidth - width - 12))}px`,
-    top: `${Math.max(12, Math.min(providerOrigin.top, innerHeight - Math.min(640, innerHeight - 24)))}px`,
-    width: `${width}px`
-  }
-}
-async function openEditor(source?: HTMLElement) {
-  positionProvider(source)
-  providerOpen.value = false
-  providerMounted.value = true
-  await nextTick()
-  providerOpen.value = true
-  await nextTick()
-  providerDialog.value?.focus({ preventScroll: true })
-}
 function editProfile(id: string, event?: Event) {
   const profile = settings.profiles.find(item => item.id === id)
   if (!profile) return
@@ -59,9 +42,6 @@ function add(event: Event) {
   Object.assign(draft, { id: '', name: '', apiKey: '', baseUrl: 'https://api.deepseek.com', model: '', extraModel: '', models: [] })
   message.value = ''
   void openEditor(event.currentTarget instanceof HTMLElement ? event.currentTarget : undefined)
-}
-function closeEditor() {
-  providerOpen.value = false
 }
 async function run(action: 'models' | 'test') {
   busy.value = action
@@ -88,73 +68,10 @@ function save() {
     draft.id = id
     failed.value = false
     message.value = '已保存'
-    providerOpen.value = false
+    closeEditor()
   } catch (error) { failed.value = true; message.value = (error as Error).message }
 }
-function remove() { settings.deleteProfile(draft.id); loadActiveProfile(); providerOpen.value = false }
-function providerKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    closeEditor()
-    return
-  }
-  if (event.key !== 'Tab') return
-  const controls = [...(providerDialog.value?.querySelectorAll<HTMLElement>('button, input, select, [tabindex]:not([tabindex="-1"])') || [])]
-  const enabled = controls.filter(control => !control.matches(':disabled'))
-  const first = enabled[0]
-  const last = enabled[enabled.length - 1]
-  if (!first || !last) return
-  if (event.shiftKey && (document.activeElement === first || document.activeElement === providerDialog.value)) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-function providerMorph(el: Element, done: () => void, leaving = false) {
-  const element = el as HTMLElement
-  const end = element.getBoundingClientRect()
-  const start = providerOrigin || addTrigger.value?.getBoundingClientRect() || end
-  const radius = getComputedStyle(element).borderRadius
-  const inner = element.firstElementChild as HTMLElement | null
-  const innerOpacity = inner ? getComputedStyle(inner).opacity : '1'
-  providerMorphing.value = true
-  if (providerSource) providerSource.style.visibility = 'hidden'
-  if (providerAnimation) {
-    providerAnimation.oncancel = null
-    providerAnimation.onfinish = null
-    providerAnimation.cancel()
-  }
-  providerContentAnimation?.cancel()
-  const small = {
-    left: `${start.left}px`, top: `${start.top}px`, width: `${start.width}px`, height: `${start.height}px`,
-    borderRadius: `${Math.min(start.width, start.height) / 2}px`, backgroundColor: getComputedStyle(providerSource || element).backgroundColor, opacity: 1
-  }
-  const large = {
-    left: `${end.left}px`, top: `${end.top}px`, width: `${end.width}px`, height: `${end.height}px`,
-    borderRadius: leaving ? radius : '24px', backgroundColor: 'var(--card)', opacity: 1
-  }
-  const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : leaving ? 520 : 720
-  providerContentAnimation = inner?.animate(
-    leaving ? [{ opacity: innerOpacity }, { opacity: 0, offset: .35 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 0, offset: .22 }, { opacity: 1, offset: .85 }, { opacity: 1 }],
-    { duration, fill: 'both', easing: 'linear' }
-  )
-  providerAnimation = element.animate(leaving ? [large, small] : [small, large], { duration, fill: 'both', easing: 'cubic-bezier(.32,0,.18,1)' })
-  providerAnimation.onfinish = () => {
-    providerMorphing.value = false
-    providerAnimation?.cancel()
-    providerContentAnimation?.cancel()
-    if (leaving && providerSource) providerSource.style.visibility = ''
-    done()
-  }
-  providerAnimation.oncancel = null
-}
-onBeforeUnmount(() => {
-  if (providerAnimation) { providerAnimation.onfinish = null; providerAnimation.cancel() }
-  providerContentAnimation?.cancel()
-  if (providerSource) providerSource.style.visibility = ''
-})
+function remove() { settings.deleteProfile(draft.id); loadActiveProfile(); closeEditor() }
 </script>
 
 <template>
@@ -194,7 +111,7 @@ onBeforeUnmount(() => {
         :css="false"
         @enter="(el, done) => providerMorph(el, done)"
         @leave="(el, done) => providerMorph(el, done, true)"
-        @after-leave="providerMounted = false; providerSource?.focus({ preventScroll: true })"
+        @after-leave="providerAfterLeave"
       >
         <section
           v-if="providerOpen"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { Newspaper, Clock } from "lucide-vue-next";
 import Motion from "../components/Motion.vue";
 import DailyGenerateMenu from "../components/DailyGenerateMenu.vue";
@@ -10,6 +10,7 @@ import DailyStudySheet from "../components/DailyStudySheet.vue";
 import DailyPdfImport from "../components/DailyPdfImport.vue";
 import { useDailyStore } from "../stores/daily";
 import { useSettingsStore } from "../stores/settings";
+import { useMorphOverlay } from '../composables/useMorphOverlay';
 import { useTabletLayout } from '../composables/useTabletLayout';
 const tablet = useTabletLayout();
 const daily = useDailyStore(),
@@ -44,9 +45,7 @@ function readNext(index: number) {
 }
 const historyTrigger = ref<HTMLButtonElement>(),
   historyPanel = ref<HTMLElement>();
-const historyOpen = ref(false),
-  historyMorphing = ref(false),
-  historyManaging = ref(false),
+const historyManaging = ref(false),
   draggedIssueId = ref(""),
   dragOverGroupId = ref(""),
   selectedText = ref("");
@@ -54,38 +53,22 @@ const historyGroups = computed(() => daily.groups.map(group => ({
   ...group,
   issues: daily.issues.filter(issue => issue.groupId === group.id),
 })).filter(group => historyManaging.value || group.issues.length));
-const historyPlacement = ref({ left: "0px", top: "0px", width: "360px" });
-let historyOrigin: DOMRect | undefined,
-  appScroller: HTMLElement | null = null;
-let historyAnimation: Animation | undefined, historyContentAnimation: Animation | undefined;
+const {
+  isOpen: historyOpen, morphing: historyMorphing, placement: historyPlacement,
+  position: positionHistory, open: openHistory, close: closeHistory,
+  morph: historyMorph, keydown: historyKeydown, afterLeave: historyAfterLeave,
+} = useMorphOverlay({
+  trigger: historyTrigger, panel: historyPanel, maxWidth: 480, initialWidth: 360,
+  topLimit: height => height - 120, liveOrigin: true,
+  onClose: () => { historyManaging.value = false; swipedId.value = ''; },
+});
+let appScroller: HTMLElement | null = null;
 let swipeStart: { id: string; x: number; y: number } | undefined;
 let swipeMoved = false,
   readingCompact = false;
 const swipedId = ref(""),
   dragId = ref(""),
   dragOffset = ref(0);
-function positionHistory() {
-  historyOrigin = historyTrigger.value?.getBoundingClientRect();
-  if (!historyOrigin) return;
-  const width = Math.min(480, innerWidth - 24);
-  historyPlacement.value = {
-    left: `${Math.max(12, Math.min(historyOrigin.right - width, innerWidth - width - 12))}px`,
-    top: `${Math.max(12, Math.min(historyOrigin.top, innerHeight - 120))}px`,
-    width: `${width}px`,
-  };
-}
-async function openHistory() {
-  positionHistory();
-  historyOpen.value = true;
-  swipedId.value = "";
-  await nextTick();
-  historyPanel.value?.focus();
-}
-function closeHistory() {
-  historyOpen.value = false;
-  historyManaging.value = false;
-  swipedId.value = "";
-}
 function toggleHistoryManagement() {
   historyManaging.value = !historyManaging.value;
   swipedId.value = "";
@@ -105,88 +88,6 @@ function dropIntoGroup(groupId: string, event: DragEvent) {
   if (issueId) daily.moveIssue(issueId, groupId);
   draggedIssueId.value = "";
   dragOverGroupId.value = "";
-}
-function historyKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closeHistory();
-    return;
-  }
-  if (event.key !== "Tab") return;
-  const controls = [
-      ...(historyPanel.value?.querySelectorAll<HTMLElement>(
-        'button:not([tabindex="-1"])',
-      ) || []),
-    ],
-    first = controls[0],
-    last = controls[controls.length - 1];
-  if (
-    event.shiftKey &&
-    (document.activeElement === first ||
-      document.activeElement === historyPanel.value)
-  ) {
-    event.preventDefault();
-    last?.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault();
-    first?.focus();
-  }
-}
-function historyMorph(el: Element, done: () => void, leaving = false) {
-  historyMorphing.value = true;
-  const element = el as HTMLElement,
-    end = element.getBoundingClientRect(),
-    start = historyTrigger.value?.getBoundingClientRect() || historyOrigin || end;
-  // Capture the current frame before reversing an interrupted opening.
-  const radius = getComputedStyle(element).borderRadius;
-  const inner = element.firstElementChild as HTMLElement | null;
-  const innerOpacity = inner ? getComputedStyle(inner).opacity : '1';
-  if (historyAnimation) {
-    historyAnimation.oncancel = null;
-    historyAnimation.onfinish = null;
-    historyAnimation.cancel();
-  }
-  historyContentAnimation?.cancel();
-  const small = {
-    left: `${start.left}px`,
-    top: `${start.top}px`,
-    width: `${start.width}px`,
-    height: `${start.height}px`,
-    borderRadius: `${Math.min(start.width, start.height) / 2}px`,
-    backgroundColor: "var(--card)",
-    opacity: 1,
-  };
-  const large = {
-    left: `${end.left}px`,
-    top: `${end.top}px`,
-    width: `${end.width}px`,
-    height: `${end.height}px`,
-    borderRadius: leaving ? radius : "24px",
-    backgroundColor: "var(--card)",
-    opacity: 1,
-  };
-  const duration = matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? 1
-    : leaving ? 520 : 720;
-  historyContentAnimation = inner?.animate(
-    leaving
-      ? [{ opacity: innerOpacity }, { opacity: 0, offset: .35 }, { opacity: 0 }]
-      : [{ opacity: 0 }, { opacity: 0, offset: .22 }, { opacity: 1, offset: .85 }, { opacity: 1 }],
-    { duration, fill: "both", easing: 'linear' },
-  );
-  const animation = element.animate(leaving ? [large, small] : [small, large], {
-    duration,
-    easing: "cubic-bezier(.32,0,.18,1)",
-  });
-  historyAnimation = animation;
-  animation.onfinish = () => {
-    historyMorphing.value = false;
-    done();
-  };
-  animation.oncancel = () => {
-    historyMorphing.value = false;
-    done();
-  };
 }
 function readSelection() {
   const selection = window.getSelection(),
@@ -267,6 +168,7 @@ function onScroll() {
     new CustomEvent("daily-reading-mode", { detail: { compact: next } }),
   );
 }
+function onHistoryResize() { positionHistory(); }
 onMounted(() => {
   daily.normalizePdfIssues();
   daily.ensureGroups();
@@ -274,14 +176,12 @@ onMounted(() => {
   appScroller = document.getElementById("app");
   appScroller?.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
-  window.addEventListener("resize", positionHistory);
+  window.addEventListener("resize", onHistoryResize);
 });
 onBeforeUnmount(() => {
-  historyAnimation?.cancel();
-  historyContentAnimation?.cancel();
   document.removeEventListener("selectionchange", readSelection);
   appScroller?.removeEventListener("scroll", onScroll);
-  window.removeEventListener("resize", positionHistory);
+  window.removeEventListener("resize", onHistoryResize);
   readingCompact = false;
   window.dispatchEvent(
     new CustomEvent("daily-reading-mode", { detail: { compact: false } }),
@@ -307,7 +207,7 @@ onBeforeUnmount(() => {
             @pdf="pdfImporter?.open()"
           /><button
             ref="historyTrigger"
-            @click="openHistory"
+            @click="swipedId = ''; openHistory()"
             class="w-10 h-10 rounded-full card flex items-center justify-center text-zhuhong"
             :style="{
               visibility: historyOpen || historyMorphing ? 'hidden' : 'visible',
@@ -369,7 +269,7 @@ onBeforeUnmount(() => {
         :css="false"
         @enter="(el, done) => historyMorph(el, done)"
         @leave="(el, done) => historyMorph(el, done, true)"
-        @after-leave="historyTrigger?.focus({ preventScroll: true })"
+        @after-leave="historyAfterLeave"
         ><section
           v-if="historyOpen"
           ref="historyPanel"
