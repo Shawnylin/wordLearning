@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.9.2',
+    date: '2026-09-22',
+    title: '修复云同步卡片排版',
+    changes: [
+      '将本机数据、立即同步和云端数据收拢到同一行，消除按钮周围不自然的大块空白。',
+      '统一云同步卡片标题、数据区、分割线与 API 加密同步区域的间距节奏。',
+      '补充 320、375、390 与 430 像素宽度下的布局和横向溢出检查。'
+    ]
+  },
+  {
     version: '0.9.1',
     date: '2026-09-22',
     title: '个人资料与设置布局优化',

@@ -40,12 +40,11 @@ function formatSummary(summary: typeof sync.localSummary) {
     </div>
 
     <div v-else class="profile-sync-body">
-      <div class="profile-sync-summary">
-        <span><strong>本机</strong>{{ formatSummary(sync.localSummary) }}</span>
-        <span><strong>云端</strong>{{ formatSummary(sync.remoteSummary) }}</span>
-      </div>
-
-      <div class="profile-sync-actions">
+      <div class="profile-sync-main">
+        <div class="profile-sync-data">
+          <strong>本机</strong>
+          <span>{{ formatSummary(sync.localSummary) }}</span>
+        </div>
         <button
           class="profile-sync-action profile-sync-action-primary"
           data-testid="cloud-sync-now-button"
@@ -57,8 +56,11 @@ function formatSummary(summary: typeof sync.localSummary) {
           <RefreshCw v-else :size="16" />
           {{ sync.syncing ? '正在同步…' : '立即同步' }}
         </button>
+        <div class="profile-sync-data profile-sync-data-cloud">
+          <strong>云端</strong>
+          <span>{{ formatSummary(sync.remoteSummary) }}</span>
+        </div>
       </div>
-
 
       <p v-if="sync.error && !sync.open" class="profile-inline-feedback is-error" role="alert">{{ sync.error }}</p>
 
@@ -71,15 +73,17 @@ function formatSummary(summary: typeof sync.localSummary) {
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
 .cloud-sync-heading > :first-child { min-width: 0; flex: 1 1 auto; }
 .cloud-sync-heading > .profile-sync-time { margin-left: auto; }
-.profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 14px; }
-.profile-sync-summary { display: grid; justify-items: stretch; color: var(--ink-mute); font-size: 11px; text-align: left; }
-.profile-sync-summary span { display: flex; min-height: 56px; align-items: center; gap: 7px; border-bottom: 1px solid var(--line); }
-.profile-sync-summary span:last-child { border-bottom: 0; }
-.profile-sync-summary strong { min-width: 24px; color: var(--ink-soft); font-weight: 600; }
+.profile-sync-body { display: grid; }
+.profile-sync-main { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); min-height: 76px; align-items: center; gap: 10px; }
+.profile-sync-data { display: grid; min-width: 0; gap: 3px; color: var(--ink-mute); font-size: 11px; line-height: 1.45; }
+.profile-sync-data strong { color: var(--ink-soft); font-weight: 600; }
+.profile-sync-data span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-sync-data-cloud { justify-items: end; text-align: right; }
 .profile-sync-time { color: var(--ink-mute); }
-.profile-sync-actions { display: grid; justify-items: end; min-width: 104px; }
+.profile-sync-main > .profile-sync-action { min-width: 104px; }
 .profile-sync-time { font-size: 11px; line-height: 1.45; white-space: nowrap; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
-.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; grid-column: 1 / -1; }
+.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; }
 .profile-sync-unauth { padding: 8px 0; font-size: 13px; }
+@media (max-width: 340px) { .profile-sync-main { gap: 6px; } }
 </style>

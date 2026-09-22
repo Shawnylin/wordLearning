@@ -20,6 +20,18 @@ await page.evaluate(async()=>{
  localStorage.setItem('word-learning-cloud-sync:test-ui-user',JSON.stringify({choice:'merge-local-to-cloud',completedAt:1}))
  const auth=useAuthStore();auth.currentUser={id:'test-ui-user',displayName:'测试用户'};auth.initialized=true
 })
+for (const width of [320,375,390,430]) {
+ await page.setViewportSize({width,height:852})
+ const main=page.locator('.profile-sync-main');await main.waitFor()
+ const data=main.locator('.profile-sync-data');const button=main.getByRole('button',{name:'立即同步',exact:true})
+ const [mainBox,localBox,buttonBox,cloudBox]=await Promise.all([main.boundingBox(),data.nth(0).boundingBox(),button.boundingBox(),data.nth(1).boundingBox()])
+ assert(mainBox&&localBox&&buttonBox&&cloudBox)
+ assert(localBox.x+localBox.width<=buttonBox.x+1&&buttonBox.x+buttonBox.width<=cloudBox.x+1)
+ assert(Math.abs((localBox.y+localBox.height/2)-(buttonBox.y+buttonBox.height/2))<2)
+ assert(Math.abs((cloudBox.y+cloudBox.height/2)-(buttonBox.y+buttonBox.height/2))<2)
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true)
+}
+await page.setViewportSize({width:393,height:852})
 await page.getByRole('button',{name:'未开启',exact:true}).waitFor()
 await page.getByRole('button',{name:'未开启',exact:true}).click()
 await page.getByLabel('同步口令',{exact:true}).fill('test-ui-long-passphrase')
@@ -47,5 +59,5 @@ for(const width of [320,1280]){
  await page.keyboard.press('Escape');await page.waitForTimeout(560)
 }
 assert.deepEqual(errors,[])
-console.log(JSON.stringify({passed:['cloud sync UI enables encrypted upload','wire excludes API key and passphrase','forget device key','wrong-passphrase UI','320px and desktop dialog fit','empty API key validation'],errors}))
+console.log(JSON.stringify({passed:['cloud sync data and action stay compact at 320/375/390/430px','no horizontal overflow','cloud sync UI enables encrypted upload','wire excludes API key and passphrase','forget device key','wrong-passphrase UI','320px and desktop dialog fit','empty API key validation'],errors}))
 await browser.close()
