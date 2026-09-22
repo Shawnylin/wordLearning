@@ -16,112 +16,26 @@ import { useDailyStore } from './daily'
 import { useIdiomStore } from './idiom'
 import { useReviewStore } from './review'
 import { PROFILE_IDENTITY_CHANGED_EVENT } from '../utils/profileAvatar'
-
-interface SyncDecisionRecord {
-  choice: SyncChoice
-  completedAt: number
-}
+import {
+  autoSyncDueAt,
+  createSyncState,
+  nextRetrySchedule,
+  readDecision,
+  readSyncState,
+  saveDecision,
+  saveSyncState,
+  SYNC_DOMAINS
+} from './cloudSyncState'
+import type { SyncDecisionRecord } from './cloudSyncState'
 
 type SyncSource = 'choice' | 'manual' | 'automatic' | 'background'
 type ForegroundReason = 'foreground' | 'resume' | 'online'
-
-const DECISION_PREFIX = 'word-learning-cloud-sync:'
-const STATE_PREFIX = 'word-learning-cloud-sync-state:'
-const AUTO_CHANGE_DELAY = 45_000
-const RETRY_DELAYS = [30_000, 120_000, 600_000] as const
-const SYNC_DOMAINS: SyncDomain[] = ['profile', 'idiom', 'review', 'daily', 'apiSettings']
 
 export const syncChoiceLabels: Record<SyncChoice, string> = {
   'no-upload': '仅在本机',
   download: '下载到本机',
   'merge-local-to-cloud': '合并到云端',
   'merge-cloud-to-local': '合并到本机'
-}
-
-function decisionKey(userId: string): string {
-  return `${DECISION_PREFIX}${userId}`
-}
-
-function stateKey(userId: string): string {
-  return `${STATE_PREFIX}${userId}`
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function numberOr(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-function stringOr(value: unknown, fallback: string): string {
-  return typeof value === 'string' ? value : fallback
-}
-
-function createSyncState(lastSyncAt = 0): SyncState {
-  return {
-    pendingDomains: [],
-    lastLocalChangeAt: 0,
-    lastSyncAt,
-    lastRemoteUpdatedAt: '',
-    retryCount: 0,
-    nextRetryAt: 0,
-    lastError: ''
-  }
-}
-
-function readDecision(userId: string): SyncDecisionRecord | null {
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(decisionKey(userId)) || 'null')
-    if (!isRecord(value)) return null
-    const choice = value.choice
-    if (typeof choice !== 'string' || !Object.prototype.hasOwnProperty.call(syncChoiceLabels, choice)) return null
-    return {
-      choice: choice as SyncChoice,
-      completedAt: numberOr(value.completedAt, 0)
-    }
-  } catch {
-    return null
-  }
-}
-
-function saveDecision(userId: string, choice: SyncChoice, completedAt: number) {
-  try {
-    localStorage.setItem(decisionKey(userId), JSON.stringify({ choice, completedAt } satisfies SyncDecisionRecord))
-  } catch {
-    // The learning data remains in the existing stores if metadata storage is unavailable.
-  }
-}
-
-function readSyncState(userId: string, fallbackLastSyncAt = 0): SyncState {
-  const fallback = createSyncState(fallbackLastSyncAt)
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(stateKey(userId)) || 'null')
-    if (!isRecord(value)) return fallback
-    const pendingDomains = Array.isArray(value.pendingDomains)
-      ? value.pendingDomains.filter((domain): domain is SyncDomain => typeof domain === 'string' && SYNC_DOMAINS.includes(domain as SyncDomain))
-      : []
-    return {
-      pendingDomains: [...new Set(pendingDomains)],
-      lastLocalChangeAt: numberOr(value.lastLocalChangeAt, 0),
-      lastSyncAt: numberOr(value.lastSyncAt, fallbackLastSyncAt),
-      lastRemoteUpdatedAt: stringOr(value.lastRemoteUpdatedAt, ''),
-      retryCount: Math.max(0, Math.floor(numberOr(value.retryCount, 0))),
-      nextRetryAt: numberOr(value.nextRetryAt, 0),
-      lastError: stringOr(value.lastError, '')
-    }
-  } catch {
-    return fallback
-  }
-}
-
-function saveSyncState(userId: string, state: SyncState) {
-  if (!userId) return
-  try {
-    localStorage.setItem(stateKey(userId), JSON.stringify(state))
-  } catch {
-    // The queue is best-effort metadata; the existing Pinia persistence remains authoritative.
-  }
 }
 
 export const useCloudSyncStore = defineStore('cloudSync', () => {
@@ -187,8 +101,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
   function scheduleAutoSync() {
     if (!activeUserId.value || !prepared.value || syncing.value || open.value || !automaticChoice() || !pendingChanges.value) return
     clearAutoTimer()
-    const debounceAt = syncState.value.lastLocalChangeAt + AUTO_CHANGE_DELAY
-    const dueAt = Math.max(debounceAt, syncState.value.nextRetryAt)
+    const dueAt = autoSyncDueAt(syncState.value.lastLocalChangeAt, syncState.value.nextRetryAt)
     autoTimer = setTimeout(() => {
       autoTimer = undefined
       const choice = automaticChoice()
@@ -232,14 +145,14 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
   }
 
   function recordFailure(message: string, queueUpload: boolean) {
-    const retryCount = Math.min(syncState.value.retryCount + 1, RETRY_DELAYS.length)
     const pendingDomains = syncState.value.pendingDomains.length > 0 || !queueUpload
       ? syncState.value.pendingDomains
       : [...SYNC_DOMAINS]
+    const retry = nextRetrySchedule(syncState.value.retryCount, Date.now())
     patchSyncState({
       pendingDomains,
-      retryCount,
-      nextRetryAt: Date.now() + RETRY_DELAYS[retryCount - 1],
+      retryCount: retry.retryCount,
+      nextRetryAt: retry.nextRetryAt,
       lastError: message
     })
     if (pendingDomains.length > 0) scheduleAutoSync()
