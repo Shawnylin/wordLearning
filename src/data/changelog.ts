@@ -9,6 +9,17 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.9.3',
+    date: '2026-09-22',
+    title: '稳定性与加载性能优化',
+    changes: [
+      '完善浏览器回归与布局检查，修复 320 像素窄屏下记录详情标题可能横向溢出的问题。',
+      '更新学习、对比、设置、主题和动效相关测试，让当前交互在常用手机与平板尺寸下保持稳定。',
+      '将 CloudBase 相关代码从主入口拆分为独立资源，明显缩小首次加载的主脚本体积并提升缓存复用。',
+      'GitHub Pages 与 CloudBase 发布前都会先执行类型检查、自动测试和构建，检查失败时不再继续部署。'
+    ]
+  },
+  {
     version: '0.9.2',
     date: '2026-09-22',
     title: '修复云同步卡片排版',
