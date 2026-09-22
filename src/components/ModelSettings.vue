@@ -184,6 +184,7 @@ fieldset:disabled { opacity: .65; }
 .provider-editor-dialog .settings-secondary { border-radius: 11px; background: var(--soft); color: var(--ink-soft); }
 .provider-editor-dialog .settings-text-button { color: var(--zhuhong); font-size: 11px; }
 .provider-editor-dialog .settings-status { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; }
+.provider-editor-dialog .settings-status.text-zhuhong { border: 1px solid color-mix(in srgb, var(--zhuhong) 30%, transparent); background: var(--zhuhong-soft); }
 .provider-editor-dialog .settings-footnote { color: var(--ink-mute); font-size: 10px; line-height: 1.6; }
 @media (max-width: 520px) { .provider-editor-dialog { max-height: min(84dvh, 760px); } .provider-editor-content { padding: 17px; } }
 @media (min-width: 768px) {

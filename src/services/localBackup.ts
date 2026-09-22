@@ -1,9 +1,11 @@
 import { useDailyStore } from '../stores/daily'
 import { useIdiomStore } from '../stores/idiom'
 import { useReviewStore } from '../stores/review'
+import { useStatisticsStore } from '../stores/statistics'
 import { useSettingsStore } from '../stores/settings'
 import { useThemeStore, type ThemeColor, type ThemeMode } from '../stores/theme'
 import { readProfileIdentity, saveProfileIdentity } from '../utils/profileAvatar'
+import { normalizeLearningStatisticsSyncData } from './learningStatistics'
 import type {
   DailySyncData,
   IdiomSyncData,
@@ -257,7 +259,8 @@ function normalizeReviewData(value: unknown, idiom: IdiomSyncData): ReviewSyncDa
       wrongToday: numberMap(item.wrongToday),
       ...(snapshotStats ? { wordStats: snapshotStats } : {}),
       ...(item.reviewedToday === undefined ? {} : { reviewedToday: strings(item.reviewedToday) }),
-      ...(typeof item.reviewedDay === 'string' ? { reviewedDay: item.reviewedDay } : {})
+      ...(typeof item.reviewedDay === 'string' ? { reviewedDay: item.reviewedDay } : {}),
+      ...(typeof item.statisticsAnswerEventId === 'string' ? { statisticsAnswerEventId: item.statisticsAnswerEventId } : {})
     }
   })
   const lastResult = value.lastResult === undefined || value.lastResult === null
@@ -387,7 +390,8 @@ function payloadFromCurrent(capturedAt = Date.now()): SafeBackupPayload {
     profile: readProfileIdentity(),
     idiom: useIdiomStore().exportSyncData(),
     review: useReviewStore().exportSyncData(),
-    daily: useDailyStore().exportSyncData()
+    daily: useDailyStore().exportSyncData(),
+    statistics: useStatisticsStore().exportSyncData()
   })
 }
 
@@ -397,13 +401,15 @@ function preparePayload(value: unknown, fallbackProfile: ProfileSyncData): SafeB
   const idiom = normalizeIdiomData(value.idiom)
   const review = normalizeReviewData(value.review, idiom)
   const daily = normalizeDailyData(value.daily)
+  const statistics = normalizeLearningStatisticsSyncData(value.statistics)
   return {
     version: 2,
     capturedAt: finite(value.capturedAt, 0),
     profile: normalizeProfile(value.profile, fallbackProfile),
     idiom,
     review,
-    daily
+    daily,
+    statistics
   }
 }
 
@@ -430,7 +436,8 @@ function prepareLegacy(value: Record<string, unknown>, fallbackProfile: ProfileS
       profile: clone(fallbackProfile),
       idiom,
       review,
-      daily
+      daily,
+      statistics: normalizeLearningStatisticsSyncData(undefined)
     },
     preferences: currentPreferences()
   }
@@ -525,6 +532,7 @@ function applyPayload(value: SafeBackupPayload) {
   useIdiomStore().restoreSyncData(clone(value.idiom))
   useReviewStore().restoreSyncData(clone(value.review))
   useDailyStore().restoreSyncData(clone(value.daily))
+  useStatisticsStore().restoreSyncData(value.statistics)
 }
 
 export async function restorePreparedLocalBackup(prepared: PreparedLocalBackup): Promise<void> {

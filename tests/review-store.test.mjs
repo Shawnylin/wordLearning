@@ -9,6 +9,19 @@ const source = ts.transpileModule(readFileSync(new URL('../src/stores/review.ts'
 
 function loadReviewModule() {
   const idiomStore = { idiomCache: {} }
+  const statisticsStore = {
+    reviewCalls: [],
+    reviewAnswers: [],
+    recordReview(word, now) { this.reviewCalls.push({ word, now }) },
+    recordReviewAnswer(word, correct, now) {
+      const id = `answer-${this.reviewAnswers.length + 1}`
+      this.reviewAnswers.push({ id, word, correct, now })
+      return id
+    },
+    removeReviewAnswer(id) { this.reviewAnswers = this.reviewAnswers.filter(item => item.id !== id) },
+    reconcileReviewDay() {},
+    clearReviewEvents() { this.reviewCalls = []; this.reviewAnswers = [] },
+  }
   const ref = value => ({ __kind: 'ref', value })
   const computed = getter => ({ __kind: 'computed', get value() { return getter() } })
   const defineStore = (_id, setup) => () => {
@@ -34,9 +47,10 @@ function loadReviewModule() {
     if (name === 'pinia') return { defineStore }
     if (name === 'vue') return { ref, computed }
     if (name === './idiom') return { useIdiomStore: () => idiomStore }
+    if (name === './statistics') return { useStatisticsStore: () => statisticsStore }
     return {}
   }, exports)
-  return { ...exports, idiomStore }
+  return { ...exports, idiomStore, statisticsStore }
 }
 
 const DAY = 24 * 60 * 60 * 1000
@@ -165,7 +179,7 @@ test('legacy word stats migrate without losing wrong count or last review time',
 })
 
 test('undo restores long-term scheduling when a graduating answer is reverted', () => {
-  const { useReviewStore, idiomStore } = loadReviewModule()
+  const { useReviewStore, idiomStore, statisticsStore } = loadReviewModule()
   idiomStore.idiomCache['实事求是'] = { word: '实事求是' }
   const store = useReviewStore()
   store.startSession(1, ['实事求是'], 1_000)
@@ -175,12 +189,15 @@ test('undo restores long-term scheduling when a graduating answer is reverted', 
   assert.equal(store.phase, 'reviewing')
   assert.equal(store.wordStats['实事求是'].correctCount, 1)
   assert.equal(store.getTodayCompletedCount(3_000), 1)
+  assert.equal(statisticsStore.reviewAnswers.length, 2)
 
   store.undo()
   assert.equal(store.phase, 'reviewing')
   assert.equal(store.wordStats['实事求是'].correctCount, 0)
   assert.equal(store.getTodayCompletedCount(3_000), 0)
   assert.deepEqual(store.queue, ['实事求是', '占位词'])
+  assert.equal(statisticsStore.reviewAnswers.length, 1)
+  assert.equal(statisticsStore.reviewAnswers[0].correct, true)
 })
 
 test('daily queue includes only due non-mastered words and fills the requested target', () => {

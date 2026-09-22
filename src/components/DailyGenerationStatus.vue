@@ -21,7 +21,7 @@ const progressLabels: Record<DailyProgressPhase, string> = {
   <Motion>
     <div
       v-if="props.loading"
-      class="daily-progress rounded-2xl bg-soft p-4 text-sm text-ink-soft"
+      class="daily-progress rounded-2xl border border-line bg-soft p-4 text-sm text-ink-soft"
       role="status"
       aria-live="polite"
     >
@@ -42,7 +42,7 @@ const progressLabels: Record<DailyProgressPhase, string> = {
     <p
       v-if="props.error"
       role="alert"
-      class="rounded-2xl bg-zhuhong-soft p-4 text-sm text-zhuhong"
+      class="rounded-2xl border border-zhuhong/30 bg-zhuhong-soft p-4 text-sm leading-6 text-zhuhong"
     >
       {{ props.error }}
     </p>

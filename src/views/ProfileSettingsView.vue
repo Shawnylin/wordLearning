@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ProviderBalances from '../components/ProviderBalances.vue'
+import LearningInsights from '../components/LearningInsights.vue'
 import Motion from '../components/Motion.vue'
 import LiquidToggle from '../components/LiquidToggle.vue'
 import { ref, computed } from 'vue'
@@ -9,6 +10,7 @@ import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import { useReviewStore } from '../stores/review'
 import { useDailyStore } from '../stores/daily'
+import { useStatisticsStore } from '../stores/statistics'
 import { useAppUpdateStore } from '../stores/appUpdate'
 import { createLocalBackup, prepareLocalBackup, readLocalBackups, restorePreparedLocalBackup, serializeLocalBackup, type PreparedLocalBackup } from '../services/localBackup'
 import {
@@ -27,6 +29,7 @@ const themeStore = useThemeStore()
 const idiomStore = useIdiomStore()
 const reviewStore = useReviewStore()
 const daily = useDailyStore()
+const statisticsStore = useStatisticsStore()
 
 const showClearConfirm = ref(false)
 const showClearCacheConfirm = ref(false)
@@ -53,6 +56,7 @@ function handleClearCache() {
   idiomStore.clearHistory()
   idiomStore.clearCompareHistory()
   reviewStore.resetAll()
+  statisticsStore.resetAll()
   daily.cancel()
   daily.issues = []
   daily.groups = []
@@ -153,10 +157,11 @@ async function confirmRestore() {
 
       <section class="profile-section profile-stats-section" aria-labelledby="profile-stats-title">
         <div class="profile-section-heading"><h2 id="profile-stats-title">学习与统计</h2></div>
+        <LearningInsights />
         <div class="profile-list">
           <div class="profile-list-row profile-settings-row">
             <span class="profile-row-icon text-gold"><Coins :size="18" /></span>
-            <span class="profile-row-main"><span class="profile-row-title">学习统计</span><span class="profile-row-caption">{{ idiomStore.tokenStats.requestCount }} 次调用</span></span>
+            <span class="profile-row-main"><span class="profile-row-title">API 用量</span><span class="profile-row-caption">{{ idiomStore.tokenStats.requestCount }} 次调用</span></span>
             <span class="profile-row-value">{{ idiomStore.tokenStats.totalTokens.toLocaleString() }} tokens</span>
           </div>
 
@@ -259,7 +264,7 @@ async function confirmRestore() {
 
     <Teleport to="body">
       <Motion><div v-if="showClearConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" @click.self="showClearConfirm = false">
-        <div class="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl">
+        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-6 shadow-xl">
           <h3 class="mb-2 text-lg font-semibold text-ink">清空搜索历史？</h3>
           <p class="mb-6 text-sm text-ink-soft">已生成的学习内容不会删除。</p>
           <div class="flex gap-3"><button class="flex-1 rounded-xl bg-soft py-2.5 text-sm font-medium text-ink-soft" type="button" @click="showClearConfirm = false">取消</button><button class="btn-primary flex-1 rounded-xl py-2.5 text-sm font-medium" type="button" @click="handleClearHistory">清空</button></div>
@@ -269,7 +274,7 @@ async function confirmRestore() {
 
     <Teleport to="body">
       <Motion><div v-if="showClearCacheConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" @click.self="showClearCacheConfirm = false">
-        <div class="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl">
+        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-6 shadow-xl">
           <h3 class="mb-2 text-lg font-semibold text-ink">清空全部数据？</h3>
           <p class="mb-6 text-sm text-ink-soft">将删除成语、日报和学习记录，且无法恢复。</p>
           <div class="flex gap-3"><button class="flex-1 rounded-xl bg-soft py-2.5 text-sm font-medium text-ink-soft" type="button" @click="showClearCacheConfirm = false">取消</button><button class="btn-primary flex-1 rounded-xl py-2.5 text-sm font-medium" type="button" @click="handleClearCache">清空全部数据</button></div>
@@ -278,7 +283,7 @@ async function confirmRestore() {
     </Teleport>
     <Teleport to="body">
       <Motion><div v-if="pendingRestore && restoreStep === 1" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" @click.self="cancelRestore">
-        <div class="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-label="备份恢复摘要">
+        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-label="备份恢复摘要">
           <h3 class="mb-2 text-lg font-semibold text-ink">确认备份内容</h3>
           <p class="text-sm text-ink-soft">恢复前请核对数据摘要。文章正文不会被重写，API Key 和认证信息不在备份中。</p>
           <div class="my-4 rounded-xl bg-soft p-4 text-sm leading-7 text-ink-soft">
@@ -296,7 +301,7 @@ async function confirmRestore() {
 
     <Teleport to="body">
       <Motion><div v-if="pendingRestore && restoreStep === 2" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" @click.self="cancelRestore">
-        <div class="w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-label="再次确认恢复">
+        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-line bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-label="再次确认恢复">
           <h3 class="mb-2 text-lg font-semibold text-ink">再次确认恢复？</h3>
           <p class="mb-6 text-sm text-ink-soft">将以这份备份恢复本机学习、复习、日报和非敏感偏好。校验或写入失败会回滚到恢复前状态。</p>
           <div class="flex gap-3">

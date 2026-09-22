@@ -234,10 +234,8 @@
 .profile-row-value {
   flex: none;
   max-width: 42%;
-  overflow: hidden;
+  overflow-wrap: anywhere;
   text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .profile-row-chevron {
@@ -327,12 +325,12 @@
 
 .profile-effort-options button.is-selected {
   background: var(--zhuhong-solid);
-  color: var(--paper-ink);
+  color: var(--color-paper-ink);
 }
 
 .profile-data-actions button.is-selected {
   background: var(--zhuhong-solid);
-  color: var(--paper-ink);
+  color: var(--color-paper-ink);
 }
 
 .profile-setting-line {

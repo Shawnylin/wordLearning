@@ -7,7 +7,7 @@ import { createPinia, setActivePinia } from 'pinia'
 const file = new URL('./.idiom-review-test.tmp.mjs', import.meta.url)
 const compiled = await build({
   stdin: {
-    contents: "export { useIdiomStore } from './src/stores/idiom'; export { useReviewStore } from './src/stores/review'",
+    contents: "export { useIdiomStore } from './src/stores/idiom'; export { useReviewStore } from './src/stores/review'; export { useStatisticsStore } from './src/stores/statistics'",
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -17,7 +17,7 @@ const compiled = await build({
   external: ['pinia', 'vue'],
 })
 await writeFile(file, compiled.outputFiles[0].text)
-const { useIdiomStore, useReviewStore } = await import(file.href)
+const { useIdiomStore, useReviewStore, useStatisticsStore } = await import(file.href)
 
 const originalFetch = globalThis.fetch
 after(async () => {
@@ -73,6 +73,7 @@ test('first successful learning creates exactly one review item without changing
   setActivePinia(createPinia())
   const idiom = useIdiomStore()
   const review = useReviewStore()
+  const statistics = useStatisticsStore()
   globalThis.fetch = async () => successSse('因地制宜')
 
   const result = await idiom.searchIdiom('因地制宜', config)
@@ -90,12 +91,19 @@ test('first successful learning creates exactly one review item without changing
   assert(review.wordStats['因地制宜'].nextReviewAt > 0)
   assert.deepEqual(idiom.tokenStats, { totalTokens: 80, requestCount: 1 })
   assert.equal(idiom.searchHistory.length, 1)
+  assert.equal(statistics.activities.length, 1)
+  assert.equal(statistics.activities[0].type, 'learn')
+  assert.equal(statistics.activities[0].word, '因地制宜')
+  assert.equal(statistics.tokenUsage.length, 1)
+  assert.equal(statistics.tokenUsage[0].tokens, 80)
+  assert.equal(statistics.tokenUsage[0].source, 'idiom')
 })
 
 test('repeated learning and cache hits never duplicate or reset review progress', async () => {
   setActivePinia(createPinia())
   const idiom = useIdiomStore()
   const review = useReviewStore()
+  const statistics = useStatisticsStore()
   globalThis.fetch = async () => successSse('久久为功')
 
   await idiom.searchIdiom('久久为功', config)
@@ -123,6 +131,8 @@ test('repeated learning and cache hits never duplicate or reset review progress'
   assert.equal(idiom.searchHistory.length, 1)
   assert.equal(idiom.queryCounts['久久为功'], 3)
   assert.deepEqual(idiom.tokenStats, { totalTokens: 80, requestCount: 1 })
+  assert.equal(statistics.activities.length, 1)
+  assert.equal(statistics.tokenUsage.length, 1)
 })
 
 test('API failure, cancellation and incomplete output never create review items', async () => {
@@ -130,6 +140,7 @@ test('API failure, cancellation and incomplete output never create review items'
     setActivePinia(createPinia())
     const idiom = useIdiomStore()
     const review = useReviewStore()
+    const statistics = useStatisticsStore()
     if (scenario === 'failure') {
       globalThis.fetch = async () => Response.json(
         { error: { message: 'server failed' } },
@@ -147,6 +158,7 @@ test('API failure, cancellation and incomplete output never create review items'
     assert.equal(result, null)
     assert.deepEqual(review.wordStats, {})
     assert.equal(Object.keys(idiom.idiomCache).length, 0)
+    assert.equal(statistics.activities.length, 0)
   }
 })
 
@@ -154,6 +166,7 @@ test('cached learning content backfills a missing review item without an API cal
   setActivePinia(createPinia())
   const idiom = useIdiomStore()
   const review = useReviewStore()
+  const statistics = useStatisticsStore()
   idiom.idiomCache['守正创新'] = cachedCard('守正创新')
   globalThis.fetch = async () => {
     throw new Error('cached content must not request network')
@@ -165,6 +178,8 @@ test('cached learning content backfills a missing review item without an API cal
   assert.equal(review.wordStats['守正创新'].state, 'new')
   assert.equal(Object.keys(review.wordStats).length, 1)
   assert.equal(idiom.searchHistory.length, 1)
+  assert.equal(statistics.activities.length, 1)
+  assert.equal(statistics.tokenUsage.length, 0)
 })
 
 test('relearning a mastered word preserves mastery history and favorites remain independent', async () => {
@@ -197,6 +212,7 @@ test('deleting search history never deletes review progress', async () => {
   setActivePinia(createPinia())
   const idiom = useIdiomStore()
   const review = useReviewStore()
+  const statistics = useStatisticsStore()
   globalThis.fetch = async () => successSse('循序渐进')
 
   await idiom.searchIdiom('循序渐进', config)
@@ -206,27 +222,33 @@ test('deleting search history never deletes review progress', async () => {
   idiom.deleteSearchRecord(recordId)
   assert.equal(idiom.searchHistory.length, 0)
   assert.deepEqual(review.wordStats['循序渐进'], stat)
+  assert.equal(statistics.activities.length, 1)
 
   await idiom.searchIdiom('循序渐进', config)
   idiom.clearHistory()
   assert.equal(idiom.searchHistory.length, 0)
   assert.deepEqual(review.wordStats['循序渐进'], stat)
+  assert.equal(statistics.activities.length, 1)
 })
 
 test('review item created by learning is included in cloud-sync serialization', async () => {
   setActivePinia(createPinia())
   const idiom = useIdiomStore()
   const review = useReviewStore()
+  const statistics = useStatisticsStore()
   globalThis.fetch = async () => successSse('知行合一', 64)
 
   await idiom.searchIdiom('知行合一', config)
   const serialized = JSON.parse(JSON.stringify({
     idiom: idiom.exportSyncData(),
     review: review.exportSyncData(),
+    statistics: statistics.exportSyncData(),
   }))
 
   assert.equal(serialized.idiom.idiomCache['知行合一'].word, '知行合一')
   assert.equal(serialized.review.wordStats['知行合一'].state, 'new')
   assert.equal(serialized.review.wordStats['知行合一'].correctCount, 0)
   assert.equal(serialized.review.wordStats['知行合一'].wrongCount, 0)
+  assert.equal(serialized.statistics.activities.length, 1)
+  assert.equal(serialized.statistics.tokenUsage.length, 1)
 })

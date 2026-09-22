@@ -236,7 +236,7 @@ export const useDailyStore = defineStore(
         error.value = e instanceof Error ? e.message : "日报生成失败";
       } finally {
         if (consumedTokens > 0) {
-          useIdiomStore().addTokenUsage(consumedTokens);
+          useIdiomStore().addTokenUsage(consumedTokens, 'daily');
           if (error.value)
             error.value += `（本次接口已报告消耗 ${consumedTokens.toLocaleString()} tokens）`;
         }

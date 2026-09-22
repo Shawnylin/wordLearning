@@ -31,6 +31,7 @@ const compiled = await build({
     contents: `
       export { useIdiomStore } from './src/stores/idiom'
       export { useReviewStore } from './src/stores/review'
+      export { useStatisticsStore } from './src/stores/statistics'
       export { useDailyStore } from './src/stores/daily'
       export { useSettingsStore } from './src/stores/settings'
       export { useThemeStore } from './src/stores/theme'
@@ -57,6 +58,7 @@ const {
   useDailyStore,
   useIdiomStore,
   useReviewStore,
+  useStatisticsStore,
   useSettingsStore,
   useThemeStore,
 } = mod
@@ -99,6 +101,7 @@ function seedRichData() {
   const idioms = useIdiomStore()
   const review = useReviewStore()
   const daily = useDailyStore()
+  const statistics = useStatisticsStore()
   const settings = useSettingsStore()
   const theme = useThemeStore()
 
@@ -126,6 +129,11 @@ function seedRichData() {
   }
   review.reviewedToday = ['因地制宜']
   review.reviewedDay = '2026-09-23'
+  statistics.recordLearning('因地制宜', 700)
+  statistics.recordReview('因地制宜', 800)
+  statistics.recordReviewAnswer('因地制宜', true, 810)
+  statistics.recordReviewAnswer('因地制宜', false, 820)
+  statistics.recordTokenUsage(21, 'idiom', 830, 'backup-token')
 
   daily.issues = [{
     id: 'daily-link',
@@ -182,6 +190,9 @@ test('creates a complete safe backup, summarizes it, excludes credentials, and k
   assert.equal(first.summary.dailyArticles, 2)
   assert.equal(first.summary.dailyStarredArticles, 2)
   assert.equal(first.summary.dailyCompletedArticles, 2)
+  assert.equal(first.document.payload.statistics.activities.length, 2)
+  assert.equal(first.document.payload.statistics.reviewAnswers.length, 2)
+  assert.equal(first.document.payload.statistics.tokenUsage.length, 1)
 
   const text = serializeLocalBackup(first.document)
   assert(!text.includes('test-only-secret-api-key'))
@@ -209,6 +220,7 @@ test('normal restore preserves learning, favorites, review mastery/schedule, Dai
   const expected = structuredClone(backup.document)
 
   const idioms = useIdiomStore(), review = useReviewStore(), daily = useDailyStore()
+  const statistics = useStatisticsStore()
   const settings = useSettingsStore(), theme = useThemeStore()
   idioms.idiomCache = { 临时词: idiom('临时词', 999) }
   idioms.searchHistory = []
@@ -218,6 +230,7 @@ test('normal restore preserves learning, favorites, review mastery/schedule, Dai
   daily.issues = []
   daily.groups = []
   daily.selectedId = ''
+  statistics.resetAll()
   settings.reviewTarget = 1
   theme.theme = 'light'
   theme.followSystem = true
@@ -231,6 +244,7 @@ test('normal restore preserves learning, favorites, review mastery/schedule, Dai
   assert.equal(review.wordStats['因地制宜'].correctCount, 8)
   assert.equal(review.wordStats['因地制宜'].wrongCount, 2)
   assert.deepEqual(daily.exportSyncData(), expected.payload.daily)
+  assert.deepEqual(statistics.exportSyncData(), expected.payload.statistics)
   assert.equal(daily.issues[0].articles[0].content, expected.payload.daily.issues[0].articles[0].content)
   assert.equal(daily.issues[0].articles[0].starred, true)
   assert.equal(daily.issues[0].articles[0].completedAt, 1_790_000_000_000)
@@ -245,22 +259,26 @@ test('normal restore preserves learning, favorites, review mastery/schedule, Dai
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
   })
   await restorePreparedLocalBackup(backup)
   assert.equal(JSON.stringify({
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
   }), once)
 })
 
 test('malformed or sensitive backups are rejected before any local data is changed', async () => {
   seedRichData()
   const idioms = useIdiomStore(), review = useReviewStore(), daily = useDailyStore()
+  const statistics = useStatisticsStore()
   const before = JSON.stringify({
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
   })
 
   assert.throws(() => prepareLocalBackup({ kind: 'word-learning-backup', version: 1, createdAt: 1, payload: {} }), /格式/)
@@ -285,6 +303,7 @@ test('malformed or sensitive backups are rejected before any local data is chang
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
   }), before)
 })
 
@@ -307,6 +326,9 @@ test('legacy manual backups with missing newer fields migrate safely and create 
   assert.equal(prepared.document.payload.review.wordStats['老词'].state, 'new')
   assert.equal(prepared.document.payload.review.wordStats['老词'].correctCount, 0)
   assert.equal(prepared.document.payload.review.wordStats['老词'].wrongCount, 0)
+  assert.deepEqual(prepared.document.payload.statistics, {
+    version: 1, activities: [], reviewAnswers: [], tokenUsage: []
+  })
 })
 
 test('new review data and mastered state survive backup preparation without reset', () => {
@@ -328,6 +350,7 @@ test('mid-restore failure rolls all already-written stores back to their origina
   seedRichData()
   const target = createLocalBackup(30_000)
   const idioms = useIdiomStore(), review = useReviewStore(), daily = useDailyStore()
+  const statistics = useStatisticsStore()
   const settings = useSettingsStore(), theme = useThemeStore()
 
   idioms.idiomCache = { 原数据: idiom('原数据', 999) }
@@ -339,6 +362,9 @@ test('mid-restore failure rolls all already-written stores back to their origina
   daily.issues = [{ id: 'origin-daily', groupId: 'origin-group', createdAt: 999, tokenUsage: 0, articles: [{ ...article('link'), title: '原日报', content: '恢复失败后必须保留的原始正文。' }] }]
   daily.groups = [{ id: 'origin-group', name: '原分组', collapsed: false, createdAt: 999 }]
   daily.selectedId = 'origin-daily'
+  statistics.resetAll()
+  statistics.recordLearning('原数据', 900)
+  statistics.recordReviewAnswer('原数据', false, 910)
   settings.reviewTarget = 9
   theme.theme = 'light'
   theme.followSystem = false
@@ -348,6 +374,7 @@ test('mid-restore failure rolls all already-written stores back to their origina
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
     reviewTarget: settings.reviewTarget,
     theme: theme.theme,
     followSystem: theme.followSystem,
@@ -368,6 +395,7 @@ test('mid-restore failure rolls all already-written stores back to their origina
     idiom: idioms.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData(),
     reviewTarget: settings.reviewTarget,
     theme: theme.theme,
     followSystem: theme.followSystem,

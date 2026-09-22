@@ -12,7 +12,7 @@ import { useDailyStore } from "../stores/daily";
 import { useSettingsStore } from "../stores/settings";
 import { useMorphOverlay } from '../composables/useMorphOverlay';
 import { useTabletLayout } from '../composables/useTabletLayout';
-const tablet = useTabletLayout();
+const tablet = useTabletLayout(960);
 const daily = useDailyStore(),
   settings = useSettingsStore();
 const sheet = ref<InstanceType<typeof DailyStudySheet>>(),
@@ -318,7 +318,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .daily-reader { min-width: 0; width: 100%; }
 .daily-lookup { display: none; }
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .app-main > .daily-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(240px, 28vw, 360px);

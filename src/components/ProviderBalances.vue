@@ -56,7 +56,7 @@ onBeforeUnmount(() => { generation++ })
       <span class="profile-row-main"><span class="profile-row-title">API 余额</span><span class="profile-row-caption">{{ row.name }}</span></span>
       <span v-if="row.loading" class="profile-row-value">查询中…</span>
       <span v-else-if="row.balances.length" class="profile-row-value balance-amount"><span v-for="balance in row.balances" :key="balance.currency">{{ formatBalance(balance) }}</span></span>
-      <span v-else class="profile-row-value">{{ row.message }}</span>
+      <span v-else class="profile-row-value balance-message">{{ row.message }}</span>
       <button v-if="index === 0" class="balance-refresh" type="button" :disabled="loading" aria-label="刷新 API 余额" @click="refresh"><RefreshCw :size="16" :class="{ 'animate-spin': loading }" /></button>
     </div>
     <div v-if="!rows.length" class="profile-list-row profile-settings-row balance-row">
@@ -72,4 +72,5 @@ onBeforeUnmount(() => { generation++ })
 .balance-amount { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
 .balance-refresh { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 10px; color: var(--ink-mute); }
 .balance-refresh:hover { background: var(--soft); color: var(--ink); }
+.balance-message { line-height: 1.5; }
 </style>

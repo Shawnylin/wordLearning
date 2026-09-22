@@ -3,6 +3,8 @@ import { readEncryptedApiSettings } from '../utils/apiVaultCrypto'
 import { useDailyStore } from '../stores/daily'
 import { useIdiomStore } from '../stores/idiom'
 import { useReviewStore } from '../stores/review'
+import { useStatisticsStore } from '../stores/statistics'
+import { mergeLearningStatisticsSyncData, normalizeLearningStatisticsSyncData } from './learningStatistics'
 import { cloudbaseRdb } from './cloudbase'
 import { readProfileIdentity, saveProfileIdentity } from '../utils/profileAvatar'
 import type { CompareRecord } from '../types/idiom'
@@ -60,7 +62,7 @@ function parseSyncPayload(value: unknown): LocalSyncPayload | null {
     avatarDataUrl: typeof rawProfile.avatarDataUrl === 'string' ? rawProfile.avatarDataUrl : '',
     avatarUpdatedAt: typeof rawProfile.avatarUpdatedAt === 'number' ? rawProfile.avatarUpdatedAt : 0
   }
-  return clone({ ...value, version: 2 as const, profile, apiSettings: readEncryptedApiSettings(value.apiSettings) }) as LocalSyncPayload
+  return clone({ ...value, version: 2 as const, profile, statistics: normalizeLearningStatisticsSyncData(value.statistics), apiSettings: readEncryptedApiSettings(value.apiSettings) }) as LocalSyncPayload
 }
 
 function chooseByTime<T>(local: T | undefined, remote: T | undefined, getTime: (value: T) => number, preferRemote: boolean): T | undefined {
@@ -219,6 +221,7 @@ export function mergeSyncPayload(local: LocalSyncPayload, remote: LocalSyncPaylo
     profile,
     idiom,
     review: mergeReview(local.review, remote.review, preferRemote),
+    statistics: mergeLearningStatisticsSyncData(local.statistics, remote.statistics),
     daily
   }
 }
@@ -228,6 +231,7 @@ export async function buildLocalSyncPayload(): Promise<LocalSyncPayload> {
   const idiom = useIdiomStore()
   const review = useReviewStore()
   const daily = useDailyStore()
+  const statistics = useStatisticsStore()
   return clone({
     version: 2 as const,
     capturedAt: Date.now(),
@@ -235,7 +239,8 @@ export async function buildLocalSyncPayload(): Promise<LocalSyncPayload> {
     profile: readProfileIdentity(),
     idiom: idiom.exportSyncData(),
     review: review.exportSyncData(),
-    daily: daily.exportSyncData()
+    daily: daily.exportSyncData(),
+    statistics: statistics.exportSyncData()
   })
 }
 
@@ -244,12 +249,13 @@ export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
   useIdiomStore().restoreSyncData(clone(payload.idiom))
   useReviewStore().restoreSyncData(clone(payload.review))
   useDailyStore().restoreSyncData(clone(payload.daily))
+  useStatisticsStore().restoreSyncData(payload.statistics)
   if (!saveProfileIdentity(payload.profile)) throw new Error('个人资料无法保存到本机，请检查浏览器存储空间')
 }
 
 export function hasSameSyncContent(left: LocalSyncPayload, right: LocalSyncPayload): boolean {
-  return JSON.stringify({ apiSettings: left.apiSettings, profile: left.profile, idiom: left.idiom, review: left.review, daily: left.daily })
-    === JSON.stringify({ apiSettings: right.apiSettings, profile: right.profile, idiom: right.idiom, review: right.review, daily: right.daily })
+  return JSON.stringify({ apiSettings: left.apiSettings, profile: left.profile, idiom: left.idiom, review: left.review, daily: left.daily, statistics: normalizeLearningStatisticsSyncData(left.statistics) })
+    === JSON.stringify({ apiSettings: right.apiSettings, profile: right.profile, idiom: right.idiom, review: right.review, daily: right.daily, statistics: normalizeLearningStatisticsSyncData(right.statistics) })
 }
 
 export async function loadRemoteSyncPayload(userId: string, sinceUpdatedAt?: string): Promise<RemoteSyncSnapshot | null> {
@@ -279,7 +285,7 @@ export async function saveRemoteSyncPayload(userId: string, payload: LocalSyncPa
   const updatedAt = new Date().toISOString()
   const record = {
     user_id: userId,
-    payload: clone({ version: 2, capturedAt: payload.capturedAt, profile: payload.profile, idiom: payload.idiom, review: payload.review, daily: payload.daily, apiSettings: readEncryptedApiSettings(payload.apiSettings) }),
+    payload: clone({ version: 2, capturedAt: payload.capturedAt, profile: payload.profile, idiom: payload.idiom, review: payload.review, daily: payload.daily, statistics: normalizeLearningStatisticsSyncData(payload.statistics), apiSettings: readEncryptedApiSettings(payload.apiSettings) }),
     schema_version: 2,
     local_updated_at: payload.capturedAt,
     updated_at: updatedAt

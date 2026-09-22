@@ -44,7 +44,7 @@ function isDisabled(choice: SyncChoice) {
   <Teleport to="body">
     <div
       v-if="sync.open"
-      class="fixed inset-0 z-[80] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+      class="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-5"
       data-testid="cloud-sync-dialog"
       role="presentation"
       @click.self="sync.closeWizard"
@@ -144,3 +144,9 @@ function isDisabled(choice: SyncChoice) {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+@media (max-width: 639px) {
+  .cloud-sync-dialog { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+}
+</style>

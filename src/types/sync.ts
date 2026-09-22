@@ -2,6 +2,7 @@ import type { EncryptedApiSettings } from '../utils/apiVaultCrypto'
 import type { DailyIssue } from '../api/daily'
 import type { DailyGroup } from '../stores/daily'
 import type { CompareRecord, IdiomData, SearchRecord, TokenStats } from './idiom'
+import type { LearningStatisticsSyncData } from './statistics'
 
 export type SyncChoice = 'no-upload' | 'download' | 'merge-local-to-cloud' | 'merge-cloud-to-local'
 
@@ -43,6 +44,7 @@ export interface ReviewSyncSnapshot {
   wordStats?: Record<string, ReviewSyncWordStat>
   reviewedToday?: string[]
   reviewedDay?: string
+  statisticsAnswerEventId?: string
 }
 
 export interface ReviewSyncWordStat {
@@ -106,6 +108,8 @@ export interface LocalSyncPayload {
   idiom: IdiomSyncData
   review: ReviewSyncData
   daily: DailySyncData
+  /** v0.9.9+ 统计事实；旧云端/旧备份缺失时按空事件集兼容。 */
+  statistics?: LearningStatisticsSyncData
 }
 
 export interface SyncSummary {

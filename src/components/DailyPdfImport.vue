@@ -117,7 +117,7 @@ async function parse() {
         status.value = text;
         progress.value = Math.round(40 + value * 55);
       },
-      (tokens) => idioms.addTokenUsage(tokens),
+      (tokens) => idioms.addTokenUsage(tokens, 'pdf'),
     );
     status.value = `分篇完成，共 ${articles.value.length} 篇；请核对后保存`;
     progress.value = 100;

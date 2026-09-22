@@ -400,9 +400,9 @@ function doConfirmDelete() {
           </TransitionGroup>
         </div>
 
-        <div v-else class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
-            <Clock :size="32" class="text-ink-mute" />
+        <div v-else class="text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
+            <Clock :size="28" class="text-ink-mute" />
           </div>
           <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的成语' : '还没有学习记录' }}
@@ -410,7 +410,7 @@ function doConfirmDelete() {
           <Motion><button
             v-if="!searchQuery"
             @click="router.push('/learn')"
-            class="mt-4 px-6 py-2 rounded-full btn-primary text-sm font-medium transition-colors"
+            class="mt-4 min-h-11 px-6 py-2 rounded-full btn-primary text-sm font-medium transition-colors"
           >
             开始学习
           </button></Motion>
@@ -462,9 +462,9 @@ function doConfirmDelete() {
           </TransitionGroup>
         </div>
 
-        <div v-else class="text-center py-16">
-          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
-            <GitCompare :size="32" class="text-ink-mute" />
+        <div v-else class="text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-card border border-line flex items-center justify-center">
+            <GitCompare :size="28" class="text-ink-mute" />
           </div>
           <p class="text-ink-mute text-sm">
             {{ searchQuery ? '没有找到匹配的对比记录' : '还没有对比记录' }}
@@ -472,7 +472,7 @@ function doConfirmDelete() {
           <Motion><button
             v-if="!searchQuery"
             @click="router.push('/compare')"
-            class="mt-4 px-6 py-2 rounded-full btn-dai text-sm font-medium transition-colors"
+            class="mt-4 min-h-11 px-6 py-2 rounded-full btn-dai text-sm font-medium transition-colors"
           >
             开始对比
           </button></Motion>
@@ -487,7 +487,7 @@ function doConfirmDelete() {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         @click.self="confirmDelete = null"
       >
-        <div class="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-line">
+        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-card p-6 shadow-xl border border-line">
           <h3 class="text-lg font-semibold text-ink mb-2">删除记录？</h3>
           <p class="text-sm text-ink-soft mb-6">
             确定要删除 {{ confirmDelete.label }} 吗？此操作不会删除已缓存的词语内容，且不可恢复。

@@ -11,7 +11,7 @@
   }
 
   .profile-row-value {
-    max-width: 34%;
+    max-width: 42%;
   }
 }
 
@@ -78,10 +78,12 @@
 @media (min-width: 1200px) {
   .profile-shell {
     grid-template-columns: minmax(250px, .78fr) minmax(0, 1.62fr);
+    grid-template-rows: auto min-content min-content 1fr;
     grid-template-areas:
       "title title"
       "identity settings"
-      "sync settings";
+      "sync settings"
+      ". settings";
     align-items: start;
     column-gap: 28px;
     row-gap: var(--profile-layout-gap);

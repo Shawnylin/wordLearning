@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { ReviewSyncData } from '../types/sync'
+import { useStatisticsStore } from './statistics'
 
 export type ReviewPhase = 'idle' | 'reviewing' | 'finished'
 export type ReviewState = 'new' | 'learning' | 'review' | 'mastered'
@@ -28,6 +29,7 @@ interface ReviewSnapshot {
   wordStats?: Record<string, ReviewWordStat>
   reviewedToday?: string[]
   reviewedDay?: string
+  statisticsAnswerEventId?: string
 }
 
 export interface ReviewResult {
@@ -227,6 +229,7 @@ export const useReviewStore = defineStore('review', () => {
   function markReviewedToday(word: string, now = Date.now()) {
     ensureToday(now)
     if (!reviewedToday.value.includes(word)) reviewedToday.value.push(word)
+    useStatisticsStore().recordReview(word, now)
   }
 
   function getDueWords(words: string[], now = Date.now()): string[] {
@@ -338,7 +341,9 @@ export const useReviewStore = defineStore('review', () => {
   function judge(known: boolean, now = Date.now()) {
     if (phase.value !== 'reviewing' || queue.value.length === 0) return
     const w = queue.value[0]
-    history.value.push(snapshot())
+    const previous = snapshot()
+    previous.statisticsAnswerEventId = useStatisticsStore().recordReviewAnswer(w, known, now) || undefined
+    history.value.push(previous)
 
     if (known) {
       levels.value[w] = (levels.value[w] || 0) + 1
@@ -407,6 +412,8 @@ export const useReviewStore = defineStore('review', () => {
   function undo() {
     const s = history.value.pop()
     if (!s) return
+    const affectedReviewedDay = reviewedDay.value
+    useStatisticsStore().removeReviewAnswer(s.statisticsAnswerEventId)
     queue.value = s.queue
     done.value = s.done
     levels.value = s.levels
@@ -415,6 +422,11 @@ export const useReviewStore = defineStore('review', () => {
     if (s.wordStats) wordStats.value = s.wordStats
     if (s.reviewedToday) reviewedToday.value = s.reviewedToday
     if (s.reviewedDay !== undefined) reviewedDay.value = s.reviewedDay
+    if (s.reviewedToday && s.reviewedDay !== undefined) {
+      const statistics = useStatisticsStore()
+      if (affectedReviewedDay && affectedReviewedDay !== s.reviewedDay) statistics.reconcileReviewDay([], affectedReviewedDay)
+      statistics.reconcileReviewDay(s.reviewedToday, s.reviewedDay)
+    }
   }
 
   /** 跳过当前卡片（例如缓存被清掉后兜底），不做判定 */
@@ -475,6 +487,7 @@ export const useReviewStore = defineStore('review', () => {
     lastFinishedDay.value = ''
     reviewedToday.value = []
     reviewedDay.value = ''
+    useStatisticsStore().clearReviewEvents()
   }
 
   /** 离开复习页面：冻结用时 */

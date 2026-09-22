@@ -5,9 +5,19 @@ import ts from 'typescript'
 const source = ts.transpileModule(readFileSync(new URL('../src/services/cloudSync.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText
+const statisticsSource = ts.transpileModule(readFileSync(new URL('../src/services/learningStatistics.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText
+const statisticsExports = {}
+new Function('require', 'exports', statisticsSource)(name => {
+  throw new Error(`Unexpected dependency in learning statistics merge: ${name}`)
+}, statisticsExports)
 const exports = {}
-// Exercise the real merge functions; using stores or CloudBase in this pure path is an error.
-new Function('require', 'exports', source)(name => new Proxy({}, { get() { throw new Error(`Unexpected dependency in merge: ${name}`) } }), exports)
+// Exercise the real merge functions; pure statistics helpers are allowed, stores or CloudBase are not.
+new Function('require', 'exports', source)(name => {
+  if (name === './learningStatistics') return statisticsExports
+  return new Proxy({}, { get() { throw new Error(`Unexpected dependency in merge: ${name}`) } })
+}, exports)
 const { mergeSyncPayload, hasSameSyncContent } = exports
 const snapshot = () => ({ version: 2, capturedAt: 1,
   profile: { name: '本机', nameUpdatedAt: 10, avatarDataUrl: 'local-avatar', avatarUpdatedAt: 30 },
@@ -88,4 +98,35 @@ test('review scheduling sync accepts legacy stats and preserves the newest sched
     state: 'learning', nextReviewAt: 80, interval: 0,
     correctCount: 0, wrongCount: 3, lastReviewedAt: 80
   })
+})
+
+test('cloud merge deduplicates learning statistics facts by stable id', () => {
+  const local = snapshot(), remote = snapshot()
+  const shared = { id: 'learn-day-word', type: 'learn', word: '甲', at: 100 }
+  local.statistics = {
+    version: 1,
+    activities: [shared],
+    reviewAnswers: [{ id: 'answer-shared', word: '甲', correct: true, at: 110 }],
+    tokenUsage: [{ id: 'token-shared', at: 120, tokens: 50, source: 'idiom' }]
+  }
+  remote.statistics = {
+    version: 1,
+    activities: [shared, { id: 'review-day-word', type: 'review', word: '乙', at: 130 }],
+    reviewAnswers: [
+      { id: 'answer-shared', word: '甲', correct: true, at: 110 },
+      { id: 'answer-remote', word: '乙', correct: false, at: 140 }
+    ],
+    tokenUsage: [
+      { id: 'token-shared', at: 120, tokens: 50, source: 'idiom' },
+      { id: 'token-remote', at: 150, tokens: 30, source: 'daily' }
+    ]
+  }
+
+  const merged = mergeSyncPayload(local, remote)
+  const twice = mergeSyncPayload(merged, remote)
+  assert.equal(merged.statistics.activities.length, 2)
+  assert.equal(merged.statistics.reviewAnswers.length, 2)
+  assert.equal(merged.statistics.tokenUsage.length, 2)
+  assert.deepEqual(twice.statistics, merged.statistics)
+  assert(hasSameSyncContent(merged, twice))
 })

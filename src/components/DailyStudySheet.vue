@@ -189,7 +189,7 @@ defineExpose({ open })
 @keyframes lookup-dot { 50% { opacity: .35; transform: scale(.8); } }
 .lookup-result-enter-active, .lookup-result-leave-active { transition: opacity 160ms ease; }
 .lookup-result-enter-from, .lookup-result-leave-to { opacity: 0; }
-@media (min-width: 768px) { .daily-scrim { display: none; } }
+@media (min-width: 960px) { .daily-scrim { display: none; } }
 @media (prefers-reduced-motion: reduce) { .daily-sheet { transition: none; } .skeleton-block::after, .skeleton-dot { animation: none; } }
 .daily-blur-enter-active,.daily-blur-leave-active { transition: backdrop-filter 520ms ease, background 520ms ease; }
 .daily-blur-enter-from,.daily-blur-leave-to { backdrop-filter: blur(0); background: transparent; }

@@ -147,9 +147,9 @@ function selectSpeechModel(key: string) {
 
 <style scoped>
 .settings-page { background: var(--paper); color: var(--ink); }
-.settings-shell { width: min(100%, 620px); margin: 0 auto; padding: 12px 18px calc(88px + env(safe-area-inset-bottom)); }
+.settings-shell { width: min(100%, 620px); margin: 0 auto; padding: 20px 16px calc(88px + env(safe-area-inset-bottom)); }
 .settings-page-header { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; min-height: 44px; align-items: center; margin-bottom: 16px; }
-.settings-page-header h1 { grid-column: 2; color: var(--ink); font-size: 17px; font-weight: 650; line-height: 1.3; white-space: nowrap; }
+.settings-page-header h1 { grid-column: 2; color: var(--ink); font-family: var(--font-kai); font-size: 24px; font-weight: 600; line-height: 1.3; white-space: nowrap; }
 .settings-back { display: inline-flex; grid-column: 1; width: fit-content; align-items: center; gap: 4px; min-height: 40px; padding: 8px 4px; color: var(--ink-soft); font-size: 13px; }
 .settings-back:hover { color: var(--zhuhong); }
 .settings-header-spacer { grid-column: 3; }
@@ -160,7 +160,7 @@ function selectSpeechModel(key: string) {
 .settings-content :deep(.settings-title) { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.35; }
 .settings-content :deep(.settings-description) { max-width: 34ch; margin-top: 4px; color: var(--ink-mute); font-size: 11px; line-height: 1.55; }
 .settings-content :deep(.settings-icon-button) { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
-.settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-deep); }
+.settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-solid); }
 .settings-content :deep(.settings-provider-list) { overflow: hidden; }
 .settings-content :deep(.settings-provider-row) { display: flex; min-width: 0; align-items: center; gap: 6px; min-height: 54px; border-bottom: 1px solid var(--line); }
 .settings-content :deep(.settings-provider-row:last-child) { border-bottom: 0; }
@@ -203,7 +203,7 @@ function selectSpeechModel(key: string) {
 .settings-select-wrap select { width: 100%; min-height: 50px; padding: 10px 32px 10px 12px; font-size: 13px; }
 .settings-select-wrap select:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
 .settings-voice-panel :deep(.speech-button) { width: 38px; min-width: 38px; height: 38px; min-height: 38px; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
-.settings-voice-panel :deep(.speech-button:hover) { background: var(--zhuhong-deep); }
+.settings-voice-panel :deep(.speech-button:hover) { background: var(--zhuhong-solid); }
 .settings-voice-help { color: var(--ink-mute); font-size: 10.5px; line-height: 1.55; }
 .settings-advanced { overflow: hidden; margin-top: 2px; border-top: 1px solid var(--line); }
 .settings-advanced summary { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 10px; color: var(--ink-soft); cursor: pointer; font-size: 13px; font-weight: 500; list-style: none; }

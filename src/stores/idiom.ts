@@ -4,6 +4,8 @@ import type { IdiomData, SearchRecord, CompareRecord, TokenStats } from '../type
 import type { IdiomSyncData } from '../types/sync'
 import { type ApiConfig, generateIdiomContent, generateComparison } from '../api/deepseek'
 import { useReviewStore } from './review'
+import { useStatisticsStore } from './statistics'
+import type { TokenUsageSource } from '../types/statistics'
 
 export const useIdiomStore = defineStore('idiom', () => {
   // 已缓存的成语数据
@@ -69,13 +71,15 @@ export const useIdiomStore = defineStore('idiom', () => {
   }
 
   // 累加 token 统计
-  function addTokenUsage(tokens: number) {
+  function addTokenUsage(tokens: number, source: TokenUsageSource = 'other', now = Date.now()) {
     tokenStats.value.totalTokens += tokens
     tokenStats.value.requestCount += 1
+    useStatisticsStore().recordTokenUsage(tokens, source, now)
   }
 
-  function registerLearnedWord(word: string) {
-    useReviewStore().ensureWord(word)
+  function registerLearnedWord(word: string, now = Date.now()) {
+    useReviewStore().ensureWord(word, now)
+    useStatisticsStore().recordLearning(word, now)
   }
 
   function streamingIdiom(word: string, draft: Partial<IdiomData>): IdiomData | null {
@@ -136,7 +140,7 @@ export const useIdiomStore = defineStore('idiom', () => {
         createdAt: Date.now()
       }
 
-      addTokenUsage(result.tokenUsage)
+      addTokenUsage(result.tokenUsage, 'idiom')
       idiomCache.value[trimmedWord] = idiomData
       addSearchRecord(trimmedWord)
       currentIdiom.value = idiomData
@@ -185,7 +189,7 @@ export const useIdiomStore = defineStore('idiom', () => {
         createdAt: Date.now()
       }
 
-      addTokenUsage(result.tokenUsage)
+      addTokenUsage(result.tokenUsage, 'idiom')
       idiomCache.value[trimmedWord] = idiomData
       currentIdiom.value = idiomData
       registerLearnedWord(trimmedWord)
@@ -234,7 +238,7 @@ export const useIdiomStore = defineStore('idiom', () => {
           }
         }
       })
-      addTokenUsage(result.tokenUsage)
+      addTokenUsage(result.tokenUsage, 'comparison')
 
       const compareRecord: CompareRecord = {
         id: `compare_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -285,7 +289,7 @@ export const useIdiomStore = defineStore('idiom', () => {
           }
         }
       })
-      addTokenUsage(result.tokenUsage)
+      addTokenUsage(result.tokenUsage, 'comparison')
 
       const compareRecord: CompareRecord = {
         id: `compare_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

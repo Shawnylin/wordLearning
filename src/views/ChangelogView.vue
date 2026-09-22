@@ -22,7 +22,7 @@ const router = useRouter()
       </header>
 
       <div class="space-y-4">
-        <article v-for="(release, index) in changelog" :key="release.version" class="card rounded-2xl p-5">
+        <article v-for="(release, index) in changelog" :key="release.version" class="card rounded-[22px] p-[18px]">
           <div class="flex flex-wrap items-center gap-2">
             <h2 class="font-serif text-xl font-bold text-ink">v{{ release.version }}</h2>
             <span v-if="index === 0" class="rounded-full bg-zhuhong-soft px-2.5 py-1 text-xs font-medium text-zhuhong">当前版本</span>
