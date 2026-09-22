@@ -77,7 +77,7 @@ function readDecision(userId: string): SyncDecisionRecord | null {
     const choice = value.choice
     if (typeof choice !== 'string' || !Object.prototype.hasOwnProperty.call(syncChoiceLabels, choice)) return null
     return {
-      choice: choice === 'no-upload' ? 'no-upload' : 'merge-local-to-cloud',
+      choice: choice as SyncChoice,
       completedAt: numberOr(value.completedAt, 0)
     }
   } catch {

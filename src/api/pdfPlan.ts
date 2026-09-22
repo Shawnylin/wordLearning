@@ -1,4 +1,5 @@
 import { apiEndpoint, type ApiConfig } from "./deepseek";
+import { completionTokenLimit, providerCapabilities } from "./providers";
 import type { DailyArticle, DailyIssue } from "./daily";
 import { dailyVocabularyRules, normalizeStudyWords } from './dailyVocabulary';
 
@@ -279,7 +280,7 @@ export async function parsePdfDraft(
   if (!snapshot.apiKey.trim() || !snapshot.model.trim())
     throw new Error("请先在模型与 API 中配置 PDF 解析模型");
   const endpoint = apiEndpoint(snapshot.baseUrl, "chat/completions");
-  const host = new URL(endpoint).hostname;
+  const capabilities = providerCapabilities(snapshot);
   const completedBeforeStart = draft.batches.filter((batch) => batch.result).length;
   onProgress(
     completedBeforeStart ? `继续解析 ${completedBeforeStart}/${draft.batches.length}` : `准备解析 ${draft.batches.length} 个批次`,
@@ -314,10 +315,8 @@ export async function parsePdfDraft(
         body: JSON.stringify({
           model: snapshot.model.trim(),
           stream: false,
-          ...(host === "api.xiaomimimo.com"
-            ? { max_completion_tokens: budget.output }
-            : { max_tokens: budget.output }),
-          ...(host === "api.deepseek.com" || host === "api.xiaomimimo.com"
+          ...completionTokenLimit(capabilities, budget.output),
+          ...(capabilities.reasoning.forceDisabledForPdf
             ? { thinking: { type: "disabled" } }
             : {}),
           messages: [

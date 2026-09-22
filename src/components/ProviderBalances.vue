@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { RefreshCw, WalletCards } from 'lucide-vue-next'
 import { fetchBalance, type ApiBalance } from '../api/deepseek'
+import { providerCapabilities } from '../api/providers'
 import { useSettingsStore } from '../stores/settings'
 const settings = useSettingsStore()
 const rows = ref<{ id: string; name: string; balances: ApiBalance[]; message: string; url?: string; loading: boolean }[]>([])
@@ -16,8 +17,7 @@ const providers = computed(() => {
   }
   const seen = new Set<string>()
   return candidates.filter(provider => {
-    const host = (() => { try { return new URL(provider.baseUrl).hostname } catch { return '' } })()
-    if (host === 'api.xiaomimimo.com' || host.endsWith('.xiaomimimo.com')) return false
+    if (!providerCapabilities(provider).supportsBalanceQuery) return false
     const key = `${provider.baseUrl.replace(/\/+$/, '')}:${provider.apiKey}`
     if (seen.has(key)) return false
     seen.add(key); return true

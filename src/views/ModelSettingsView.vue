@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/settings'
 import SpeechButton from '../components/SpeechButton.vue'
 import ModelSettings from '../components/ModelSettings.vue'
 import SpeechSettings from '../components/SpeechSettings.vue'
+import { providerCapabilities } from '../api/providers'
 
 interface ModelChoice {
   key: string
@@ -56,7 +57,7 @@ const pdfModelKey = computed(() => {
 
 const speechModelChoices = computed(() => modelChoices.value.filter(choice => {
   const profile = settings.profiles.find(item => item.id === choice.profileId)
-  return /xiaomimimo\.com|mimo/i.test(choice.baseUrl) || /mimo/i.test(`${choice.provider} ${choice.model} ${profile?.name || ''}`)
+  return providerCapabilities({ baseUrl: choice.baseUrl, model: choice.model, name: `${choice.provider} ${profile?.name || ''}` }).supportsSpeech
 }))
 
 const speechModelKey = computed(() => settings.speechProfileId

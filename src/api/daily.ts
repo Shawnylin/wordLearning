@@ -1,5 +1,6 @@
 import { apiEndpoint, type ApiConfig } from './deepseek'
 import { dailyVocabularyRules, normalizeStudyWords } from './dailyVocabulary'
+import { providerCapabilities } from './providers'
 
 export interface DailyArticle { title: string; shortTitle?: string; source: string; url: string; publishedAt: string; content: string; words: string[]; analysis: string; origin?: 'link' | 'pdf'; page?: number; completedAt?: number; starred?: boolean; continuationOf?: number }
 export interface DailyIssue { id: string; createdAt: number; articles: DailyArticle[]; tokenUsage: number; groupId?: string; pdf?: { fingerprint: string; filename: string; pages: number; remainder: string; model: string; usageEstimated: boolean; articleIndex?: number; articleCount?: number; editionDate?: string } }
@@ -7,9 +8,6 @@ export type DailyProgressPhase = 'searching' | 'reading' | 'generating' | 'valid
 export interface DailyProgress { phase: DailyProgressPhase; text?: string }
 export const sourceDomains = ['people.com.cn', 'gmw.cn', 'banyuetan.org']
 export const deepSeekSearchNotice = '使用 DeepSeek 官方联网搜索入口，复用当前模型与 API Key。只有返回真实搜索结果的文段才会保存。'
-export function isOfficialDeepSeek(baseUrl: string): boolean {
-  try { return new URL(baseUrl.trim()).hostname === 'api.deepseek.com' } catch { return false }
-}
 export function sourceUrl(value: string): string {
   const url = new URL(value)
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || !sourceDomains.some(d => url.hostname === d || url.hostname.endsWith('.' + d)) || url.pathname === '/') throw new Error('日报来源必须是指定媒体的文章链接')
@@ -200,7 +198,7 @@ export async function generateDaily(config: ApiConfig, excluded: string[], signa
   const timer = setTimeout(abort, 180000)
   try {
     onProgress?.({ phase: 'searching', text: '' })
-    if (isOfficialDeepSeek(config.baseUrl)) return await generateDeepSeekDaily(config, excluded, now, controller.signal, onUsage, onProgress)
+    if (providerCapabilities(config).webSearchProtocol === 'deepseek-anthropic') return await generateDeepSeekDaily(config, excluded, now, controller.signal, onUsage, onProgress)
     const response = await fetch(endpoint, { method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', Authorization: `Bearer ${config.apiKey.trim()}` }, body: JSON.stringify({ model: config.model.trim(), store: false, stream: true, input: dailyPrompt(now, excluded), tools: [{ type: 'web_search', filters: { allowed_domains: sourceDomains } }], tool_choice: 'required', include: ['web_search_call.action.sources'], max_output_tokens: 6000 }) })
     const data = response.ok ? await readResponsesData(response, onProgress) : await response.json().catch(() => null)
     if (!response.ok) {

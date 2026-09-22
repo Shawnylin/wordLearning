@@ -1,5 +1,6 @@
 import type { DeepSeekResponse, GeneratedIdiomContent } from '../types/idiom'
 import { sanitizeInput, validateIdiomData } from '../utils/sanitizer'
+import { completionTokenLimit, providerCapabilities } from './providers'
 
 export type ReasoningEffort = 'low' | 'high' | 'max'
 export interface ApiConfig { apiKey: string; baseUrl: string; model: string; thinkingEnabled?: boolean; reasoningEffort?: ReasoningEffort }
@@ -11,7 +12,7 @@ export function apiEndpoint(baseUrl: string, resource: ApiResource): string {
   try { url = new URL(baseUrl.trim()) } catch { throw new Error('请输入完整的 API URL') }
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('API URL 格式不正确')
   let root = url.href.replace(/\/+$/, '').replace(/\/(chat\/completions|models)$/, '')
-  if (resource === 'user/balance' && url.hostname === 'api.deepseek.com') root = root.replace(/\/v1$/, '')
+  if (resource === 'user/balance' && providerCapabilities({ baseUrl }).balanceEndpointOmitsV1) root = root.replace(/\/v1$/, '')
   return root + '/' + resource
 }
 async function request(config: ApiConfig, resource: ApiResource, body?: object) {
@@ -211,11 +212,8 @@ export async function fetchBalance(config: ApiConfig): Promise<ApiBalance[]> {
 
 function generationBudget(config: ApiConfig, wordCount = 1): number {
   const contentBudget = wordCount === 1 ? 4096 : Math.min(8192, 4096 + Math.max(0, wordCount - 2) * 1024)
-  // Current official DeepSeek thinking models share reasoning and answer tokens.
-  // Do not infer capabilities from a model name on an arbitrary compatible host.
-  const officialThinking = new URL(apiEndpoint(config.baseUrl, 'chat/completions')).hostname === 'api.deepseek.com'
-    && /^(deepseek-flash|deepseek-v4-(?:flash|pro)(?:-\d+)?|deepseek-reasoner)$/.test(config.model.trim())
-  return officialThinking ? 32768 + contentBudget : contentBudget
+  const capabilities = providerCapabilities(config)
+  return capabilities.reasoning.usesExpandedTokenBudget ? 32768 + contentBudget : contentBudget
 }
 
 async function callApi(
@@ -230,6 +228,7 @@ async function callApi(
   // Snapshot the request so settings changes cannot switch provider/model mid-retry.
   const snapshot = { ...config }
   const messages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+  const capabilities = providerCapabilities(snapshot)
   let budget: number | undefined = maxTokens
   let expanded = false
   let tokenUsage = 0
@@ -240,7 +239,7 @@ async function callApi(
       model: snapshot.model.trim(), messages,
       ...(snapshot.thinkingEnabled === undefined ? {} : { thinking: { type: snapshot.thinkingEnabled ? 'enabled' : 'disabled' } }),
       ...(snapshot.thinkingEnabled && snapshot.reasoningEffort ? { reasoning_effort: snapshot.reasoningEffort } : {}),
-      ...(budget === undefined ? {} : new URL(apiEndpoint(snapshot.baseUrl, 'chat/completions')).hostname === 'api.xiaomimimo.com' ? { max_completion_tokens: budget } : { max_tokens: budget })
+      ...completionTokenLimit(capabilities, budget)
     }
     try {
       if (onProgress) {
