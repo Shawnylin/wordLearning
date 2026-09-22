@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { IdiomData, SearchRecord, CompareRecord, TokenStats } from '../types/idiom'
 import type { IdiomSyncData } from '../types/sync'
 import { type ApiConfig, generateIdiomContent, generateComparison } from '../api/deepseek'
+import { useReviewStore } from './review'
 
 export const useIdiomStore = defineStore('idiom', () => {
   // 已缓存的成语数据
@@ -73,6 +74,10 @@ export const useIdiomStore = defineStore('idiom', () => {
     tokenStats.value.requestCount += 1
   }
 
+  function registerLearnedWord(word: string) {
+    useReviewStore().ensureWord(word)
+  }
+
   function streamingIdiom(word: string, draft: Partial<IdiomData>): IdiomData | null {
     const hasVisibleContent = [draft.pinyin, draft.explanation, draft.origin, draft.example, draft.usage]
       .some(value => typeof value === 'string' && value.trim()) || !!draft.relatedIdioms?.length
@@ -100,6 +105,7 @@ export const useIdiomStore = defineStore('idiom', () => {
       currentIdiom.value = cached
       idiomError.value = ''
       addSearchRecord(trimmedWord)
+      registerLearnedWord(trimmedWord)
       return cached
     }
 
@@ -134,6 +140,7 @@ export const useIdiomStore = defineStore('idiom', () => {
       idiomCache.value[trimmedWord] = idiomData
       addSearchRecord(trimmedWord)
       currentIdiom.value = idiomData
+      registerLearnedWord(trimmedWord)
 
       return idiomData
     } catch (error: any) {
@@ -181,6 +188,7 @@ export const useIdiomStore = defineStore('idiom', () => {
       addTokenUsage(result.tokenUsage)
       idiomCache.value[trimmedWord] = idiomData
       currentIdiom.value = idiomData
+      registerLearnedWord(trimmedWord)
 
       return idiomData
     } catch (error: any) {

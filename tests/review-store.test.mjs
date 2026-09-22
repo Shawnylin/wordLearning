@@ -58,7 +58,7 @@ test('session requires consecutive correct answers before scheduling the next re
   const { useReviewStore, idiomStore } = loadReviewModule()
   idiomStore.idiomCache['画龙点睛'] = { word: '画龙点睛' }
   const store = useReviewStore()
-  assert.equal(store.startSession(1, 10_000), true)
+  assert.equal(store.startSession(1, ['画龙点睛'], 10_000), true)
   assert.equal(store.wordStats['画龙点睛'].state, 'new')
 
   store.judge(true, 11_000)
@@ -89,7 +89,7 @@ test('a wrong answer increases the consecutive threshold and falls back to learn
       '守正创新': { state: 'review', nextReviewAt: 1, interval: 12, correctCount: 4, wrongCount: 2, lastReviewedAt: 1 }
     }
   })
-  store.startSession(1, 20_000)
+  store.startSession(1, ['守正创新'], 20_000)
   store.judge(false, 21_000)
   assert.equal(store.thresholds['守正创新'], 3)
   store.judge(true, 22_000)
@@ -168,7 +168,7 @@ test('undo restores long-term scheduling when a graduating answer is reverted', 
   const { useReviewStore, idiomStore } = loadReviewModule()
   idiomStore.idiomCache['实事求是'] = { word: '实事求是' }
   const store = useReviewStore()
-  store.startSession(1, 1_000)
+  store.startSession(1, ['实事求是'], 1_000)
   store.judge(true, 2_000)
   store.queue.push('占位词')
   store.judge(true, 3_000)
@@ -187,6 +187,7 @@ test('daily queue includes only due non-mastered words and fills the requested t
   const { useReviewStore, idiomStore } = loadReviewModule()
   const now = 1_000_000
   for (const word of ['新词', '到期词', '已掌握词', '未到期词']) idiomStore.idiomCache[word] = { word }
+  const pool = Object.keys(idiomStore.idiomCache)
   const store = useReviewStore()
   store.restoreSyncData({
     phase: 'idle', queue: [], done: [], levels: {}, thresholds: {}, wrongToday: {}, history: [],
@@ -197,9 +198,9 @@ test('daily queue includes only due non-mastered words and fills the requested t
       '未到期词': { state: 'review', nextReviewAt: now + DAY, interval: 6, correctCount: 3, wrongCount: 0, lastReviewedAt: now - DAY }
     }
   })
-  assert.deepEqual(new Set(store.getDueWords(now)), new Set(['新词', '到期词']))
-  assert.equal(store.getDueCount(now), 2)
-  assert.equal(store.startSession(10, now), true)
+  assert.deepEqual(new Set(store.getDueWords(pool, now)), new Set(['新词', '到期词']))
+  assert.equal(store.getDueCount(pool, now), 2)
+  assert.equal(store.startSession(10, pool, now), true)
   assert.equal(store.target, 2)
   assert.deepEqual(new Set(store.queue), new Set(['新词', '到期词']))
   assert(!store.queue.includes('已掌握词'))
@@ -211,22 +212,23 @@ test('mastered action leaves the ordinary queue and daily progress survives seri
   const now = 2_000_000
   idiomStore.idiomCache['甲'] = { word: '甲' }
   idiomStore.idiomCache['乙'] = { word: '乙' }
+  const pool = ['甲', '乙']
   const store = useReviewStore()
-  store.startSession(2, now)
+  store.startSession(2, pool, now)
 
   const masteredWord = store.currentWord
   store.markCurrentMastered(now + 1)
   assert.equal(store.wordStats[masteredWord].state, 'mastered')
   assert.equal(store.getTodayCompletedCount(now + 1), 1)
-  assert(!store.getDueWords(now + 1).includes(masteredWord))
-  assert.equal(store.getTodayGoal(2, now + 1), 2)
-  assert.equal(store.getTodayRemainingGoal(2, now + 1), 1)
+  assert(!store.getDueWords(pool, now + 1).includes(masteredWord))
+  assert.equal(store.getTodayGoal(2, pool, now + 1), 2)
+  assert.equal(store.getTodayRemainingGoal(2, pool, now + 1), 1)
 
   store.judge(true, now + 2)
   store.judge(true, now + 3)
   assert.equal(store.phase, 'finished')
   assert.equal(store.getTodayCompletedCount(now + 3), 2)
-  assert.equal(store.getTodayRemainingGoal(2, now + 3), 0)
+  assert.equal(store.getTodayRemainingGoal(2, pool, now + 3), 0)
 
   const exported = store.exportSyncData()
   assert.equal(exported.reviewedToday.length, 2)
@@ -235,7 +237,7 @@ test('mastered action leaves the ordinary queue and daily progress survives seri
   const restored = useReviewStore()
   restored.restoreSyncData(exported)
   assert.equal(restored.getTodayCompletedCount(now + 3), 2)
-  assert.equal(restored.getTodayRemainingGoal(2, now + 3), 0)
+  assert.equal(restored.getTodayRemainingGoal(2, pool, now + 3), 0)
 })
 
 test('defer current only rotates the queue and never changes review counters', () => {
@@ -243,7 +245,7 @@ test('defer current only rotates the queue and never changes review counters', (
   idiomStore.idiomCache['甲'] = { word: '甲' }
   idiomStore.idiomCache['乙'] = { word: '乙' }
   const store = useReviewStore()
-  store.startSession(2, 3_000_000)
+  store.startSession(2, ['甲', '乙'], 3_000_000)
 
   const first = store.currentWord
   const before = [...store.queue]
@@ -259,7 +261,7 @@ test('wrong answers stay in the active queue until the stricter consecutive targ
   const { useReviewStore, idiomStore } = loadReviewModule()
   idiomStore.idiomCache['反复巩固'] = { word: '反复巩固' }
   const store = useReviewStore()
-  store.startSession(1, 4_000_000)
+  store.startSession(1, ['反复巩固'], 4_000_000)
   store.judge(false, 4_000_001)
   assert.equal(store.phase, 'reviewing')
   assert.deepEqual(store.queue, ['反复巩固'])

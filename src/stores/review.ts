@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useIdiomStore } from './idiom'
 import type { ReviewSyncData } from '../types/sync'
 
 export type ReviewPhase = 'idle' | 'reviewing' | 'finished'
@@ -230,9 +229,8 @@ export const useReviewStore = defineStore('review', () => {
     if (!reviewedToday.value.includes(word)) reviewedToday.value.push(word)
   }
 
-  function getDueWords(now = Date.now()): string[] {
-    const idiomStore = useIdiomStore()
-    return Object.keys(idiomStore.idiomCache).filter(word => {
+  function getDueWords(words: string[], now = Date.now()): string[] {
+    return [...new Set(words.map(word => word.trim()).filter(Boolean))].filter(word => {
       const stat = wordStats.value[word]
         ? normalizeReviewWordStat(wordStats.value[word], now)
         : createReviewWordStat(now)
@@ -240,21 +238,21 @@ export const useReviewStore = defineStore('review', () => {
     })
   }
 
-  function getDueCount(now = Date.now()): number {
-    return getDueWords(now).length
+  function getDueCount(words: string[], now = Date.now()): number {
+    return getDueWords(words, now).length
   }
 
   function getTodayCompletedCount(now = Date.now()): number {
     return reviewedDay.value === dayKey(now) ? reviewedToday.value.length : 0
   }
 
-  function getTodayGoal(requestedTarget: number, now = Date.now()): number {
-    const available = getTodayCompletedCount(now) + getDueCount(now)
+  function getTodayGoal(requestedTarget: number, words: string[], now = Date.now()): number {
+    const available = getTodayCompletedCount(now) + getDueCount(words, now)
     return requestedTarget > 0 ? Math.min(requestedTarget, available) : available
   }
 
-  function getTodayRemainingGoal(requestedTarget: number, now = Date.now()): number {
-    return Math.max(0, getTodayGoal(requestedTarget, now) - getTodayCompletedCount(now))
+  function getTodayRemainingGoal(requestedTarget: number, words: string[], now = Date.now()): number {
+    return Math.max(0, getTodayGoal(requestedTarget, words, now) - getTodayCompletedCount(now))
   }
 
   function snapshot(): ReviewSnapshot {
@@ -300,9 +298,9 @@ export const useReviewStore = defineStore('review', () => {
    * 开始一组复习：n 为数量（0 表示全部到期词）。
    * 只从当前到期且未 mastered 的词中选取；历史答错词优先约 60% 名额。
    */
-  function startSession(n: number, now = Date.now()): boolean {
+  function startSession(n: number, words: string[], now = Date.now()): boolean {
     ensureToday(now)
-    const pool = getDueWords(now)
+    const pool = getDueWords(words, now)
     if (pool.length === 0) return false
     for (const word of pool) ensureWord(word, now)
 

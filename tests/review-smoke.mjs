@@ -129,12 +129,14 @@ try {
   await page.getByText('今日复习目标完成', { exact: true }).waitFor()
 
   const completed = await page.evaluate(async ({ wrongWord, masteredWord }) => {
+    const { useIdiomStore } = await import('/wordLearning/src/stores/idiom.ts')
     const { useReviewStore } = await import('/wordLearning/src/stores/review.ts')
+    const idiom = useIdiomStore()
     const review = useReviewStore()
     return {
       phase: review.phase,
       completed: review.getTodayCompletedCount(),
-      due: review.getDueCount(),
+      due: review.getDueCount(Object.keys(idiom.idiomCache)),
       wrongStat: review.wordStats[wrongWord],
       masteredStat: review.wordStats[masteredWord],
     }
@@ -151,9 +153,11 @@ try {
   assert(await page.getByText(/今日已完成\s*2\s*\/\s*2\s*词/).count())
 
   const persisted = await page.evaluate(async () => {
+    const { useIdiomStore } = await import('/wordLearning/src/stores/idiom.ts')
     const { useReviewStore } = await import('/wordLearning/src/stores/review.ts')
+    const idiom = useIdiomStore()
     const review = useReviewStore()
-    return { completed: review.getTodayCompletedCount(), due: review.getDueCount(), phase: review.phase }
+    return { completed: review.getTodayCompletedCount(), due: review.getDueCount(Object.keys(idiom.idiomCache)), phase: review.phase }
   })
   assert.deepEqual(persisted, { completed: 2, due: 0, phase: 'finished' })
 

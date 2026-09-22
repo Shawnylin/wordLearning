@@ -21,15 +21,16 @@ const leaving = ref<'up' | 'down' | 'left' | 'right' | ''>('')
 const drag = reactive({ active: false, x: 0, y: 0, dx: 0, dy: 0 })
 const showNoPool = ref(false)
 
-const poolSize = computed(() => Object.keys(idiomStore.idiomCache).length)
+const reviewWords = computed(() => Object.keys(idiomStore.idiomCache))
+const poolSize = computed(() => reviewWords.value.length)
 const currentWord = computed(() => reviewStore.currentWord)
 const currentIdiom = computed(() =>
   currentWord.value ? idiomStore.idiomCache[currentWord.value] : null
 )
-const dueCount = computed(() => reviewStore.getDueCount())
+const dueCount = computed(() => reviewStore.getDueCount(reviewWords.value))
 const todayCompleted = computed(() => reviewStore.getTodayCompletedCount())
-const todayGoal = computed(() => reviewStore.getTodayGoal(settingsStore.reviewTarget))
-const todayRemainingGoal = computed(() => reviewStore.getTodayRemainingGoal(settingsStore.reviewTarget))
+const todayGoal = computed(() => reviewStore.getTodayGoal(settingsStore.reviewTarget, reviewWords.value))
+const todayRemainingGoal = computed(() => reviewStore.getTodayRemainingGoal(settingsStore.reviewTarget, reviewWords.value))
 const todayGoalMet = computed(() =>
   todayGoal.value > 0 && todayCompleted.value >= todayGoal.value
 )
@@ -63,7 +64,7 @@ function startReview(extra = false) {
   showNoPool.value = false
   let amount = extra ? settingsStore.reviewTarget : todayRemainingGoal.value
   if (!extra && amount === 0) amount = settingsStore.reviewTarget
-  reviewStore.startSession(amount)
+  reviewStore.startSession(amount, reviewWords.value)
 }
 
 function goReport() {
