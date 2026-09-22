@@ -1,7 +1,7 @@
 import { createServer } from 'vite'
 import { readdir } from 'node:fs/promises'
 const suites = {
-  smoke: ['network-isolation', 'settings-sync-ui', 'api-vault-browser', 'provider-smoke', 'daily-smoke', 'output-budget-browser', 'morph-overlay-browser'],
+  smoke: ['network-isolation', 'settings-sync-ui', 'api-vault-browser', 'provider-smoke', 'daily-smoke', 'review-smoke', 'output-budget-browser', 'morph-overlay-browser'],
   legacy: ['browser', 'motion', 'settings-browser', 'daily-polish', 'compare-layout', 'generation-center', 'theme-transitions'],
 }
 const args = process.argv.slice(2)

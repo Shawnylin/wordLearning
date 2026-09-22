@@ -26,6 +26,13 @@ const currentWord = computed(() => reviewStore.currentWord)
 const currentIdiom = computed(() =>
   currentWord.value ? idiomStore.idiomCache[currentWord.value] : null
 )
+const dueCount = computed(() => reviewStore.getDueCount())
+const todayCompleted = computed(() => reviewStore.getTodayCompletedCount())
+const todayGoal = computed(() => reviewStore.getTodayGoal(settingsStore.reviewTarget))
+const todayRemainingGoal = computed(() => reviewStore.getTodayRemainingGoal(settingsStore.reviewTarget))
+const todayGoalMet = computed(() =>
+  todayGoal.value > 0 && todayCompleted.value >= todayGoal.value
+)
 
 const progressPct = computed(() => Math.round(reviewStore.progressRatio * 100))
 
@@ -41,17 +48,22 @@ watch([currentWord], () => {
   }
 }, { immediate: true })
 
-onMounted(() => reviewStore.resumeClock())
+onMounted(() => {
+  reviewStore.ensureToday()
+  reviewStore.resumeClock()
+})
 onBeforeUnmount(() => reviewStore.pause())
 
 // —— 会话控制 ——
-function startReview() {
-  if (poolSize.value === 0) {
+function startReview(extra = false) {
+  if (poolSize.value === 0 || dueCount.value === 0) {
     showNoPool.value = true
     return
   }
   showNoPool.value = false
-  reviewStore.startSession(settingsStore.reviewTarget)
+  let amount = extra ? settingsStore.reviewTarget : todayRemainingGoal.value
+  if (!extra && amount === 0) amount = settingsStore.reviewTarget
+  reviewStore.startSession(amount)
 }
 
 function goReport() {
@@ -137,19 +149,31 @@ function cancelDrag() {
 }
 
 function commit(dir: 'up' | 'down' | 'left' | 'right', action: () => void) {
+  if (leaving.value) return
   leaving.value = dir
   drag.dx = 0
   drag.dy = 0
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   window.setTimeout(() => {
     action()
     leaving.value = ''
     flipped.value = false
-  }, 170)
+  }, reducedMotion ? 0 : 170)
 }
 
 function judgeByButton(known: boolean) {
   if (reviewStore.phase !== 'reviewing' || !currentIdiom.value || leaving.value) return
   commit(known ? 'up' : 'down', () => reviewStore.judge(known))
+}
+
+function deferByButton() {
+  if (reviewStore.phase !== 'reviewing' || reviewStore.remaining <= 1 || leaving.value) return
+  commit('left', () => reviewStore.deferCurrent())
+}
+
+function masterByButton() {
+  if (reviewStore.phase !== 'reviewing' || !currentIdiom.value || leaving.value) return
+  commit('up', () => reviewStore.markCurrentMastered())
 }
 
 // —— 完成页 ——
@@ -190,7 +214,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
         </button>
         <h1 class="font-kai text-3xl text-ink leading-tight">今日复习</h1>
         <span class="w-16 text-right text-xs text-ink-mute">
-          {{ reviewStore.finishedToday > 0 ? `已完成 ${reviewStore.finishedToday} 组` : '' }}
+          {{ todayGoal > 0 ? `${todayCompleted}/${todayGoal}` : '' }}
         </span>
       </div>
 
@@ -201,53 +225,80 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
             <Shuffle :size="20" />
           </div>
           <div>
-            <h3 class="font-semibold text-ink">一组复习</h3>
+            <h3 class="font-semibold text-ink">今日复习计划</h3>
             <p class="text-xs text-ink-mute">词库共 {{ poolSize }} 词</p>
           </div>
         </div>
 
-        <p class="text-sm text-ink-soft leading-relaxed">
-          从已学词库抽取词语复习：<span class="text-bamboo font-medium">上滑=认识</span>，
-          <span class="text-zhuhong font-medium">下滑=不熟</span>。
-          不熟的词会稍后重现，需<span class="text-ink font-medium">连续答对 2 次</span>
-          （不熟后 3 次）才从今日列表移除；左右滑动可浏览卡片，轻点卡片查看释义。
-        </p>
-
-        <div class="mt-5">
-          <p class="text-xs text-ink-mute mb-2">今日复习数量</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="n in targetOptions"
-              :key="n"
-              @click="settingsStore.setReviewTarget(n)"
-              class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200"
-              :class="settingsStore.reviewTarget === n
-                ? 'btn-primary'
-                : 'bg-soft text-ink-soft hover:opacity-80'"
-            >
-              {{ n === 0 ? `全部（${poolSize}）` : `${n} 词` }}
-            </button>
+        <div class="grid grid-cols-3 gap-2 mb-5">
+          <div class="rounded-2xl bg-soft px-3 py-3 text-center">
+            <p class="font-serif text-xl font-bold text-ink">{{ dueCount }}</p>
+            <p class="mt-0.5 text-[11px] text-ink-mute">今日待复习</p>
+          </div>
+          <div class="rounded-2xl bg-soft px-3 py-3 text-center">
+            <p class="font-serif text-xl font-bold text-ink">{{ todayGoal }}</p>
+            <p class="mt-0.5 text-[11px] text-ink-mute">今日目标</p>
+          </div>
+          <div class="rounded-2xl bg-soft px-3 py-3 text-center">
+            <p class="font-serif text-xl font-bold text-bamboo">{{ todayCompleted }}</p>
+            <p class="mt-0.5 text-[11px] text-ink-mute">今日已完成</p>
           </div>
         </div>
 
-        <Motion><p v-if="showNoPool" class="mt-4 text-sm text-zhuhong">
-          词库还是空的，先去学习几个成语再来复习吧。
-        </p></Motion>
+        <template v-if="dueCount > 0">
+          <p class="text-sm text-ink-soft leading-relaxed">
+            今天只安排已经到期的词语，已掌握词不会进入普通队列。
+            <span class="text-bamboo font-medium">答对</span>会推进连续正确次数，
+            <span class="text-zhuhong font-medium">答错</span>的词会在本组稍后重现；
+            轻点卡片仍可查看释义。
+          </p>
 
-        <button
-          @click="startReview"
-          class="w-full mt-6 py-3 rounded-2xl btn-primary text-base font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          <BookOpen :size="18" />
-          开始复习
-        </button>
-        <Motion><button
-          v-if="poolSize === 0"
-          @click="router.push('/learn')"
-          class="w-full mt-2 py-2.5 rounded-2xl bg-soft text-ink-soft text-sm font-medium hover:opacity-80 transition-colors"
-        >
-          去学习
-        </button></Motion>
+          <div class="mt-5">
+            <p class="text-xs text-ink-mute mb-2">今日复习目标</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="n in targetOptions"
+                :key="n"
+                @click="settingsStore.setReviewTarget(n)"
+                class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200"
+                :class="settingsStore.reviewTarget === n
+                  ? 'btn-primary'
+                  : 'bg-soft text-ink-soft hover:opacity-80'"
+              >
+                {{ n === 0 ? `全部（${dueCount + todayCompleted}）` : `${n} 词` }}
+              </button>
+            </div>
+          </div>
+
+          <button
+            @click="startReview(todayGoalMet)"
+            class="w-full mt-6 py-3 rounded-2xl btn-primary text-base font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <BookOpen :size="18" />
+            {{ todayGoalMet ? '继续复习' : '开始今日复习' }}
+          </button>
+        </template>
+
+        <Motion v-else><div class="mt-2 rounded-2xl bg-soft px-4 py-5 text-center">
+          <Sparkles :size="24" class="mx-auto text-bamboo" />
+          <p class="mt-2 font-medium text-ink">
+            {{ poolSize === 0 ? '还没有可以复习的词语' : '今天没有待复习内容' }}
+          </p>
+          <p class="mt-1 text-xs leading-5 text-ink-mute">
+            {{ poolSize === 0 ? '先学习几个词语，之后会自动进入复习安排。' : '到期词已经完成，或其余词语还没到下一次复习时间。' }}
+          </p>
+          <button
+            v-if="poolSize === 0"
+            @click="router.push('/learn')"
+            class="mt-4 px-5 py-2.5 rounded-2xl bg-card text-ink-soft text-sm font-medium hover:opacity-80 transition-colors"
+          >
+            去学习
+          </button>
+        </div></Motion>
+
+        <Motion><p v-if="showNoPool && dueCount > 0" class="mt-4 text-sm text-zhuhong">
+          暂时无法开始复习，请稍后再试。
+        </p></Motion>
       </div>
 
       <!-- 复习中 -->
@@ -255,9 +306,9 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
         <!-- 进度 -->
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs text-ink-mute">
-            已掌握 {{ reviewStore.doneCount }}/{{ reviewStore.target }}
+            本组进度 {{ reviewStore.doneCount }}/{{ reviewStore.target }}
           </span>
-          <span class="text-xs text-ink-mute">剩余 {{ reviewStore.remaining }} 词</span>
+          <span class="text-xs text-ink-mute">今日 {{ todayCompleted }}/{{ todayGoal }}</span>
         </div>
         <div class="h-1.5 rounded-full bg-soft overflow-hidden mb-4">
           <div
@@ -360,33 +411,51 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
         </div>
 
         <!-- 操作按钮 -->
-        <div class="mt-5 grid grid-cols-[1fr_auto_1fr] gap-3">
+        <div class="mt-5 grid grid-cols-2 gap-3">
           <button
             @click="judgeByButton(false)"
             class="flex items-center justify-center gap-1.5 py-3.5 rounded-2xl bg-zhuhong-soft text-zhuhong text-base font-medium active:scale-95 transition-transform"
           >
             <X :size="18" />
-            不熟
-          </button>
-          <button
-            @click="reviewStore.undo()"
-            :disabled="reviewStore.history.length === 0"
-            class="flex flex-col items-center justify-center gap-0.5 w-16 rounded-2xl bg-soft text-ink-soft disabled:opacity-40 active:scale-95 transition-transform"
-            title="撤回上一步"
-          >
-            <Undo2 :size="18" />
-            <span class="text-[10px]">撤回</span>
+            答错
           </button>
           <button
             @click="judgeByButton(true)"
             class="flex items-center justify-center gap-1.5 py-3.5 rounded-2xl bg-bamboo-soft text-bamboo text-base font-medium active:scale-95 transition-transform"
           >
-            认识
+            答对
             <Check :size="18" />
           </button>
         </div>
+        <div class="mt-2 grid grid-cols-3 gap-2">
+          <button
+            @click="reviewStore.undo()"
+            :disabled="reviewStore.history.length === 0 || !!leaving"
+            class="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-soft text-ink-soft text-xs font-medium disabled:opacity-40 active:scale-95 transition-transform"
+            title="撤回上一步"
+          >
+            <Undo2 :size="15" />
+            撤回
+          </button>
+          <button
+            @click="deferByButton"
+            :disabled="reviewStore.remaining <= 1 || !!leaving"
+            class="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-soft text-ink-soft text-xs font-medium disabled:opacity-40 active:scale-95 transition-transform"
+          >
+            <RotateCcw :size="15" />
+            稍后复习
+          </button>
+          <button
+            @click="masterByButton"
+            :disabled="!!leaving"
+            class="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-soft text-bamboo text-xs font-medium disabled:opacity-40 active:scale-95 transition-transform"
+          >
+            <Sparkles :size="15" />
+            已掌握
+          </button>
+        </div>
         <p class="text-center text-[11px] text-ink-mute mt-3">
-          上滑认识 · 下滑不熟 · 左右滑浏览 · 轻点看释义
+          上滑答对 · 下滑答错 · 左右滑浏览 · 轻点看释义
         </p>
       </div>
 
@@ -406,8 +475,17 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
           <div class="w-16 h-16 mx-auto rounded-full bg-zhuhong-soft text-zhuhong flex items-center justify-center">
             <Sparkles :size="30" />
           </div>
-          <h2 class="font-kai text-3xl text-ink mt-4 leading-tight">今日复习完成</h2>
+          <h2 class="font-kai text-3xl text-ink mt-4 leading-tight">
+            {{ todayGoalMet ? '今日复习目标完成' : '本组复习完成' }}
+          </h2>
           <p class="text-sm text-ink-soft mt-2">{{ encourageText }}</p>
+
+          <div class="mt-4 rounded-2xl bg-soft px-4 py-3 text-sm text-ink-soft">
+            今日已完成 <span class="font-semibold text-bamboo">{{ todayCompleted }}</span>
+            / {{ todayGoal }} 词
+            <span v-if="dueCount > 0" class="text-ink-mute"> · 仍有 {{ dueCount }} 词到期</span>
+            <span v-else class="text-bamboo"> · 当前到期内容已清空</span>
+          </div>
 
           <div class="mt-6 grid grid-cols-3 gap-3">
             <div class="p-3 rounded-2xl bg-soft">
@@ -440,11 +518,12 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
 
           <div class="mt-7 space-y-2">
             <button
-              @click="startReview"
+              v-if="dueCount > 0"
+              @click="startReview(true)"
               class="w-full py-3 rounded-2xl btn-primary text-base font-medium transition-colors flex items-center justify-center gap-2"
             >
               <RotateCcw :size="18" />
-              再来一组
+              {{ todayGoalMet ? '继续复习' : '继续完成今日目标' }}
             </button>
             <button
               @click="goReport"

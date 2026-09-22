@@ -34,6 +34,8 @@ export interface ReviewSyncSnapshot {
   thresholds: Record<string, number>
   wrongToday: Record<string, number>
   wordStats?: Record<string, ReviewSyncWordStat>
+  reviewedToday?: string[]
+  reviewedDay?: string
 }
 
 export interface ReviewSyncWordStat {
@@ -71,6 +73,8 @@ export interface ReviewSyncData {
   lastResult: ReviewSyncResult | null
   finishedToday: number
   lastFinishedDay: string
+  reviewedToday?: string[]
+  reviewedDay?: string
   wordStats: Record<string, ReviewSyncWordStat>
 }
 
