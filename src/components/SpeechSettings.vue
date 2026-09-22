@@ -10,44 +10,6 @@ const draft = ref({ ...defaultSpeechConfig, ...settings.speechConfig })
 const message = ref('')
 const editing = ref(!settings.speechConfig.apiKey)
 
-interface ModelChoice {
-  key: string
-  profileId: string
-  provider: string
-  model: string
-  baseUrl: string
-}
-
-const modelChoices = computed<ModelChoice[]>(() => {
-  const seen = new Set<string>()
-  const choices: ModelChoice[] = []
-  for (const profile of settings.profiles) {
-    const models = profile.models.length ? profile.models : [profile.model]
-    const isMiMoProfile = /xiaomimimo\.com|mimo/i.test(profile.baseUrl) || [profile.name, ...models].some(value => /mimo/i.test(value))
-    if (!isMiMoProfile) continue
-    for (const model of models) {
-      const normalizedModel = model.trim()
-      if (!normalizedModel) continue
-      const key = `${profile.id}:${normalizedModel}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      choices.push({
-        key,
-        profileId: profile.id,
-        provider: profile.name || profile.model || '模型服务商',
-        model: normalizedModel,
-        baseUrl: profile.baseUrl
-      })
-    }
-  }
-  return choices
-})
-
-const speechModelKey = computed(() => settings.speechProfileId ? `${settings.speechProfileId}:${settings.speechConfig.model}` : modelChoices.value.find(choice => choice.baseUrl === settings.speechConfig.baseUrl && choice.model === settings.speechConfig.model)?.key || '')
-const currentModelLabel = computed(() => {
-  const choice = modelChoices.value.find(item => item.key === speechModelKey.value)
-  return choice ? `${choice.provider} · ${choice.model}` : settings.speechConfig.model || '未选择模型'
-})
 const previewConfig = computed(() => ({ ...settings.speechConfig, ...draft.value }))
 
 watch(draft, () => { message.value = '' }, { deep: true })
@@ -57,15 +19,6 @@ watch(() => [settings.speechConfig.apiKey, settings.speechConfig.baseUrl, settin
   draft.value.model = model
 })
 onMounted(() => { if (location.hash.endsWith('#speech')) document.getElementById('speech')?.scrollIntoView() })
-
-function selectModel(key: string) {
-  const choice = modelChoices.value.find(item => item.key === key)
-  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
-  if (!choice || !profile) return
-  useSpeech().stop()
-  settings.speechProfileId = profile.id
-  settings.speechConfig = { ...settings.speechConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model }
-}
 
 function save() {
   try {
@@ -88,9 +41,7 @@ function cancelEdit() {
 
 <template>
   <section id="speech-advanced" class="card settings-card speech-settings">
-    <label class="settings-label">朗读模型<select :value="speechModelKey" :disabled="!modelChoices.length" @change="selectModel(($event.target as HTMLSelectElement).value)"><option value="" disabled>{{ modelChoices.length ? '选择模型服务商与模型' : '请先添加小米 MiMo 服务商' }}</option><option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option></select></label>
     <div v-if="!editing" class="settings-summary" aria-label="当前朗读配置">
-      <div class="settings-summary-row"><span>当前模型</span><strong class="break-all">{{ currentModelLabel }}</strong></div>
       <div class="settings-summary-row"><span>音色 / 语速</span><strong>{{ draft.voice === 'mimo_default' ? '默认音色' : draft.voice }} · {{ draft.rate === 'slow' ? '慢速' : draft.rate === 'fast' ? '快速' : '标准' }}</strong></div>
     </div>
     <form v-if="editing" @submit.prevent="save" class="settings-form">

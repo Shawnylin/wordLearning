@@ -64,10 +64,10 @@ function formatTime(value: number) {
 
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
-.profile-sync-body { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px 14px; }
-.profile-sync-summary { grid-column: 1; font-size: 12px; }
-.profile-sync-actions { grid-template-columns: 1fr; min-width: 104px; grid-column: 2; grid-row: 1; }
+.profile-sync-body { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.profile-sync-summary { font-size: 12px; }
+.profile-sync-actions { display: grid; width: min(100%, 220px); grid-template-columns: 1fr; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
-.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { grid-column: 1 / -1; }
+.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; }
 .profile-sync-unauth { padding: 8px 0; font-size: 13px; }
 </style>

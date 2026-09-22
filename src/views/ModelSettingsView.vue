@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { ArrowLeft, ChevronDown } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { ArrowLeft } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import SpeechButton from '../components/SpeechButton.vue'
 import ModelSettings from '../components/ModelSettings.vue'
 import SpeechSettings from '../components/SpeechSettings.vue'
-import PdfModelSettings from '../components/PdfModelSettings.vue'
 
 interface ModelChoice {
   key: string
@@ -18,9 +17,6 @@ interface ModelChoice {
 
 const router = useRouter()
 const settings = useSettingsStore()
-const showPdfAdvanced = ref(false)
-const showSpeechAdvanced = ref(false)
-
 const modelChoices = computed<ModelChoice[]>(() => {
   const seen = new Set<string>()
   const choices: ModelChoice[] = []
@@ -58,6 +54,15 @@ const pdfModelKey = computed(() => {
   return settings.pdfProfileId ? `${settings.pdfProfileId}:${settings.pdfConfig.model}` : findChoice(settings.pdfConfig.baseUrl, settings.pdfConfig.model)?.key || ''
 })
 
+const speechModelChoices = computed(() => modelChoices.value.filter(choice => {
+  const profile = settings.profiles.find(item => item.id === choice.profileId)
+  return /xiaomimimo\.com|mimo/i.test(choice.baseUrl) || /mimo/i.test(`${choice.provider} ${choice.model} ${profile?.name || ''}`)
+}))
+
+const speechModelKey = computed(() => settings.speechProfileId
+  ? `${settings.speechProfileId}:${settings.speechConfig.model}`
+  : speechModelChoices.value.find(choice => choice.baseUrl === settings.speechConfig.baseUrl && choice.model === settings.speechConfig.model)?.key || '')
+
 function getChoice(key: string) {
   return modelChoices.value.find(choice => choice.key === key)
 }
@@ -83,6 +88,14 @@ function selectPdfModel(key: string) {
   settings.pdfUseLearningModel = false
 }
 
+function selectSpeechModel(key: string) {
+  const choice = getChoice(key)
+  const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
+  if (!choice || !profile) return
+  settings.speechProfileId = profile.id
+  settings.speechConfig = { ...settings.speechConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model }
+}
+
 </script>
 
 <template>
@@ -97,46 +110,34 @@ function selectPdfModel(key: string) {
       <main class="settings-content">
         <ModelSettings />
 
-        <section class="settings-panel settings-role-panel" aria-labelledby="learning-model-title">
-          <div class="settings-panel-heading">
-            <div><h2 id="learning-model-title">学习模型</h2></div>
-          </div>
-          <label class="settings-select-label" for="learning-model-select">当前模型</label>
-          <div class="settings-select-wrap">
+        <section class="settings-panel settings-model-roles" aria-label="模型用途">
+          <div class="settings-model-row"><label for="learning-model-select">学习模型</label><div class="settings-select-wrap">
             <select id="learning-model-select" :value="learningModelKey" :disabled="!modelChoices.length" @change="selectLearningModel(($event.target as HTMLSelectElement).value)">
               <option value="" disabled>{{ modelChoices.length ? '选择服务商与模型' : '请先添加模型服务商' }}</option>
               <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
             </select>
-          </div>
-        </section>
-
-        <section class="settings-panel settings-role-panel" aria-labelledby="pdf-model-title">
-          <div class="settings-panel-heading">
-            <div><h2 id="pdf-model-title">PDF 模型</h2></div>
-          </div>
-          <label class="settings-select-label" for="pdf-model-select">当前模型</label>
-          <div class="settings-select-wrap">
+          </div></div>
+          <div class="settings-model-row"><label for="pdf-model-select">PDF 模型</label><div class="settings-select-wrap">
             <select id="pdf-model-select" :value="pdfModelKey" @change="selectPdfModel(($event.target as HTMLSelectElement).value)">
               <option value="" disabled>选择服务商与模型</option>
               <option value="learning">跟随学习查词模型</option>
               <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
             </select>
-          </div>
-          <details class="settings-advanced" :open="showPdfAdvanced" @toggle="showPdfAdvanced = ($event.target as HTMLDetailsElement).open">
-            <summary><span>独立配置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
-            <div class="settings-advanced-body"><PdfModelSettings /></div>
-          </details>
+          </div></div>
+          <div class="settings-model-row"><label for="speech-model-select">朗读模型</label><div class="settings-select-wrap">
+            <select id="speech-model-select" :value="speechModelKey" :disabled="!speechModelChoices.length" @change="selectSpeechModel(($event.target as HTMLSelectElement).value)">
+              <option value="" disabled>{{ speechModelChoices.length ? '选择服务商与模型' : '请先添加 MiMo 服务商' }}</option>
+              <option v-for="choice in speechModelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
+            </select>
+          </div></div>
         </section>
 
-        <section class="settings-panel settings-role-panel settings-voice-panel" aria-labelledby="speech-model-title">
+        <section class="settings-panel settings-voice-panel" aria-labelledby="speech-tools-title">
           <div class="settings-panel-heading">
-            <div><h2 id="speech-model-title">语音</h2></div>
+            <div><h2 id="speech-tools-title">语音测试与调试</h2></div>
           </div>
           <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
-          <details id="speech" class="settings-advanced" :open="showSpeechAdvanced" @toggle="showSpeechAdvanced = ($event.target as HTMLDetailsElement).open">
-            <summary><span>MiMo 朗读设置</span><ChevronDown :size="15" aria-hidden="true" /></summary>
-            <div class="settings-advanced-body"><SpeechSettings /></div>
-          </details>
+          <div id="speech" class="settings-advanced-body"><SpeechSettings /></div>
         </section>
       </main>
     </div>
@@ -159,7 +160,7 @@ function selectPdfModel(key: string) {
 .settings-content :deep(.settings-description) { max-width: 34ch; margin-top: 4px; color: var(--ink-mute); font-size: 11px; line-height: 1.55; }
 .settings-content :deep(.settings-icon-button) { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
 .settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-deep); }
-.settings-content :deep(.settings-provider-list) { overflow: hidden; border-top: 1px solid var(--line); }
+.settings-content :deep(.settings-provider-list) { overflow: hidden; }
 .settings-content :deep(.settings-provider-row) { display: flex; min-width: 0; align-items: center; gap: 8px; min-height: 68px; border-bottom: 1px solid var(--line); }
 .settings-content :deep(.settings-provider-row:last-child) { border-bottom: 0; }
 .settings-content :deep(.settings-provider-main) { display: flex; min-width: 0; flex: 1; align-items: center; gap: 11px; min-height: 64px; padding: 8px 0; color: var(--ink); text-align: left; }
@@ -192,6 +193,9 @@ function selectPdfModel(key: string) {
 .settings-panel-heading { display: flex; min-width: 0; align-items: center; gap: 11px; }
 .settings-panel-heading h2 { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.4; }
 .settings-panel-heading p { margin-top: 3px; color: var(--ink-mute); font-size: 11px; line-height: 1.5; }
+.settings-model-roles { gap: 0; }
+.settings-model-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 12px; min-height: 66px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-weight: 500; }
+.settings-model-row:last-child { border-bottom: 0; }
 .settings-select-label { margin-top: 2px; }
 .settings-select-wrap { position: relative; display: flex; align-items: center; }
 .settings-select-wrap > svg { position: absolute; left: 14px; z-index: 1; color: var(--zhuhong); pointer-events: none; }
@@ -208,5 +212,6 @@ function selectPdfModel(key: string) {
 .settings-advanced-body { padding-top: 8px; }
 .settings-advanced-body :deep(.settings-card) { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 @media (min-width: 520px) { .settings-shell { padding-inline: 24px; } }
+@media (max-width: 420px) { .settings-model-row { grid-template-columns: 68px minmax(0, 1fr); gap: 8px; } }
 @media (prefers-reduced-motion: reduce) { .settings-advanced summary > svg { transition: none; } }
 </style>

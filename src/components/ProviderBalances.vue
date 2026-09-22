@@ -16,6 +16,8 @@ const providers = computed(() => {
   }
   const seen = new Set<string>()
   return candidates.filter(provider => {
+    const host = (() => { try { return new URL(provider.baseUrl).hostname } catch { return '' } })()
+    if (host === 'api.xiaomimimo.com' || host.endsWith('.xiaomimimo.com')) return false
     const key = `${provider.baseUrl.replace(/\/+$/, '')}:${provider.apiKey}`
     if (seen.has(key)) return false
     seen.add(key); return true
@@ -34,12 +36,6 @@ async function refresh() {
   await Promise.all(list.map(async (provider, index) => {
     const row = rows.value[index]
     try {
-      const host = new URL(provider.baseUrl).hostname
-      if (host === 'api.xiaomimimo.com' || host.endsWith('.xiaomimimo.com')) {
-        row.url = 'https://platform.xiaomimimo.com/#/console/balance'
-        row.message = '在 MiMo 查看'
-        return
-      }
       const result = await fetchBalance(provider)
       if (epoch !== generation) return
       row.balances = result
