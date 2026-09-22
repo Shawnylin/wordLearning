@@ -1,0 +1,77 @@
+/* ============ 基础样式 ============ */
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  background-color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 宣纸纸纹：极淡的纤维噪点 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html.dark body::before {
+  opacity: 0.06;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.app-update-leaving #app {
+  opacity: 0;
+  transform: scale(0.985);
+  filter: blur(7px);
+  transition: opacity 420ms ease, transform 480ms cubic-bezier(0.4, 0, 0.2, 1), filter 420ms ease;
+}
+
+html.app-update-entering #app {
+  animation: app-update-reveal 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes app-update-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.app-update-leaving #app,
+  html.app-update-entering #app {
+    animation-duration: 1ms;
+    transition-duration: 1ms;
+  }
+}
+
+/* 主题切换的柔和过渡（只作用于颜色类属性，避免布局抖动） */
+* {
+  transition: background-color 320ms ease, border-color 320ms ease, color 240ms ease, box-shadow 240ms ease, opacity 200ms ease, filter 200ms ease;
+}
+

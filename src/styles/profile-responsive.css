@@ -1,0 +1,122 @@
+@media (max-width: 360px) {
+  .profile-sync-summary,
+  .profile-sync-policy {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .profile-sync-policy span:last-child {
+    text-align: left;
+  }
+
+  .profile-row-value {
+    max-width: 34%;
+  }
+}
+
+@media (min-width: 768px) {
+  .profile-shell {
+    max-width: 900px;
+  }
+
+  .profile-shell > .profile-settings {
+    margin-top: 24px;
+  }
+
+  .profile-shell > .profile-settings > .profile-settings-layout {
+    max-width: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .profile-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "identity"
+      "sync"
+      "settings";
+    row-gap: 0;
+  }
+
+  .profile-shell > .profile-title-row {
+    grid-area: title;
+  }
+
+  .profile-shell > .profile-identity-card {
+    grid-area: identity;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-sync-card {
+    grid-area: sync;
+    margin-top: 16px;
+  }
+
+  .profile-shell > .profile-settings {
+    grid-area: settings;
+    margin-top: 20px;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .profile-shell > .profile-settings > .profile-settings-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .profile-shell > .profile-settings .profile-section {
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-settings .profile-stats-section {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1200px) {
+  .profile-shell {
+    grid-template-columns: minmax(250px, .78fr) minmax(0, 1.62fr);
+    grid-template-areas:
+      "title title"
+      "identity settings"
+      "sync settings";
+    align-items: start;
+    column-gap: 28px;
+    row-gap: var(--profile-layout-gap);
+    max-width: 1040px;
+  }
+
+  .profile-shell > .profile-title-row {
+    grid-area: title;
+  }
+
+  .profile-shell > .profile-identity-card {
+    grid-area: identity;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-sync-card {
+    grid-area: sync;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-settings {
+    grid-area: settings;
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-settings > .profile-settings-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--profile-layout-gap);
+  }
+
+  .profile-shell > .profile-settings .profile-section {
+    margin-top: 0;
+  }
+
+  .profile-shell > .profile-settings .profile-stats-section {
+    grid-column: 1 / -1;
+  }
+}

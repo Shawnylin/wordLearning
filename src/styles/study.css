@@ -1,0 +1,43 @@
+/* Page reading layout; record overlays retain their card presentation. */
+.study-page { width: 100%; max-width: 1120px; margin-inline: auto; container-type: inline-size; }
+.study-page button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.study-page button:not(:disabled):active {
+  scale: .965;
+  filter: brightness(1.16) saturate(1.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .98), inset 0 0 14px rgb(255 255 255 / .28), 0 0 0 1px rgb(255 255 255 / .5), 0 5px 18px -7px color-mix(in srgb, var(--zhuhong-solid) 58%, transparent);
+}
+@media (dynamic-range: high) {
+  @supports (color: color(rec2100-pq 0.8 0.8 0.8)) {
+    .study-page button:not(:disabled):active {
+      dynamic-range-limit: no-limit;
+      filter: brightness(1.22) saturate(1.12);
+      box-shadow: inset 0 1px 0 color(rec2100-pq 0.92 0.92 0.92 / .98), inset 0 0 16px color(display-p3 1 .92 .78 / .46), 0 0 0 1px color(display-p3 1 .9 .72 / .72), 0 6px 22px -7px color(display-p3 .95 .18 .1 / .78);
+    }
+  }
+}
+.study-page .study-command-zone { min-height: 96px; }
+.learn-page.has-study-result .study-command-zone { min-height: 0; }
+.study-page .generation-stage { max-width: none; }
+.study-page > .max-w-lg, .study-page > div > .max-w-lg { max-width: 760px; }
+.study-page .generation-result .card {
+ background: transparent; border: 0; border-radius: 0; box-shadow: none;
+ backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible;
+}
+.study-page .study-heading { background: none; padding: 0 0 12px; text-align: left; border-bottom: 1px solid var(--line); margin-bottom: var(--study-section-gap); }
+.study-page .study-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.study-page .study-heading-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+.study-page .study-heading-row > p { font-size: 15px; letter-spacing: .08em; overflow-wrap: anywhere; }
+.study-page .study-heading h1 { font-size: clamp(32px, 5vw, 44px); letter-spacing: .06em; overflow-wrap: anywhere; }
+.study-page .study-heading .token-usage { justify-content: flex-start; }
+.study-page .compare-words { justify-content: flex-start; font-size: clamp(24px, 4vw, 34px); gap: 10px 20px; }
+.study-page .study-sections { padding: 0 0 var(--study-section-gap); display: grid; gap: var(--study-section-gap) 40px; }
+.study-page .study-sections > div { min-width: 0; margin: 0; }
+.study-page .study-sections .pl-9 { padding-left: 0; }
+.study-page .study-sections p { line-height: 1.85; overflow-wrap: anywhere; }
+.study-page .study-sections .grid { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.study-page .study-sections .grid button { white-space: normal; overflow: visible; overflow-wrap: anywhere; border-radius: 0; background: transparent; padding: 4px 0; color: var(--zhuhong); text-align: left; }
+.study-page .study-sections .grid button:hover { text-decoration: underline; }
+@container (min-width: 680px) {
+ .study-page .study-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+

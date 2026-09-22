@@ -1,0 +1,108 @@
+.cloud-sync-panel-compact {
+  min-width: 0;
+}
+
+.cloud-sync-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--profile-inline-gap);
+  min-width: 0;
+  padding: 0 0 11px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-sync-unauth {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.profile-sync-body {
+  min-width: 0;
+}
+
+.profile-sync-summary,
+.profile-sync-policy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--profile-inline-gap);
+  padding: 11px 0;
+  color: var(--ink-mute);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.profile-sync-summary {
+  flex-wrap: wrap;
+}
+
+.profile-sync-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile-sync-action {
+  display: inline-flex;
+  min-height: var(--profile-field-height);
+  padding: 0 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--profile-action-radius);
+  background: var(--soft);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-sync-action-primary {
+  border-color: color-mix(in srgb, var(--dai) 25%, var(--line));
+  background: var(--dai-soft);
+  color: var(--dai);
+}
+
+.profile-sync-policy {
+  border-top: 1px solid var(--line);
+}
+
+.profile-sync-policy span:last-child {
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.profile-sync-settings {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-mute);
+  font-size: 11px;
+}
+
+.profile-inline-feedback {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: var(--profile-control-radius);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.profile-inline-feedback.is-success {
+  background: var(--bamboo-soft);
+  color: var(--bamboo);
+}
+
+.profile-inline-feedback.is-error {
+  background: var(--zhuhong-soft);
+  color: var(--zhuhong);
+}
+

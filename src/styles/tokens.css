@@ -1,0 +1,16 @@
+/* Stable, scoped dimensions only. Color and Tailwind theme mappings stay in theme.css. */
+:root {
+  --word-command-control-size: 56px;
+  --word-command-field-radius: 28px;
+  --study-section-gap: 24px;
+  --profile-section-gap: 18px;
+  --profile-section-padding-inline: 18px;
+  --profile-inline-gap: 12px;
+  --profile-layout-gap: 20px;
+  --profile-control-size: 40px;
+  --profile-option-height: 42px;
+  --profile-field-height: 44px;
+  --profile-control-radius: 10px;
+  --profile-action-radius: 11px;
+  --motion-feedback-duration: 180ms;
+}

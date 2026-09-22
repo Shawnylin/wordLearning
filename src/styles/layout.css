@@ -1,0 +1,51 @@
+/* Tablet canvas follows available width, including iPad Split View. */
+.app-shell { --nav-width: 160px; }
+.app-shell.nav-collapsed { --nav-width: 68px; }
+.app-main { transition: padding-left 420ms cubic-bezier(.22,1,.36,1); }
+.app-main > * {
+  transition: padding 420ms cubic-bezier(.22,1,.36,1), max-width 420ms cubic-bezier(.22,1,.36,1), opacity 180ms ease;
+}
+@media (min-width: 768px) {
+  .app-main {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: calc(var(--nav-width) + env(safe-area-inset-left, 0px));
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .app-main > * {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: clamp(28px, 4vw, 56px);
+    padding-top: 32px;
+    min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+  .app-main > * > .max-w-lg { max-width: 760px; }
+  .app-main .settings-layout { width: 100%; max-width: 760px; }
+  .study-page .study-sections { gap: 28px 36px; }
+  .study-page .study-heading { margin-top: 28px; }
+  .learn-page.has-study-result .study-heading { margin-top: 0; }
+  .study-page .study-sections p { font-size: 15px; line-height: 1.95; }
+}
+@media (min-width: 1024px) {
+  .app-main > * > .max-w-lg:has(.settings-layout) { max-width: 960px; }
+  .app-main .settings-layout.is-profile-embedded {
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "token model"
+      "token update"
+      "theme data";
+    align-items: stretch;
+    gap: 20px;
+  }
+  .app-main .settings-layout > * { min-width: 0; margin-block: 0; }
+  .app-main .settings-layout > header { grid-column: 1 / -1; }
+  .app-main .is-profile-embedded .settings-card-token { grid-area: token; }
+  .app-main .is-profile-embedded .settings-card-model { grid-area: model; }
+  .app-main .is-profile-embedded .settings-card-theme { grid-area: theme; }
+  .app-main .is-profile-embedded .settings-card-update { grid-area: update; }
+  .app-main .is-profile-embedded .settings-card-data { grid-area: data; }
+}
+
