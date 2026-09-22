@@ -1191,6 +1191,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 .profile-sync-action {
   display: inline-flex;
   min-height: 44px;
+  padding: 0 14px;
   align-items: center;
   justify-content: center;
   gap: 7px;
