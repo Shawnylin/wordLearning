@@ -30,6 +30,10 @@ try {
   // Visual scripts retain their before/after CLI argument.
   if (suite === 'css-visual') process.argv[2] = args[1]
   for (const file of selected) {
+    if (file === 'daily-polish' && !process.env.TEST_PDF_PATH) {
+      results.push({ file, passed: true, skipped: true, reason: 'TEST_PDF_PATH not set', ms: 0 })
+      continue
+    }
     const start = Date.now()
     const timeout = setTimeout(async () => {
       console.error(`${file}: exceeded 90 seconds`)

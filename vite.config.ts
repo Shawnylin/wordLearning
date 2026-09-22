@@ -51,6 +51,15 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/@cloudbase/') || id.includes('\\node_modules\\@cloudbase\\')) return 'cloudbase'
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': '/src'

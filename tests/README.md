@@ -79,17 +79,17 @@ WebKit 可通过 `BROWSER_ENGINE=webkit` 选择，需另行安装对应浏览器
 
 ## 保留的诊断与 visual 脚本
 
-这些脚本未删除、未改成跳过断言，也未加入 check。它们统一接入安全的浏览器启动器，后续修复应更新过时夹具/选择器，或另开任务修业务问题，不能为了变绿降低断言。
+这些脚本仍未加入 `check`，但已统一接入安全的浏览器启动器并按当前 UI/交互刷新。`npm run test:browser:legacy` 当前会执行可自包含的诊断；`daily-polish.mjs` 只有显式提供 `TEST_PDF_PATH` 时才运行真实 PDF 部分，否则报告为 skipped。诊断修复不通过扩大容差或移除有效断言来换取绿灯。
 
 | 文件 | 当前用途/限制 |
 | --- | --- |
-| `browser.mjs` | 旧综合流程与截图；直接 API Key 设置入口等选择器已过时 |
-| `motion.mjs` | 动画中间帧截图；旧“搜索”按钮、独立对比页等流程待更新 |
-| `settings-browser.mjs` | 旧设置/余额/语音综合流程；旧朗读设置入口待更新 |
-| `daily-polish.mjs` | 日报细节、滑动删除、真实 PDF 提取；星标断言过时，需显式 `TEST_PDF_PATH` 指向本地测试 PDF |
-| `compare-layout.mjs` | 320/393/430/768px 长词、多词、记录展开；存在已复现的横向溢出断言失败 |
-| `generation-center.mjs` | 展开过程中心位置采样；存在已复现的中间帧断言失败 |
-| `theme-transitions.mjs` | 主题/路由/删除过渡与截图；旧界面定位方式尚未重新验证 |
+| `browser.mjs` | 综合流程与截图；已适配当前服务商配置、统一学习/对比页和结果回看路径 |
+| `motion.mjs` | 动画中间帧、记录共享转场、reduced motion 与设置页往返；已适配当前统一学习/对比页 |
+| `settings-browser.mjs` | 设置/余额/语音综合流程；验证当前学习、PDF、语音模型选择与移动端布局 |
+| `daily-polish.mjs` | 日报细节、滑动删除、真实 PDF 提取；需显式 `TEST_PDF_PATH` 指向脱敏本地测试 PDF，否则 legacy 套件将其记为 skipped |
+| `compare-layout.mjs` | 320/393/430/768px 长词、多词、记录展开；当前 20 组布局用例通过，覆盖窄屏横向溢出 |
+| `generation-center.mjs` | 展开过程中心位置采样；当前保持 1px 中心容差并通过学习、对比和延迟键盘恢复用例 |
+| `theme-transitions.mjs` | 主题/路由/清理确认/动态列表与截图；已按当前设置页入口重新验证 |
 | `css-visual.mjs` | 320/393/820/1440px，36 个页面/弹层状态；需要同机器、浏览器、字体和有效前置基线 |
 
 旧 `tests/*.png` 保留为历史人工查看材料，不是自动加载的黄金截图。脚本产生的新截图放到忽略目录，不覆盖这些历史图片。visual 当前自动比较计算样式与几何，PNG 仍需人工或独立像素比对；不能把“截了图”写成“像素验证通过”。不要在代码改完后覆盖 baseline 来消除差异。

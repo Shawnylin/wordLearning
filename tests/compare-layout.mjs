@@ -31,6 +31,7 @@ for(const width of [320,393,430,768]) {
   assert.equal(await row.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true)
   await row.click()
   await page.getByRole('dialog').waitFor()
+  await page.waitForFunction(() => document.querySelector('.record-panel')?.getAnimations().length === 0)
   await bounds('.compare-words--card')
   await bounds('.record-panel')
   assert.equal(await page.locator('.compare-words--card [data-morph-word]').count(),words.length)

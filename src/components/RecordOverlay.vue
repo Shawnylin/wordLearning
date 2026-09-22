@@ -223,8 +223,8 @@ onBeforeUnmount(() => {
 .record-panel .compare-heading .compare-words { justify-content: flex-start; color: var(--ink); font-weight: 700; letter-spacing: .04em; }
 .record-panel .compare-heading .compare-word { line-height: 1.18; }
 .record-panel .compare-heading .compare-word-divider { font-size: 14px; letter-spacing: 0; }
-.record-panel .compare-heading .compare-words--count-2 { flex-wrap: nowrap; gap: 6px 10px; font-size: clamp(24px, 7.5vw, 48px); }
-.record-panel .compare-heading .compare-words--count-3 { flex-wrap: nowrap; gap: 4px 6px; font-size: clamp(15px, 4.8vw, 32px); }
+.record-panel .compare-heading .compare-words--count-2 { flex-wrap: wrap; gap: 6px 10px; font-size: clamp(24px, 7.5vw, 48px); }
+.record-panel .compare-heading .compare-words--count-3 { flex-wrap: wrap; gap: 4px 6px; font-size: clamp(15px, 4.8vw, 32px); }
 .record-panel .compare-heading .compare-words--count-2 .compare-word,
 .record-panel .compare-heading .compare-words--count-3 .compare-word { flex: 0 1 auto; white-space: nowrap; overflow-wrap: normal; }
 .record-panel .compare-heading .compare-words--count-4 { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px 10px; width: 100%; font-size: clamp(22px, 7vw, 42px); }

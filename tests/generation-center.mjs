@@ -30,7 +30,8 @@ async function assertCenteredExpansion(trigger) {
   for (const time of [40, 120, 220, 300, 420, 600, 710]) {
     const sample = await page.evaluate(async time => {
       const surface = document.querySelector('.generation-surface')
-      const animation = surface.getAnimations()[0]
+      const animation = surface.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'width' in frame && 'left' in frame))
+      if (!animation) throw new Error('generation geometry animation not found')
       animation.pause()
       animation.currentTime = time
       for (const a of document.querySelector('.generation-body').getAnimations()) { a.pause(); a.currentTime = time }
@@ -47,7 +48,10 @@ async function assertCenteredExpansion(trigger) {
     assert(Math.abs(sample.captionY - captionBefore.y) < 1, JSON.stringify({ captionBefore, sample }))
   }
   await page.evaluate(() => {
-    document.querySelector('.generation-surface').getAnimations()[0].finish()
+    const surface = document.querySelector('.generation-surface')
+    const geometry = surface.getAnimations().find(a => a.effect.getKeyframes().some(frame => 'width' in frame && 'left' in frame))
+    if (!geometry) throw new Error('generation geometry animation not found')
+    geometry.finish()
     document.querySelector('.generation-body').getAnimations().forEach(a => a.finish())
   })
   await page.waitForFunction(() => !document.querySelector('.is-morphing'))
@@ -64,7 +68,7 @@ await assertCenteredExpansion(() => page.getByRole('button', { name: '发送词�
 await page.goto(`${base}#/learn?mode=compare`)
 await page.getByPlaceholder('输入词语 1').fill('画龙点睛')
 await page.getByPlaceholder('输入词语 2').fill('锦上添花')
-await assertCenteredExpansion(() => page.getByRole('button', { name: '发送对比', exact: true }).click())
+await assertCenteredExpansion(() => page.locator('.generation-stage .satellite.right').click())
 
 // Simulate the delayed visualViewport restoration that desktop mobile emulation
 // does not generate when an input loses focus.
