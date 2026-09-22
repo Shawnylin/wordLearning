@@ -1,13 +1,11 @@
-import { createRequire } from 'node:module'
 import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import assert from 'node:assert/strict'
-const require = createRequire(`${process.env.CODEX_NODE_MODULES}/package.json`)
-const { chromium } = require('playwright')
+import { launchBrowser, base } from './helpers/browser.mjs'
 const phase = process.argv[2]
 assert(['before', 'after'].includes(phase), 'Usage: node tests/css-visual.mjs before|after')
 const root = 'docs/.local/css-refactor'
 await mkdir(`${root}/${phase}`, { recursive: true })
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+const browser = await launchBrowser()
 const errors = [], captures = []
 try {
   for (const [width, height] of [[320,852], [393,852], [820,1180], [1440,1000]]) {
@@ -38,7 +36,7 @@ try {
       if (phase === 'after') assert(JSON.stringify(styles) === await readFile(`${root}/before/${key}.json`, 'utf8'), `${key}: computed style or geometry changed (see JSON artifacts)`)
       captures.push(key)
     }
-    await page.goto('http://127.0.0.1:5173/wordLearning/#/learn')
+    await page.goto(`${base}#/learn`)
     await page.getByPlaceholder('输入成语或词语…').waitFor()
     await capture('learn-empty')
     await page.evaluate(async () => {
@@ -49,7 +47,7 @@ try {
     await page.locator('.study-heading').waitFor()
     await capture('learn-result')
     for (const route of ['profile', 'profile/account', 'profile/models', 'report']) {
-      await page.goto(`http://127.0.0.1:5173/wordLearning/#/${route}`)
+      await page.goto(`${base}#/${route}`)
       await page.locator({profile:'.profile-page', 'profile/account':'.profile-account-page', 'profile/models':'.model-settings', report:'.daily-workspace'}[route]).waitFor()
       await page.waitForFunction(() => !document.querySelector('[class*="fade-leave"], [class*="fade-enter"]'))
       await capture(route.replaceAll('/','-'))

@@ -1,8 +1,6 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+import { launchBrowser, base, saveFailureArtifacts } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 try {
   const page = await browser.newPage({ viewport: { width: 393, height: 852 } })
   const errors = []
@@ -17,11 +15,19 @@ try {
     budgets.push(request.max_tokens)
     count++
     const truncated = fail || count === 1
-    await route.fulfill({ json: { choices: [{ finish_reason: truncated ? 'length' : 'stop', message: { content: truncated ? '{"explanation":"未完成' : JSON.stringify(idiom) } }] } })
+    const content = truncated ? '{"explanation":"未完成' : JSON.stringify(idiom)
+    const finish_reason = truncated ? 'length' : 'stop'
+    if (request.stream) {
+      await route.fulfill({ contentType: 'text/event-stream', body: [
+        `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}`,
+        `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason }] })}`,
+        'data: [DONE]', '',
+      ].join('\n\n') })
+    } else await route.fulfill({ json: { choices: [{ finish_reason, message: { content } }] } })
   })
-  await page.goto('http://127.0.0.1:5173/wordLearning/#/learn')
+  await page.goto(`${base}#/learn`)
   await page.getByPlaceholder('输入成语或词语…').fill('画龙点睛')
-  await page.getByRole('button', { name: '搜索', exact: true }).click()
+  await page.getByRole('button', { name: '发送词语', exact: true }).click()
   await page.getByText(idiom.explanation, { exact: true }).waitFor()
   assert.deepEqual(budgets, [4096, 8192])
   const before = await page.evaluate(async () => {
@@ -44,7 +50,7 @@ try {
   assert.equal(after.loading, false)
   assert.equal(count, 4)
   await page.getByPlaceholder('输入成语或词语…').fill('一心一意')
-  await page.getByRole('button', { name: '搜索', exact: true }).click()
+  await page.getByRole('button', { name: '发送词语', exact: true }).click()
   await page.waitForFunction(async () => {
     const { useIdiomStore } = await import('/wordLearning/src/stores/idiom.ts')
     return !useIdiomStore().idiomLoading && useIdiomStore().idiomError.includes('未保存')
@@ -56,4 +62,4 @@ try {
   assert.equal(count, 6)
   assert.deepEqual(errors, [])
   console.log(JSON.stringify({ passed: true, recoveredAutomatically: true, existingCachePreserved: true, incompleteResultNotCached: true, errors }))
-} finally { await browser.close() }
+} catch (error) { await saveFailureArtifacts('output-budget-browser'); throw error } finally { await browser.close() }

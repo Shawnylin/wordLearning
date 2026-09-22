@@ -1,8 +1,8 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const pdfFixture = process.env.TEST_PDF_PATH
+if (!pdfFixture) throw new Error('daily-polish requires TEST_PDF_PATH pointing to a local newspaper PDF fixture')
+const browser = await launchBrowser()
 const page = await browser.newPage({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 const errors = []
 page.on('pageerror', error => errors.push(error.message))
@@ -11,7 +11,7 @@ const issues = [
   { id:'b', createdAt:Date.now()-1000, tokenUsage:70, articles:[{ title:'完整长标题第二篇文章用于阅读页面展示', shortTitle:'基层治理协同创新', source:'导入 PDF', url:'', publishedAt:'', content:'久久为功提升基层治理效能。'.repeat(50), words:['久久为功'], analysis:'', origin:'pdf', page:1, completedAt:Date.now(), starred:true }], pdf:{ fingerprint:'a'.repeat(64), filename:'rmrb.pdf', pages:1, remainder:'', model:'mimo', usageEstimated:false, articleIndex:1, articleCount:2 } }
 ]
 await page.addInitScript(value => localStorage.setItem('daily-store', JSON.stringify({issues:value,selectedId:'a'})), issues)
-await page.goto(process.env.DAILY_TEST_URL || 'http://127.0.0.1:5173/wordLearning/#/report')
+await page.goto(`${base}#/report`)
 await page.getByRole('heading',{name:/关于推动高质量发展/}).waitFor()
 const app = page.locator('#app')
 const indicatorBefore = await page.locator('#bottom-nav-indicator').boundingBox()
@@ -60,7 +60,7 @@ assert.equal(await panel.getByText('高质量发展新实践',{exact:true}).coun
 await panel.getByRole('button',{name:'关闭历史日报'}).click(); await panel.waitFor({state:'detached'})
 await page.getByRole('button',{name:'生成日报',exact:true}).click(); await page.getByRole('button',{name:/PDF 日报导入/}).click()
 const pdf = page.getByRole('dialog',{name:'PDF 日报导入'}); await pdf.waitFor(); await pdf.getByRole('button',{name:'选择 PDF 文件'}).waitFor()
-const chooser = page.waitForEvent('filechooser'); await pdf.getByRole('button',{name:'选择 PDF 文件'}).click(); (await chooser).setFiles('E:/QuarkDownload/03_学习数据与阅读资料/rmrb2026091401.pdf')
+const chooser = page.waitForEvent('filechooser'); await pdf.getByRole('button',{name:'选择 PDF 文件'}).click(); (await chooser).setFiles(pdfFixture)
 await pdf.getByText('原文已提取，尚未调用模型',{exact:true}).waitFor({timeout:30000})
 await pdf.getByRole('button',{name:'重新选择 PDF'}).waitFor()
 assert.equal(await pdf.getByText(/核对原始提取文字/).count(),0)

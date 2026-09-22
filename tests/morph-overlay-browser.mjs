@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict'
-import { createRequire } from 'node:module'
-const require = createRequire(`${process.env.CODEX_NODE_MODULES}/package.json`)
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 const page = await browser.newPage({ viewport: { width: 393, height: 852 } })
 const errors = []
 page.on('pageerror', error => errors.push(error.message))
-const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5173/wordLearning/'
 try {
   for (const [route, name, selector] of [['report', '查看历史日报', '.daily-history'], ['profile/models', '添加模型服务商', '.provider-editor-dialog']]) {
     await page.goto(`${base}#/${route}`)

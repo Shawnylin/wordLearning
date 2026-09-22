@@ -1,3 +1,5 @@
+// Same-origin fallback for these media only; the configured Worker intentionally
+// serves general article links. Keep this local server allowlist narrow (README).
 const domains = ['people.com.cn', 'gmw.cn', 'banyuetan.org']
 export function readerUrl(input) {
   const url = new URL(input)

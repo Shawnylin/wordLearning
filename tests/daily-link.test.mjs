@@ -83,3 +83,37 @@ test('missing deployed reader and model network failure have separate actionable
   }
   await assert.rejects(generateDailyFromLink(config, url, []), /网页已读取，但模型接口连接失败/)
 })
+
+test('all three media use same-origin reader, while lookalikes use direct then Jina', async () => {
+  for (const host of ['people.com.cn', 'gmw.cn', 'banyuetan.org', 'news.gmw.cn', 'people.com.cn.evil.com']) {
+    const input = `https://${host}/article`
+    const calls = []
+    globalThis.fetch = async target => {
+      calls.push(target)
+      if (target === input) throw new TypeError('CORS')
+      return Response.json({ error: 'mock blocked' }, { status: 502 })
+    }
+    await assert.rejects(generateDailyFromLink(config, input, []))
+    assert.deepEqual(calls, host.endsWith('.evil.com')
+      ? [input, 'https://r.jina.ai/' + input]
+      : ['/wordLearning/api/article-reader?url=' + encodeURIComponent(input)])
+  }
+})
+
+test('configured reader handles general and media links without direct/Jina fallback', async () => {
+  const endpoint = 'https://reader.example/api/article-reader'
+  const output = await build({ entryPoints: ['src/api/dailyLink.ts'], bundle: true, write: false, platform: 'node', format: 'esm',
+    define: { 'import.meta.env': JSON.stringify({ VITE_ARTICLE_READER_URL: endpoint }) } })
+  const configured = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].text).toString('base64')}`)
+  for (const input of [url, 'https://people.com.cn/article']) {
+    const calls = []
+    globalThis.fetch = async (target, options) => {
+      calls.push(target)
+      assert.equal(options.credentials, 'omit')
+      assert.equal(options.headers.Authorization, undefined)
+      return Response.json({ error: 'mock blocked' }, { status: 502 })
+    }
+    await assert.rejects(configured.generateDailyFromLink(config, input, []), /mock blocked/)
+    assert.deepEqual(calls, [endpoint + '?url=' + encodeURIComponent(input)])
+  }
+})

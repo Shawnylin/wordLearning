@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
 
+      - name: Run checks
+        run: npm run check
+
       - name: Check required CloudBase secrets
         env:
           TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}

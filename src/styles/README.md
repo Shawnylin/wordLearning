@@ -44,12 +44,12 @@ This is not a global spacing scale. Keep unrelated equal numbers independent. Br
 
 ## Visual comparison
 
-With the development server on port 5173 and `CODEX_NODE_MODULES` pointing to the available Playwright installation:
+Install the project dependencies and Playwright Chromium (`npx playwright install chromium`) first. The test runner starts and stops its own local server:
 
 ```sh
-node tests/css-visual.mjs before
+npm run test:visual:baseline
 # Make the CSS change.
-node tests/css-visual.mjs after
+npm run test:visual
 ```
 
 The script uses mock data and network responses, captures 36 views at 320/393/820/1440px, and compares computed geometry/styles. Artifacts are written to ignored `docs/.local/css-refactor/`. Compare the matching before/after PNGs as well; reduced-motion captures check settled layouts, not intermediate animation frames. Capture a fresh baseline before each later change.

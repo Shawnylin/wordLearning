@@ -16,8 +16,9 @@ export function extractArticleHtml(html: string, url: string): string {
   if (content.length < 80) throw new Error('没有读取到足够的文章正文；未调用模型')
   return `Title: ${title}\nPublished Time: ${date}\nMarkdown Content:\n${content}`
 }
-// Prefer direct reading when the publisher permits CORS. The reader is a fallback
-// for this one public URL only; model credentials are never sent to either site.
+// Configured reader: all links. Otherwise: same-origin reader for sourceDomains,
+// direct fetch then Jina for other hosts. Reader errors do not switch routes.
+// Model credentials are never sent to any article-reading endpoint.
 // Reader protocol: https://github.com/jina-ai/reader
 async function readArticle(url: string, signal: AbortSignal): Promise<string> {
   const host = new URL(url).hostname

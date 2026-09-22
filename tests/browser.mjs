@@ -1,8 +1,6 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 const context = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
 const page = await context.newPage()
 const errors = []
@@ -26,7 +24,7 @@ await page.route('https://api.deepseek.com/**', async route => {
   }
   return route.fulfill({ json: { choices: [{ message: { content: body.messages[0].content.includes('对比') ? JSON.stringify(compare) : body.messages[1].content === 'Reply OK.' ? 'OK' : JSON.stringify(idiom) } }], usage: { total_tokens: 80 } } })
 })
-await page.goto('http://127.0.0.1:5173/wordLearning/#/profile')
+await page.goto(`${base}#/profile`)
 assert.equal(await page.getByText('个人设置', { exact: true }).count(), 0)
 assert.equal(await page.getByLabel('API Key', { exact: true }).count(), 0)
 await page.getByRole('button', { name: '模型与 API', exact: true }).click()
@@ -70,7 +68,7 @@ await page.waitForTimeout(120)
 const middle = await page.locator('.record-panel').boundingBox()
 assert(middle.height > source.height && middle.height < 840)
 await page.waitForTimeout(620)
-await page.screenshot({ path: 'tests/record-expanded.png' })
+await page.screenshot({ path: 'docs/.local/browser-artifacts/record-expanded.png' })
 await page.getByRole('button', { name: '返回记录' }).click()
 await page.getByRole('dialog').waitFor({ state: 'detached' })
 assert(Math.abs((await row.boundingBox()).y - source.y) < 1)

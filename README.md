@@ -139,7 +139,7 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 
 页面采用 hash 路由，避免静态托管访问 `/learn` 时返回 404。学习和对比的请求由 Pinia 管理，切换应用内页面继续生成，输入状态保留；关闭浏览器或刷新页面不在此保障范围内。PWA 更新在下次打开时生效，避免更新强制刷新中断请求。
 
-浏览器回归脚本：`tests/browser.mjs`。先启动 Vite，再设置 `CODEX_NODE_MODULES` 为含 Playwright 的 node_modules 目录并运行 `node tests/browser.mjs`；使用 Edge 与模拟 API，不需要真实密钥，验证 393×852 视口、跨页生成、配置保存切换、接口错误及记录展开动画。
+浏览器 smoke 推荐运行 `npm run test:browser`；运行器会自行启动测试服务并管理浏览器环境。如只需运行单项 smoke，使用 `node tests/run-browser.mjs <名称>`（名称省略 `.mjs`，例如 `node tests/run-browser.mjs provider-smoke`）。完整测试入口与维护约定见 `tests/README.md`。
 
 ## 生成长度与完整性
 
@@ -147,18 +147,43 @@ DeepSeek 搜索适配依据[官方 Anthropic 兼容文档](https://api-docs.deep
 
 当接口明确返回 `finish_reason: length`，保留原模型与提示词，自动扩大额度完整重生成一次（最高 65536 tokens）。不拼接截断 JSON、不删减内容，也不缓存未完成输出。仅在服务商明确拒绝 `max_tokens` 参数或额度时，额外尝试一次服务商默认额度；认证、限流和上下文超限等错误不自动重试。自动重生成可能增加等待时间和实际 token 消耗；服务商自身的输出限制仍可能导致失败。
 
-运行 `node --test tests/output-budget.test.mjs` 可验证额度、有限重试、兼容处理和完整性校验，使用模拟 API，不需要真实密钥。浏览器缓存保护检查：`node tests/output-budget-browser.mjs`（先启动 Vite 并设置上述 `CODEX_NODE_MODULES`）。
+运行 `node --test tests/output-budget.test.mjs` 可验证额度、有限重试、兼容处理和完整性校验，使用模拟 API，不需要真实密钥。浏览器缓存保护可单独运行 `node tests/run-browser.mjs output-budget-browser`；完整浏览器 smoke 推荐统一执行 `npm run test:browser`。
 
 ## 日报文章读取服务
 
-人民日报等媒体未开放浏览器跨域读取，Jina Reader 也可能拒绝相关域名。日报链接解析对人民网、光明网、半月谈使用同源 `api/article-reader` 接口读取正文，再用现有模型解析，不调用搜索工具。其他公开网址保留原站直读及 Reader 回退。
+人民日报等媒体未开放浏览器跨域读取，Jina Reader 也可能拒绝相关域名。链接解析只读取用户指定的网址，再用现有模型解析，不调用搜索工具。
+
+| 前端配置 | 网址 | 读取顺序 |
+| --- | --- | --- |
+| 未设置 `VITE_ARTICLE_READER_URL` | `people.com.cn`、`gmw.cn`、`banyuetan.org` 本域及子域 | 同源 `<BASE_URL>api/article-reader`（Node） |
+| 未设置 | 其他通过 `articleLink` 校验的网址 | 原站 direct fetch；失败、非 HTML 或正文提取失败后使用现有 Jina `https://r.jina.ai/<url>` |
+| 已设置 | 所有通过 `articleLink` 校验的网址 | 仅配置的 reader（静态部署使用 Worker） |
+
+reader 路径失败直接报错，不会再尝试 direct fetch/Jina，也不会调用模型。direct fetch 最多等待 8 秒；用户取消不会触发 Jina 回退。
 
 - 本机开发：`npm run dev` 自动提供读取接口。
 - 本机生产预览：`npm run build` 后执行 `npm run serve`，打开 `http://127.0.0.1:4173/wordLearning/`。`npm run preview` 也已接入读取接口。
 - 服务器部署：部署 `dist/`、`server/`、`package.json`，使用 Node.js 20+ 执行 `npm run serve`，由 HTTPS 反向代理转发应用与 API。可用 `HOST`、`PORT` 修改监听地址。
-- GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 只允许现有 GitHub Pages 和 CloudBase 静态托管域名调用，不接收或保存模型 API Key。
+- GitHub Pages 只托管静态文件，**不会运行此服务**。仓库内提供了 Cloudflare Worker。在 GitHub 仓库 `Settings → Secrets and variables → Actions → Secrets` 添加 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`，运行 `Deploy article reader` workflow；然后在同页 `Variables` 新建 `ARTICLE_READER_URL`，值为部署日志中的 `https://...workers.dev/api/article-reader`。再次运行 Pages workflow 后，前端会连接这个接口。也可以在本机执行 `npm run worker:deploy`。Worker 的浏览器 Origin 白名单是现有 GitHub Pages 和 CloudBase 静态托管域名；无 Origin 的请求也接受，因此 CORS 不是调用鉴权。不接收或保存模型 API Key。
 
-读取服务接受公开文章域名，每次重定向都会重新校验；本机、内网、测试域名、IP 地址以及带账号密码或非标准端口的链接会被拒绝。它不转发 API Key 或浏览器 Cookie，并限制读取大小和短时缓存。网页读取失败不会调用模型。
+#### Node 与 Worker 的不同职责及安全边界
+
+这不是需要统一的允许列表：提交 `f7a812b` 在增加 Worker 时，同时将前端配置 reader 的分支改为覆盖所有链接，并测试普通公开域名。Node 保留三家媒体的窄列表，Worker 支持用户输入的其他文章；将两者合并会扩大本机服务访问范围或破坏静态站点的链接解析。
+
+- **Node**：仅允许 `people.com.cn`、`gmw.cn`、`banyuetan.org` 本域和以点分隔的子域；`people.com.cn.evil.com`、`evilpeople.com.cn` 均拒绝。
+- **Worker**：允许符合当前域名语法的多段 hostname（末段至少两个英文字母），排除 `.local`、`.localhost`、`.internal`、`.test`、`.invalid` 后缀，拒绝 IP 字面量（包括 URL 标准化后的数字/十六进制 IPv4）及单段主机名。普通域名 `news.example.com` 允许；`people.com.cn.evil.com` 也按普通域名处理，**不代表被认定为人民网**。
+- 两者均只接受 HTTP/HTTPS、无账号密码、无非默认端口、路径不为 `/` 的 URL，去掉 hash；显式默认端口会被 URL 标准化后接受。每一跳重定向都使用各自相同规则，最多发出 4 次请求。前端 `articleLink` 使用类似 Worker 的域名规则，但允许根路径；根路径交给 reader 时仍会被拒绝。
+- Node 读取超时为 15 秒，按流累计原始字节并在超过 2 MiB 时取消；Worker 先检查 Content-Length，再完整读取文本并检查 UTF-8 编码后是否超过 2 MiB，**不是流式内存上限**，也没有代码层显式超时。这些既有差异此次保持不变。
+- 域名规则是 URL 层防护，未执行 DNS 解析结果的私网 IP 校验，不能宣称覆盖 DNS 重绑定或所有内网别名。不得将 Worker 的宽域名规则搬到 Node，也不得把 CORS 当成 SSRF 防护。两端不转发模型 Key 或浏览器 Cookie。
+- Worker 允许的 Origin 为 `https://shawnylin.github.io` 和 `https://cooh-d1gj7cmvs2469a250-1351557942.tcloudbaseapp.com`；带其他 Origin 返回 403，无 Origin 接受。Node 的 `ARTICLE_READER_ORIGIN` 仅控制 CORS 响应头，不是请求鉴权。
+
+离线回归（全部 mock，不请求原站或真实模型）：
+
+```bash
+node --import ./tests/helpers/no-network.mjs --test tests/article-reader.test.mjs tests/worker-reader.test.mjs tests/article-reader-policy.test.mjs tests/daily-link.test.mjs
+npm test
+npm run build
+```
 
 ### PDF 日报导入与学习进度
 

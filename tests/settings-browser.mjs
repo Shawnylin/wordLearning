@@ -1,11 +1,8 @@
 import { mkdir } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require=createRequire(process.env.CODEX_NODE_MODULES ? `${process.env.CODEX_NODE_MODULES}/package.json` : import.meta.url)
-const {chromium}=require('playwright')
-const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5174/wordLearning/'
+import { launchBrowser, base } from './helpers/browser.mjs'
 await mkdir('docs/.local', { recursive: true })
-const browser=await chromium.launch({channel:'msedge',headless:true})
+const browser = await launchBrowser()
 const context=await browser.newContext({viewport:{width:393,height:852}})
 const page=await context.newPage(); const errors=[];page.on('pageerror', e=>errors.push(e.message))
 await page.route('https://**/*',route=>{

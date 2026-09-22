@@ -5,6 +5,8 @@ const allowedOrigins = new Set([
 
 function isAllowedOrigin(origin) { return allowedOrigins.has(origin) }
 
+// A configured reader handles ALL link imports, unlike the media-only Node reader.
+// This checks URL/hostname syntax, not resolved DNS addresses; see README boundaries.
 function articleUrl(input) {
   const url = new URL(input)
   const publicHostname = /^(?:[a-z0-9-]+\.)+[a-z]{2,}$/i.test(url.hostname) && !/\.(local|localhost|internal|test|invalid)$/i.test(url.hostname)

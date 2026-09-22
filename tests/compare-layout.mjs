@@ -1,12 +1,10 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel:'msedge', headless:true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 const page = await browser.newPage({viewport:{width:393,height:852},reducedMotion:'reduce'})
 const errors=[]; page.on('pageerror', e=>errors.push(e.message))
 const cases=[['画龙点睛','锦上添花'],['画龙点睛','锦上添花','恰到好处'],['百尺竿头更进一步','不积跬步无以至千里','锲而不舍','持之以恒','水滴石穿'],['这是一个用于验证超长词语完整显示的二十字词','ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789','画龙点睛','锦上添花','恰到好处'],['画龙点睛','画龙点睛','锦上添花','恰到好处']]
-await page.goto('http://127.0.0.1:5173/wordLearning/#/record')
+await page.goto(`${base}#/record`)
 async function bounds(rootSelector) {
  const result=await page.locator(rootSelector).evaluate(root=>{
   const outer=root.getBoundingClientRect(); const failures=[]
@@ -36,7 +34,7 @@ for(const width of [320,393,430,768]) {
   await bounds('.compare-words--card')
   await bounds('.record-panel')
   assert.equal(await page.locator('.compare-words--card [data-morph-word]').count(),words.length)
-  if(width===393 && words===cases[2]) await page.screenshot({path:'tests/compare-five-words.png'})
+  if(width===393 && words===cases[2]) await page.screenshot({path:'docs/.local/browser-artifacts/compare-five-words.png'})
   await page.getByRole('button',{name:'返回记录'}).click()
   await page.getByRole('dialog').waitFor({state:'detached'})
   await page.getByRole('button',{name:'管理',exact:true}).click()

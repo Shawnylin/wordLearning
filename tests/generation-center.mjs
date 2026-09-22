@@ -1,10 +1,7 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
 
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium, webkit } = require('playwright')
-const engine = process.env.BROWSER_ENGINE || 'chromium'
-const browser = await (engine === 'webkit' ? webkit : chromium).launch({ ...(engine === 'webkit' ? {} : { channel: 'msedge' }), headless: true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 const page = await browser.newPage({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 
 await page.addInitScript(() => localStorage.setItem('settings-store', JSON.stringify({ apiKey: 'test-only', model: 'test-model', baseUrl: 'https://api.deepseek.com' })))
@@ -60,18 +57,18 @@ async function assertCenteredExpansion(trigger) {
   assert(Math.abs(closed.width - 80) < 1 && Math.abs(center(closed).y - origin.y) < 1)
 }
 
-await page.goto('http://127.0.0.1:5173/wordLearning/#/learn')
+await page.goto(`${base}#/learn`)
 await page.getByPlaceholder('输入成语或词语…').fill('画龙点睛')
 await assertCenteredExpansion(() => page.getByRole('button', { name: '发送词语', exact: true }).click())
 
-await page.goto('http://127.0.0.1:5173/wordLearning/#/learn?mode=compare')
+await page.goto(`${base}#/learn?mode=compare`)
 await page.getByPlaceholder('输入词语 1').fill('画龙点睛')
 await page.getByPlaceholder('输入词语 2').fill('锦上添花')
 await assertCenteredExpansion(() => page.getByRole('button', { name: '发送对比', exact: true }).click())
 
 // Simulate the delayed visualViewport restoration that desktop mobile emulation
 // does not generate when an input loses focus.
-await page.goto('http://127.0.0.1:5173/wordLearning/#/learn')
+await page.goto(`${base}#/learn`)
 await page.getByPlaceholder('输入成语或词语…').fill('一心一意')
 await page.evaluate(() => {
   let keyboard = true
@@ -82,5 +79,5 @@ await page.evaluate(() => {
 await page.waitForTimeout(100)
 assert.equal(await page.locator('.generation-stage.is-active').count(), 0)
 await page.waitForFunction(() => !!document.querySelector('.generation-stage.is-active'))
-console.log(JSON.stringify({ passed: true, engine, cases: ['search', 'compare', 'delayed-keyboard-restoration'], samplesPerExpansion: 7, centerTolerancePx: 1 }))
+console.log(JSON.stringify({ passed: true, engine: process.env.BROWSER_ENGINE || 'chromium', cases: ['search', 'compare', 'delayed-keyboard-restoration'], samplesPerExpansion: 7, centerTolerancePx: 1 }))
 await browser.close()

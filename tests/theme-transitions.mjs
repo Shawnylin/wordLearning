@@ -1,13 +1,11 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require = createRequire(process.env.CODEX_NODE_MODULES + '/package.json')
-const { chromium } = require('playwright')
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 try {
   const page = await browser.newPage({ viewport: { width: 393, height: 852 } })
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
-  await page.goto('http://127.0.0.1:5173/wordLearning/#/profile')
+  await page.goto(`${base}#/profile`)
   await page.getByText('跟随系统', { exact: true }).last().waitFor()
   await page.locator('button').filter({ has: page.locator('span.absolute') }).click()
   await page.getByRole('button', { name: '深色', exact: true }).click()
@@ -24,7 +22,7 @@ try {
     assert(await page.locator('main').innerText())
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
   }
-  await page.screenshot({ path: 'tests/theme-neutral-dark.png', fullPage: true })
+  await page.screenshot({ path: 'docs/.local/browser-artifacts/theme-neutral-dark.png', fullPage: true })
   await page.getByRole('button', { name: '清空搜索历史', exact: true }).click()
   await page.getByRole('button', { name: '取消', exact: true }).waitFor()
   await page.waitForTimeout(300)

@@ -1,9 +1,6 @@
-import { createRequire } from 'node:module'
 import assert from 'node:assert/strict'
-const require=createRequire(process.env.CODEX_NODE_MODULES ? `${process.env.CODEX_NODE_MODULES}/package.json` : import.meta.url)
-const {chromium}=require('playwright')
-const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5174/wordLearning/'
-const browser=await chromium.launch({channel:'msedge',headless:true})
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
 const contexts=[]
 async function device(){const context=await browser.newContext();contexts.push(context);const page=await context.newPage();await page.route('https://**/*',r=>r.fulfill({json:{}}));await page.goto(`${base}#/profile/models`);await page.getByRole('button',{name:'添加模型服务商',exact:true}).waitFor();return page}
 const first=await device()

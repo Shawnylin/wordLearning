@@ -58,6 +58,8 @@ jobs:
       - name: Install dependencies
         if: steps.dependency-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Run checks
+        run: npm run check
       - name: Build current source
         run: npm run build
       - name: Setup Pages
