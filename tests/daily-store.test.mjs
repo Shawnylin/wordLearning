@@ -4,9 +4,9 @@ import { build } from 'esbuild'
 import { writeFile, unlink } from 'node:fs/promises'
 import { createPinia, setActivePinia } from 'pinia'
 const file = new URL('./.daily-store-test.tmp.mjs', import.meta.url)
-const compiled = await build({ stdin: { contents: "export { useIdiomStore } from './src/stores/idiom'; export { useDailyStore } from './src/stores/daily'", resolveDir: process.cwd() }, bundle: true, write: false, platform: 'node', format: 'esm', external: ['pinia', 'vue'] })
+const compiled = await build({ stdin: { contents: "export { useIdiomStore } from './src/stores/idiom'; export { useDailyStore } from './src/stores/daily'; export { useReviewStore } from './src/stores/review'", resolveDir: process.cwd() }, bundle: true, write: false, platform: 'node', format: 'esm', external: ['pinia', 'vue'] })
 await writeFile(file, compiled.outputFiles[0].text)
-const { useIdiomStore, useDailyStore } = await import(file.href)
+const { useIdiomStore, useDailyStore, useReviewStore } = await import(file.href)
 const originalFetch = globalThis.fetch, originalStorage = globalThis.localStorage
 after(async () => { globalThis.fetch = originalFetch; globalThis.localStorage = originalStorage; await unlink(file) })
 const config = { apiKey: '', model: 'test', baseUrl: 'https://example.test/v1' }
@@ -87,4 +87,48 @@ test('history groups migrate, rename, collapse and move issues without changing 
   assert.equal(store.groups[0].collapsed, true)
   assert.equal(store.issues.find(issue => issue.id === 'b').groupId, 'manual')
   assert.equal(store.issues[1].articles[0].content, '原文乙')
+})
+
+test('daily deletion keeps shared idiom/review data intact for PDF and link articles and sync serialization', () => {
+  setActivePinia(createPinia())
+  const daily = useDailyStore(), idioms = useIdiomStore(), review = useReviewStore()
+  globalThis.localStorage = { setItem: () => {} }
+  const pdfArticle = { title: 'PDF 原文', source: '导入 PDF', url: '', publishedAt: '', content: '因地制宜推进发展。'.repeat(12), words: ['因地制宜'], analysis: '', origin: 'pdf', page: 1 }
+  const linkArticle = { title: '链接原文', source: '示例媒体', url: 'https://news.example.com/a', publishedAt: '', content: '守正创新推动发展。'.repeat(12), words: ['守正创新'], analysis: '', origin: 'link' }
+  daily.issues = [
+    { id: 'pdf', createdAt: 1, tokenUsage: 0, articles: [pdfArticle] },
+    { id: 'link', createdAt: 2, tokenUsage: 0, articles: [linkArticle] },
+  ]
+  daily.selectedId = 'pdf'
+  idioms.idiomCache['因地制宜'] = { id: 'pdf-word', word: '因地制宜', pinyin: '', explanation: '释义', origin: '', example: '', usage: '', relatedIdioms: [], createdAt: 1 }
+  idioms.idiomCache['守正创新'] = { id: 'link-word', word: '守正创新', pinyin: '', explanation: '释义', origin: '', example: '', usage: '', relatedIdioms: [], createdAt: 2 }
+  review.ensureWord('因地制宜', 100)
+  review.ensureWord('守正创新', 200)
+  review.wordStats['因地制宜'] = {
+    state: 'mastered', nextReviewAt: 9_999, interval: 30,
+    correctCount: 8, wrongCount: 2, lastReviewedAt: 8_888,
+  }
+
+  const before = JSON.parse(JSON.stringify({
+    daily: daily.exportSyncData(),
+    idiom: idioms.exportSyncData(),
+    review: review.exportSyncData(),
+  }))
+  assert.equal(before.daily.issues[0].articles[0].origin, 'pdf')
+  assert.equal(before.daily.issues[1].articles[0].origin, 'link')
+  assert.equal(before.review.wordStats['因地制宜'].state, 'mastered')
+  assert.equal(Object.keys(before.idiom.idiomCache).length, 2)
+
+  daily.deleteIssue('pdf')
+  const after = JSON.parse(JSON.stringify({
+    daily: daily.exportSyncData(),
+    idiom: idioms.exportSyncData(),
+    review: review.exportSyncData(),
+  }))
+  assert.deepEqual(after.daily.issues.map(issue => issue.id), ['link'])
+  assert.equal(after.daily.issues[0].articles[0].content, linkArticle.content)
+  assert.deepEqual(Object.keys(after.idiom.idiomCache).sort(), ['因地制宜', '守正创新'].sort())
+  assert.equal(after.review.wordStats['因地制宜'].state, 'mastered')
+  assert.equal(after.review.wordStats['因地制宜'].correctCount, 8)
+  assert.equal(after.review.wordStats['守正创新'].state, 'new')
 })
