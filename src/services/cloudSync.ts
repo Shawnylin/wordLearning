@@ -3,7 +3,6 @@ import { readEncryptedApiSettings } from '../utils/apiVaultCrypto'
 import { useDailyStore } from '../stores/daily'
 import { useIdiomStore } from '../stores/idiom'
 import { useReviewStore } from '../stores/review'
-import { useAuthStore } from '../stores/auth'
 import { cloudbaseRdb } from './cloudbase'
 import { readProfileIdentity, saveProfileIdentity } from '../utils/profileAvatar'
 import type { CompareRecord } from '../types/idiom'
@@ -189,12 +188,11 @@ export async function buildLocalSyncPayload(): Promise<LocalSyncPayload> {
   const idiom = useIdiomStore()
   const review = useReviewStore()
   const daily = useDailyStore()
-  const auth = useAuthStore()
   return clone({
     version: 2 as const,
     capturedAt: Date.now(),
     apiSettings,
-    profile: readProfileIdentity(auth.currentUser?.username),
+    profile: readProfileIdentity(),
     idiom: idiom.exportSyncData(),
     review: review.exportSyncData(),
     daily: daily.exportSyncData()
@@ -207,10 +205,6 @@ export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
   useReviewStore().restoreSyncData(clone(payload.review))
   useDailyStore().restoreSyncData(clone(payload.daily))
   if (!saveProfileIdentity(payload.profile)) throw new Error('个人资料无法保存到本机，请检查浏览器存储空间')
-  const auth = useAuthStore()
-  if (auth.currentUser && payload.profile.name && auth.currentUser.username !== payload.profile.name) {
-    await auth.updateProfileName(payload.profile.name, payload.profile.nameUpdatedAt)
-  }
 }
 
 export function hasSameSyncContent(left: LocalSyncPayload, right: LocalSyncPayload): boolean {

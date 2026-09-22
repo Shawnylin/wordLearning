@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { RefreshCw } from 'lucide-vue-next'
+import { RefreshCw, WalletCards } from 'lucide-vue-next'
 import { fetchBalance, type ApiBalance } from '../api/deepseek'
 import { useSettingsStore } from '../stores/settings'
 const settings = useSettingsStore()
@@ -51,27 +51,25 @@ onBeforeUnmount(() => { generation++ })
 
 <template>
   <div class="provider-balances">
-    <div class="balance-heading"><span>API 余额</span><button type="button" :disabled="loading" aria-label="刷新 API 余额" @click="refresh"><RefreshCw :size="16" :class="{ 'animate-spin': loading }" /></button></div>
-    <p v-if="!rows.length" class="balance-empty">未配置服务商</p>
-    <div v-for="row in rows" :key="row.id" class="balance-row">
-      <span class="balance-provider">{{ row.name }}</span>
-      <span v-if="row.loading" class="balance-message">查询中…</span>
-      <a v-else-if="row.url" :href="row.url" target="_blank" rel="noopener noreferrer">{{ row.message }} ↗</a>
-      <span v-else-if="row.balances.length" class="balance-amount"><span v-for="balance in row.balances" :key="balance.currency">{{ formatBalance(balance) }}</span></span>
-      <span v-else class="balance-message">{{ row.message }}</span>
+    <div v-for="(row, index) in rows" :key="row.id" class="profile-list-row profile-settings-row balance-row">
+      <span class="profile-row-icon text-gold"><WalletCards :size="18" /></span>
+      <span class="profile-row-main"><span class="profile-row-title">API 余额</span><span class="profile-row-caption">{{ row.name }}</span></span>
+      <span v-if="row.loading" class="profile-row-value">查询中…</span>
+      <span v-else-if="row.balances.length" class="profile-row-value balance-amount"><span v-for="balance in row.balances" :key="balance.currency">{{ formatBalance(balance) }}</span></span>
+      <span v-else class="profile-row-value">{{ row.message }}</span>
+      <button v-if="index === 0" class="balance-refresh" type="button" :disabled="loading" aria-label="刷新 API 余额" @click="refresh"><RefreshCw :size="16" :class="{ 'animate-spin': loading }" /></button>
+    </div>
+    <div v-if="!rows.length" class="profile-list-row profile-settings-row balance-row">
+      <span class="profile-row-icon text-gold"><WalletCards :size="18" /></span>
+      <span class="profile-row-main"><span class="profile-row-title">API 余额</span><span class="profile-row-caption">未配置服务商</span></span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.provider-balances { padding: 10px 0 0; border-top: 1px solid var(--line); }
-.balance-heading { display: flex; min-height: 30px; align-items: center; justify-content: space-between; color: var(--ink-mute); font-size: 11px; font-weight: 700; letter-spacing: .12em; }
-.balance-heading button { display: grid; place-items: center; width: 36px; height: 36px; color: var(--ink-mute); }
-.balance-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; gap: 12px; padding: 8px 0; font-size: 13px; }
-.balance-row:last-child { padding-bottom: 0; }
-.balance-provider { overflow-wrap: anywhere; color: var(--ink-soft); }
-.balance-row > :last-child { text-align: right; }
-.balance-row a { color: var(--zhuhong); }
-.balance-amount { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
-.balance-message, .balance-empty { color: var(--ink-mute); font-size: 12px; overflow-wrap: anywhere; }
+.provider-balances { min-width: 0; }
+.balance-row { padding: 0; }
+.balance-amount { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.balance-refresh { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 10px; color: var(--ink-mute); }
+.balance-refresh:hover { background: var(--soft); color: var(--ink); }
 </style>

@@ -14,6 +14,11 @@ function formatTime(value: number) {
   if (!value) return '尚未完成'
   return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(value)
 }
+function formatSummary(summary: typeof sync.localSummary) {
+  if (!summary) return '暂无数据'
+  const total = summary.words + summary.searches + summary.comparisons + summary.favorites + summary.reviewWords + summary.dailyIssues
+  return `${total.toLocaleString()} 项数据`
+}
 </script>
 
 <template>
@@ -34,9 +39,13 @@ function formatTime(value: number) {
     </div>
 
     <div v-else class="profile-sync-body">
-      <div class="profile-sync-summary"><span>本机与云端数据</span><span>{{ sync.statusLabel }}</span></div>
+      <div class="profile-sync-summary">
+        <span><strong>本机</strong>{{ formatSummary(sync.localSummary) }}</span>
+        <span><strong>云端</strong>{{ formatSummary(sync.remoteSummary) }}</span>
+      </div>
 
       <div class="profile-sync-actions">
+        <span class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
         <button
           class="profile-sync-action profile-sync-action-primary"
           data-testid="cloud-sync-now-button"
@@ -48,7 +57,6 @@ function formatTime(value: number) {
           <RefreshCw v-else :size="16" />
           {{ sync.syncing ? '正在同步…' : '立即同步' }}
         </button>
-        <span class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
       </div>
 
 
@@ -62,8 +70,10 @@ function formatTime(value: number) {
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
 .profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 14px; }
-.profile-sync-summary { display: grid; justify-items: start; gap: 2px; padding: 10px 0; font-size: 11px; text-align: left; }
-.profile-sync-summary span:last-child, .profile-sync-time { color: var(--ink-mute); }
+.profile-sync-summary { display: grid; justify-items: start; gap: 4px; padding: 10px 0; color: var(--ink-mute); font-size: 11px; text-align: left; }
+.profile-sync-summary span { display: flex; gap: 7px; }
+.profile-sync-summary strong { min-width: 24px; color: var(--ink-soft); font-weight: 600; }
+.profile-sync-time { color: var(--ink-mute); }
 .profile-sync-actions { display: grid; justify-items: end; gap: 3px; min-width: 104px; }
 .profile-sync-time { font-size: 11px; line-height: 1.45; white-space: nowrap; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }

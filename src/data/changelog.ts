@@ -9,6 +9,17 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.9.1',
+    date: '2026-09-22',
+    title: '个人资料与设置布局优化',
+    changes: [
+      '昵称不再作为登录账号，可直接使用中文；登录账号统一使用邮箱。',
+      '云同步卡片同时展示本机与云端数据概况，并将同步时间和按钮紧凑排列。',
+      'API 余额并入学习与统计列表，统一图标、字号、间距和刷新入口。',
+      '整理模型服务商、朗读设置和 API 加密同步的布局与交互。'
+    ]
+  },
+  {
     version: '0.9.0',
     date: '2026-09-22',
     title: '服务商管理与 API 加密同步',

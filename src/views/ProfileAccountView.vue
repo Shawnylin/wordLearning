@@ -4,7 +4,7 @@ import { ArrowLeft, LoaderCircle, Save } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import AuthPanel from '../components/AuthPanel.vue'
 import { useAuthStore } from '../stores/auth'
-import { PROFILE_IDENTITY_CHANGED_EVENT, prepareProfileAvatar, readProfileAvatar, saveProfileAvatar } from '../utils/profileAvatar'
+import { PROFILE_IDENTITY_CHANGED_EVENT, prepareProfileAvatar, readProfileAvatar, readProfileIdentity, saveProfileAvatar } from '../utils/profileAvatar'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -18,6 +18,7 @@ const notice = ref('')
 
 function refreshAvatar() {
   avatarDataUrl.value = readProfileAvatar()
+  name.value = readProfileIdentity().name
 }
 
 onMounted(() => {
@@ -27,9 +28,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => window.removeEventListener(PROFILE_IDENTITY_CHANGED_EVENT, refreshAvatar))
 
-watch(() => auth.currentUser, (user) => {
-  name.value = user?.username ?? ''
-}, { immediate: true })
+watch(() => auth.currentUser, () => refreshAvatar(), { immediate: true })
 
 function openAvatarPicker() {
   avatarInput.value?.click()
@@ -68,7 +67,7 @@ async function saveName() {
   notice.value = ''
   try {
     await auth.updateProfileName(name.value)
-    notice.value = '名称已同步到服务器'
+    notice.value = auth.signedIn ? '名称已保存，将随云同步更新' : '名称已保存'
   } catch (error: unknown) {
     errorMessage.value = error instanceof Error ? error.message : '名称保存失败，请稍后重试'
   }
@@ -105,12 +104,12 @@ async function saveName() {
         <form class="profile-account-form" @submit.prevent="saveName">
           <label class="profile-form-field">
             <span>名称</span>
-            <input v-model="name" class="profile-form-input" maxlength="32" placeholder="例如：小林" type="text" :disabled="!auth.signedIn" />
+            <input v-model="name" class="profile-form-input" maxlength="32" placeholder="例如：小林" type="text" />
           </label>
-          <p class="profile-form-hint">{{ auth.signedIn ? '名称与头像会作为同一份个人资料同步。' : '登录后可以同步名称和头像。' }}</p>
+          <p class="profile-form-hint">昵称独立于登录邮箱，支持中文；登录后可随个人资料同步。</p>
           <p v-if="errorMessage" class="profile-inline-feedback is-error" role="alert">{{ errorMessage }}</p>
           <p v-if="notice" class="profile-inline-feedback is-success" role="status">{{ notice }}</p>
-          <button class="btn-primary profile-account-save" type="submit" :disabled="auth.loading || !auth.signedIn || !name.trim()">
+          <button class="btn-primary profile-account-save" type="submit" :disabled="auth.loading || !name.trim()">
             <LoaderCircle v-if="auth.loading" :size="16" class="animate-spin" />
             <Save v-else :size="16" />
             {{ auth.loading ? '保存中…' : '保存名称' }}
