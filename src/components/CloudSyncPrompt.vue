@@ -68,7 +68,7 @@ function isDisabled(choice: SyncChoice) {
               </div>
               <p class="mt-8 text-xs uppercase tracking-[.2em] text-paper/55">{{ sync.firstChoice ? '第一次登录' : '数据管理' }}</p>
               <h2 id="cloud-sync-title" class="mt-2 font-kai text-3xl leading-tight tracking-wide">数据同步</h2>
-              <p class="mt-4 text-sm leading-7 text-paper/70">系统会安全合并两边数据，无需判断上传或下载。API 密钥和密码不会同步。</p>
+              <p class="mt-4 text-sm leading-7 text-paper/70">合并学习记录与个人资料。API 配置可在个人页开启加密同步。</p>
               <div class="mt-auto hidden border-t border-paper/15 pt-5 md:block">
                 <p class="text-xs leading-6 text-paper/55">同步学习记录、名称和头像。</p>
               </div>

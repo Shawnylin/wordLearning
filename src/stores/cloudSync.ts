@@ -1,3 +1,4 @@
+import { useApiVaultStore, API_VAULT_CHANGED } from './apiVault'
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
@@ -28,7 +29,7 @@ const DECISION_PREFIX = 'word-learning-cloud-sync:'
 const STATE_PREFIX = 'word-learning-cloud-sync-state:'
 const AUTO_CHANGE_DELAY = 45_000
 const RETRY_DELAYS = [30_000, 120_000, 600_000] as const
-const SYNC_DOMAINS: SyncDomain[] = ['profile', 'idiom', 'review', 'daily']
+const SYNC_DOMAINS: SyncDomain[] = ['profile', 'idiom', 'review', 'daily', 'apiSettings']
 
 export const syncChoiceLabels: Record<SyncChoice, string> = {
   'no-upload': '仅在本机',
@@ -217,8 +218,11 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
   function startAutoSync() {
     stopAutoSync()
     const profileChanged = () => markLocalMutation('profile')
+    const apiChanged = () => markLocalMutation('apiSettings')
+    window.addEventListener(API_VAULT_CHANGED, apiChanged)
     window.addEventListener(PROFILE_IDENTITY_CHANGED_EVENT, profileChanged)
     autoUnsubscribers = [
+      () => window.removeEventListener(API_VAULT_CHANGED, apiChanged),
       () => window.removeEventListener(PROFILE_IDENTITY_CHANGED_EVENT, profileChanged),
       useIdiomStore().$subscribe(() => markLocalMutation('idiom')),
       useReviewStore().$subscribe(() => markLocalMutation('review')),
@@ -256,6 +260,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       let remote = remoteSnapshot.value
       let savedRecord: RemoteSyncSnapshot | null = null
 
+      if (activeUserId.value !== userId) return false
       if (choice !== 'no-upload') {
         const sinceUpdatedAt = source === 'automatic' || source === 'background'
           ? syncState.value.lastRemoteUpdatedAt || undefined
@@ -268,7 +273,8 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         }
       }
 
-      const local = buildLocalSyncPayload()
+      const local = await buildLocalSyncPayload()
+      if (activeUserId.value !== userId) return false
       let result = local
       if (choice === 'download') {
         if (!remote) throw new Error('云端还没有同步数据，为保护本机数据，本次未执行下载')
@@ -285,9 +291,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         }
       }
 
+      if (activeUserId.value !== userId) return false
       if (choice !== 'no-upload') {
         if (syncState.value.lastLocalChangeAt > startedLocalChangeAt) {
-          const latestLocal = buildLocalSyncPayload()
+          const latestLocal = await buildLocalSyncPayload()
           result = choice === 'merge-cloud-to-local'
             ? mergeSyncPayload(latestLocal, result, 'remote')
             : mergeSyncPayload(latestLocal, result, 'local')
@@ -316,7 +323,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         nextRetryAt: 0,
         lastError: ''
       })
-      localSnapshot.value = buildLocalSyncPayload()
+      localSnapshot.value = await buildLocalSyncPayload()
       localSummary.value = summarizeSyncPayload(localSnapshot.value)
       remoteSnapshot.value = savedRecord?.payload || remoteRecord?.payload || remote
       remoteSummary.value = remoteSnapshot.value ? summarizeSyncPayload(remoteSnapshot.value) : null
@@ -329,14 +336,14 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       if (source === 'choice') open.value = false
       return true
     } catch (caught: unknown) {
+      if (activeUserId.value !== userId) return false
       const message = caught instanceof Error ? caught.message : '云同步失败，请稍后重试'
       error.value = message
       const queueUpload = choice === 'merge-local-to-cloud' && Boolean(automaticChoice())
       recordFailure(message, queueUpload)
       return false
     } finally {
-      syncing.value = false
-      scheduleAutoSync()
+      if (activeUserId.value === userId) { syncing.value = false; scheduleAutoSync() }
     }
   }
 
@@ -356,9 +363,15 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     syncState.value = storedState
     decision.value = storedDecision
     try {
+      await useApiVaultStore().initialize(userId)
       const remoteRecord = await loadRemoteSyncPayload(userId)
+      if (activeUserId.value !== userId) return
+      if (remoteRecord?.payload.apiSettings && storedDecision?.choice !== 'no-upload') {
+        await useApiVaultStore().capture()
+        await useApiVaultStore().accept(remoteRecord.payload.apiSettings)
+      }
       let reconciledRecord: RemoteSyncSnapshot | null = null
-      const local = buildLocalSyncPayload()
+      const local = await buildLocalSyncPayload()
       localSnapshot.value = local
       localSummary.value = summarizeSyncPayload(local)
       if (remoteRecord) {
@@ -384,7 +397,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
           remoteSnapshot.value = reconciledRecord.payload
           remoteSummary.value = summarizeSyncPayload(reconciledRecord.payload)
         }
-        localSnapshot.value = buildLocalSyncPayload()
+        localSnapshot.value = await buildLocalSyncPayload()
         localSummary.value = summarizeSyncPayload(localSnapshot.value)
       } else if (decision.value?.choice === 'merge-local-to-cloud') {
         reconciledRecord = await saveRemoteSyncPayload(userId, local)
@@ -403,10 +416,11 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       if (!decision.value && !force) open.value = true
       if (!decision.value) selectedChoice.value = 'merge-local-to-cloud'
     } catch (caught: unknown) {
+      if (activeUserId.value !== userId) return false
       const message = caught instanceof Error ? caught.message : '读取云端学习数据失败'
       remoteLoadFailed.value = true
       prepared.value = true
-      localSnapshot.value = buildLocalSyncPayload()
+      localSnapshot.value = await buildLocalSyncPayload()
       localSummary.value = summarizeSyncPayload(localSnapshot.value)
       remoteSnapshot.value = null
       remoteSummary.value = null
@@ -415,8 +429,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       if (!decision.value && !force) open.value = true
       if (!decision.value) selectedChoice.value = 'no-upload'
     } finally {
-      preparing.value = false
-      if (prepared.value) startAutoSync()
+      if (activeUserId.value === userId) { preparing.value = false; if (prepared.value) startAutoSync() }
     }
   }
 
@@ -474,9 +487,12 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
   }
 
   function resetForUser() {
+    useApiVaultStore().reset()
     stopAutoSync()
     activeUserId.value = ''
     prepared.value = false
+    preparing.value = false
+    syncing.value = false
     open.value = false
     selectedChoice.value = null
     decision.value = null

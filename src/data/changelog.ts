@@ -9,6 +9,17 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '0.9.0',
+    date: '2026-09-22',
+    title: '服务商管理与 API 加密同步',
+    changes: [
+      '服务商统一保存 API 地址、密钥与模型列表，学习、PDF 和朗读分别选择模型，无需重复配置。',
+      '整理模型与 API 页的图标、字体和朗读按钮，服务商弹层从按钮圆形展开并原路收回。',
+      '精简云同步卡片，API 余额按服务商显示，MiMo 提供官方余额页入口。',
+      '新增独立口令加密同步 API 配置，新设备输入口令即可恢复，可选择记住此设备。'
+    ]
+  },
+  {
     version: '0.8.0',
     date: '2026-09-21',
     title: '云同步与模型设置精简',

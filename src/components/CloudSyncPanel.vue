@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Cloud, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-vue-next'
+import ApiVaultSettings from './ApiVaultSettings.vue'
+import { LoaderCircle, RefreshCw } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 import { useCloudSyncStore } from '../stores/cloudSync'
 
@@ -19,23 +20,23 @@ function formatTime(value: number) {
   <section :class="props.compact ? 'cloud-sync-panel cloud-sync-panel-compact' : 'cloud-sync-panel card rounded-2xl p-5'" data-testid="cloud-sync-panel">
     <div class="cloud-sync-heading">
       <div class="flex min-w-0 items-center gap-3">
-        <span class="profile-row-icon bg-dai-soft text-dai"><Cloud :size="18" /></span>
+
         <div class="min-w-0">
           <h2 class="font-semibold text-ink">云同步</h2>
-          <p class="mt-0.5 text-xs text-ink-mute">学习记录与个人资料，不含 API 密钥</p>
+
         </div>
       </div>
-      <span v-if="auth.signedIn" class="profile-row-value text-bamboo">{{ sync.statusLabel }}</span>
+      <button v-if="auth.signedIn" class="profile-row-value sync-mode" type="button" aria-label="同步方式" :disabled="sync.preparing || sync.syncing" @click="sync.openWizard">{{ sync.statusLabel }} · 设置</button>
     </div>
 
     <div v-if="!auth.signedIn" class="profile-sync-unauth">
-      <ShieldCheck :size="17" class="shrink-0 text-ink-mute" />
-      <p>登录后自动安全合并本机与云端数据；未登录时继续使用本机模式。</p>
+
+      <RouterLink to="/profile/account">登录后同步</RouterLink>
     </div>
 
     <div v-else class="profile-sync-body">
       <div class="profile-sync-summary">
-        <span>本机 {{ sync.localSummary?.words ?? 0 }} 词 · {{ sync.localSummary?.dailyArticles ?? 0 }} 篇日报</span>
+
         <span>上次 {{ formatTime(sync.lastCompletedAt) }}</span>
       </div>
 
@@ -53,19 +54,20 @@ function formatTime(value: number) {
         </button>
       </div>
 
-      <div class="profile-sync-policy">
-        <span>自动同步</span>
-        <span>{{ sync.autoSyncLabel }}</span>
-      </div>
 
-      <p v-if="sync.notice" class="profile-inline-feedback is-success" role="status">{{ sync.notice }}</p>
       <p v-if="sync.error && !sync.open" class="profile-inline-feedback is-error" role="alert">{{ sync.error }}</p>
 
-      <button class="profile-sync-settings" type="button" :disabled="sync.preparing || sync.syncing" @click="sync.openWizard">
-        <LoaderCircle v-if="sync.preparing" :size="15" class="animate-spin" />
-        <RefreshCw v-else :size="15" />
-        同步方式
-      </button>
+      <ApiVaultSettings />
     </div>
   </section>
 </template>
+
+<style scoped>
+.cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
+.profile-sync-body { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px 14px; }
+.profile-sync-summary { grid-column: 1; font-size: 12px; }
+.profile-sync-actions { grid-template-columns: 1fr; min-width: 104px; grid-column: 2; grid-row: 1; }
+.sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
+.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { grid-column: 1 / -1; }
+.profile-sync-unauth { padding: 8px 0; font-size: 13px; }
+</style>

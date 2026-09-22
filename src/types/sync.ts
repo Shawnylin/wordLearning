@@ -1,10 +1,11 @@
+import type { EncryptedApiSettings } from '../utils/apiVaultCrypto'
 import type { DailyIssue } from '../api/daily'
 import type { DailyGroup } from '../stores/daily'
 import type { CompareRecord, IdiomData, SearchRecord, TokenStats } from './idiom'
 
 export type SyncChoice = 'no-upload' | 'download' | 'merge-local-to-cloud' | 'merge-cloud-to-local'
 
-export type SyncDomain = 'profile' | 'idiom' | 'review' | 'daily'
+export type SyncDomain = 'profile' | 'idiom' | 'review' | 'daily' | 'apiSettings'
 
 export interface SyncState {
   pendingDomains: SyncDomain[]
@@ -80,6 +81,7 @@ export interface ProfileSyncData {
 
 export interface LocalSyncPayload {
   version: 2
+  apiSettings?: EncryptedApiSettings
   capturedAt: number
   profile: ProfileSyncData
   idiom: IdiomSyncData

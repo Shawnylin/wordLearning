@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { apiEndpoint, fetchModels, testConnection } from '../api/deepseek'
 import { useSettingsStore } from '../stores/settings'
 import ApiKeyInput from './ApiKeyInput.vue'
@@ -9,6 +9,7 @@ const draft = reactive({ ...settings.pdfConfig })
 const models = ref<string[]>([]), busy = ref(false), message = ref(''), error = ref(false)
 const editing = ref(!settings.pdfUseLearningModel && !settings.pdfConfig.apiKey)
 const draftUseLearningModel = ref(settings.pdfUseLearningModel)
+watch(() => settings.pdfConfig, config => { if (!editing.value) Object.assign(draft, config) }, { deep: true })
 async function run(action: 'models' | 'test' | 'save') {
   busy.value = true; message.value = ''; error.value = false
   try {
@@ -24,6 +25,7 @@ async function run(action: 'models' | 'test' | 'save') {
       }
       apiEndpoint(config.baseUrl, 'chat/completions')
       if (!config.apiKey.trim() || !config.model.trim()) throw new Error('请填写 API Key 和模型')
+      settings.pdfProfileId = ''
       settings.pdfConfig = { ...config, apiKey: config.apiKey.trim(), model: config.model.trim(), baseUrl: config.baseUrl.trim() }
       settings.pdfUseLearningModel = false
       editing.value = false
@@ -32,7 +34,7 @@ async function run(action: 'models' | 'test' | 'save') {
   } catch (e) { error.value = true; message.value = (e as Error).message }
   finally { busy.value = false }
 }
-function edit() { editing.value = true; message.value = '' }
+function edit() { Object.assign(draft, settings.pdfConfig); draftUseLearningModel.value = settings.pdfUseLearningModel; editing.value = true; message.value = '' }
 function cancelEdit() {
   Object.assign(draft, settings.pdfConfig)
   draftUseLearningModel.value = settings.pdfUseLearningModel
@@ -42,7 +44,7 @@ function cancelEdit() {
 </script>
 <template>
   <section class="card settings-card pdf-model-settings">
-    <header class="settings-card-header"><div><h2 class="settings-title">PDF 解析</h2><p class="settings-description">仅用于分篇排序</p></div></header>
+    <header class="settings-card-header"><div><h2 class="settings-title">PDF 解析</h2></div></header>
     <div v-if="!editing" class="settings-summary" aria-label="当前 PDF 解析配置">
       <div class="settings-summary-row"><span>模型来源</span><strong>{{ settings.pdfUseLearningModel ? '学习模型' : '独立模型' }}</strong></div>
       <template v-if="!settings.pdfUseLearningModel">
@@ -64,7 +66,7 @@ function cancelEdit() {
     </template>
     <div v-else class="settings-actions"><button class="btn-primary" @click="edit">编辑</button><button v-if="!settings.pdfUseLearningModel" class="settings-secondary" :disabled="busy" @click="run('test')">{{ busy ? '测试中…' : '测试连接' }}</button></div>
     <p v-if="message" role="status" class="settings-status break-words" :class="error ? 'text-zhuhong' : 'text-bamboo'">{{ message }}</p>
-    <p class="settings-footnote">独立模型默认关闭深度思考。</p>
+
   </section>
 </template>
 <style scoped>

@@ -1,0 +1,51 @@
+import { mkdir } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import assert from 'node:assert/strict'
+const require=createRequire(process.env.CODEX_NODE_MODULES ? `${process.env.CODEX_NODE_MODULES}/package.json` : import.meta.url)
+const {chromium}=require('playwright')
+const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5174/wordLearning/'
+await mkdir('docs/.local', { recursive: true })
+const browser=await chromium.launch({channel:'msedge',headless:true})
+const page=await browser.newPage({viewport:{width:393,height:852}});const errors=[];page.on('pageerror',e=>errors.push(e.message))
+await page.route('https://**/*',r=>r.fulfill({json:{}}))
+await page.goto(`${base}#/profile`)
+await page.getByText('登录后同步',{exact:true}).waitFor()
+await page.evaluate(async()=>{
+ const {cloudbaseRdb}=await import('/wordLearning/src/services/cloudbase.ts')
+ window.testRemote=null
+ cloudbaseRdb.from=()=>({select(){return this},eq(){return this},gt(){return this},async limit(){return {data:window.testRemote?[window.testRemote]:[],error:null}},async upsert(record){window.testRemote=structuredClone(record);return {data:null,error:null}}})
+ const {useAuthStore}=await import('/wordLearning/src/stores/auth.ts')
+ const {useSettingsStore}=await import('/wordLearning/src/stores/settings.ts')
+ useSettingsStore().saveProfile({id:'test',name:'MiMo',apiKey:'test-only-ui-secret',baseUrl:'https://api.xiaomimimo.com/v1',model:'',models:['mimo-pdf','mimo-tts']})
+ localStorage.setItem('word-learning-cloud-sync:test-ui-user',JSON.stringify({choice:'merge-local-to-cloud',completedAt:1}))
+ const auth=useAuthStore();auth.currentUser={id:'test-ui-user',displayName:'测试用户'};auth.initialized=true
+})
+await page.getByRole('button',{name:'未开启',exact:true}).waitFor()
+await page.getByRole('button',{name:'未开启',exact:true}).click()
+await page.getByLabel('同步口令',{exact:true}).fill('test-ui-long-passphrase')
+await page.getByLabel('确认口令',{exact:true}).fill('test-ui-long-passphrase')
+await page.getByRole('button',{name:'开启加密同步',exact:true}).click()
+await page.getByRole('button',{name:'已解锁',exact:true}).waitFor()
+await page.waitForFunction(()=>window.testRemote?.payload?.apiSettings?.ciphertext)
+const wire=await page.evaluate(()=>JSON.stringify(window.testRemote));assert(!wire.includes('test-only-ui-secret'))
+assert(!wire.includes('test-ui-long-passphrase'))
+await page.screenshot({path:'docs/.local/sync-mobile.png',fullPage:true})
+await page.getByRole('button',{name:'已解锁',exact:true}).click()
+await page.getByRole('button',{name:'忘记此设备的解锁密钥',exact:true}).click()
+await page.getByRole('button',{name:'待解锁',exact:true}).waitFor()
+await page.getByLabel('同步口令',{exact:true}).fill('wrong-test-passphrase')
+await page.getByRole('button',{name:'解锁并恢复',exact:true}).click()
+await page.getByRole('alert').filter({hasText:'同步口令不正确'}).waitFor()
+for(const width of [320,1280]){
+ await page.setViewportSize({width,height:900})
+ await page.goto(`${base}#/profile/models`)
+ await page.getByRole('button',{name:'添加模型服务商',exact:true}).click()
+ await page.waitForTimeout(780)
+ const rect=await page.locator('.provider-editor-dialog').boundingBox();assert(rect.x>=0&&rect.x+rect.width<=width+1)
+ await page.locator('.provider-editor-dialog').getByRole('button',{name:'保存',exact:true}).click()
+ await page.getByText('请填写 API Key',{exact:true}).waitFor()
+ await page.keyboard.press('Escape');await page.waitForTimeout(560)
+}
+assert.deepEqual(errors,[])
+console.log(JSON.stringify({passed:['cloud sync UI enables encrypted upload','wire excludes API key and passphrase','forget device key','wrong-passphrase UI','320px and desktop dialog fit','empty API key validation'],errors}))
+await browser.close()

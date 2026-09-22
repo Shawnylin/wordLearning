@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowLeft, Bot, ChevronDown, FileText, Volume2 } from 'lucide-vue-next'
+import { ArrowLeft, ChevronDown } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import SpeechButton from '../components/SpeechButton.vue'
@@ -50,12 +50,12 @@ function findChoice(baseUrl: string, model: string) {
 
 const learningModelKey = computed(() => {
   const active = settings.profiles.find(profile => profile.id === settings.activeProfileId)
-  return active ? findChoice(active.baseUrl, active.model)?.key || '' : ''
+  return active ? `${active.id}:${active.model}` : ''
 })
 
 const pdfModelKey = computed(() => {
   if (settings.pdfUseLearningModel) return 'learning'
-  return findChoice(settings.pdfConfig.baseUrl, settings.pdfConfig.model)?.key || ''
+  return settings.pdfProfileId ? `${settings.pdfProfileId}:${settings.pdfConfig.model}` : findChoice(settings.pdfConfig.baseUrl, settings.pdfConfig.model)?.key || ''
 })
 
 function getChoice(key: string) {
@@ -67,6 +67,7 @@ function selectLearningModel(key: string) {
   const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
   if (!choice || !profile) return
   settings.saveProfile({ ...profile, model: choice.model })
+  settings.selectProfile(profile.id)
 }
 
 function selectPdfModel(key: string) {
@@ -77,6 +78,7 @@ function selectPdfModel(key: string) {
   const choice = getChoice(key)
   const profile = choice && settings.profiles.find(item => item.id === choice.profileId)
   if (!choice || !profile) return
+  settings.pdfProfileId = profile.id
   settings.pdfConfig = { ...settings.pdfConfig, apiKey: profile.apiKey, baseUrl: profile.baseUrl, model: choice.model, thinkingEnabled: false }
   settings.pdfUseLearningModel = false
 }
@@ -97,12 +99,10 @@ function selectPdfModel(key: string) {
 
         <section class="settings-panel settings-role-panel" aria-labelledby="learning-model-title">
           <div class="settings-panel-heading">
-            <div class="settings-panel-icon"><Bot :size="17" /></div>
-            <div><h2 id="learning-model-title">学习模型</h2><p>查词与内容生成</p></div>
+            <div><h2 id="learning-model-title">学习模型</h2></div>
           </div>
           <label class="settings-select-label" for="learning-model-select">当前模型</label>
           <div class="settings-select-wrap">
-            <Bot :size="17" aria-hidden="true" />
             <select id="learning-model-select" :value="learningModelKey" :disabled="!modelChoices.length" @change="selectLearningModel(($event.target as HTMLSelectElement).value)">
               <option value="" disabled>{{ modelChoices.length ? '选择服务商与模型' : '请先添加模型服务商' }}</option>
               <option v-for="choice in modelChoices" :key="choice.key" :value="choice.key">{{ choice.provider }} · {{ choice.model }}</option>
@@ -112,12 +112,10 @@ function selectPdfModel(key: string) {
 
         <section class="settings-panel settings-role-panel" aria-labelledby="pdf-model-title">
           <div class="settings-panel-heading">
-            <div class="settings-panel-icon"><FileText :size="17" /></div>
-            <div><h2 id="pdf-model-title">PDF 模型</h2><p>默认跟随学习模型</p></div>
+            <div><h2 id="pdf-model-title">PDF 模型</h2></div>
           </div>
           <label class="settings-select-label" for="pdf-model-select">当前模型</label>
           <div class="settings-select-wrap">
-            <FileText :size="17" aria-hidden="true" />
             <select id="pdf-model-select" :value="pdfModelKey" @change="selectPdfModel(($event.target as HTMLSelectElement).value)">
               <option value="" disabled>选择服务商与模型</option>
               <option value="learning">跟随学习查词模型</option>
@@ -132,8 +130,7 @@ function selectPdfModel(key: string) {
 
         <section class="settings-panel settings-role-panel settings-voice-panel" aria-labelledby="speech-model-title">
           <div class="settings-panel-heading">
-            <div class="settings-panel-icon"><Volume2 :size="17" /></div>
-            <div><h2 id="speech-model-title">语音</h2><p>MiMo 朗读与试听</p></div>
+            <div><h2 id="speech-model-title">语音</h2></div>
           </div>
           <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
           <details id="speech" class="settings-advanced" :open="showSpeechAdvanced" @toggle="showSpeechAdvanced = ($event.target as HTMLDetailsElement).open">
@@ -158,7 +155,7 @@ function selectPdfModel(key: string) {
 .settings-content :deep(.settings-card) { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 26px rgb(49 39 26 / 4%); }
 .settings-content :deep(.settings-card-header) { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 0 0 13px; border-bottom: 1px solid var(--line); }
 .settings-content :deep(.settings-overline) { margin-bottom: 2px; color: var(--ink-mute); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
-.settings-content :deep(.settings-title) { color: var(--ink); font-size: 18px; font-weight: 650; line-height: 1.35; }
+.settings-content :deep(.settings-title) { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.35; }
 .settings-content :deep(.settings-description) { max-width: 34ch; margin-top: 4px; color: var(--ink-mute); font-size: 11px; line-height: 1.55; }
 .settings-content :deep(.settings-icon-button) { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
 .settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-deep); }
@@ -168,8 +165,8 @@ function selectPdfModel(key: string) {
 .settings-content :deep(.settings-provider-main) { display: flex; min-width: 0; flex: 1; align-items: center; gap: 11px; min-height: 64px; padding: 8px 0; color: var(--ink); text-align: left; }
 .settings-content :deep(.settings-provider-icon), .settings-content :deep(.settings-panel-icon) { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 11px; background: var(--soft); color: var(--zhuhong); }
 .settings-content :deep(.settings-provider-copy) { display: grid; min-width: 0; flex: 1; gap: 3px; }
-.settings-content :deep(.settings-provider-copy strong) { overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.settings-content :deep(.settings-provider-copy small) { overflow: hidden; color: var(--ink-mute); font-size: 10px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.settings-content :deep(.settings-provider-copy strong) { overflow: hidden; color: var(--ink); font-size: 14px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.settings-content :deep(.settings-provider-copy small) { overflow: hidden; color: var(--ink-mute); font-size: 12px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .settings-content :deep(.settings-provider-state) { flex: none; color: var(--bamboo); font-size: 10px; }
 .settings-content :deep(.settings-provider-actions) { display: flex; flex: none; gap: 2px; }
 .settings-content :deep(.settings-row-icon) { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: var(--ink-mute); }
@@ -179,31 +176,33 @@ function selectPdfModel(key: string) {
 .settings-content :deep(.settings-editor) { display: grid; gap: 12px; padding-top: 2px; border-top: 1px solid var(--line); }
 .settings-content :deep(.settings-editor-heading) { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 12px; }
 .settings-content :deep(.settings-form) { display: grid; gap: 11px; }
-.settings-content :deep(.settings-label), .settings-content :deep(.settings-select-label) { display: block; color: var(--ink-soft); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.settings-content :deep(.settings-label), .settings-content :deep(.settings-select-label) { display: block; color: var(--ink-soft); font-size: 13px; font-weight: 500; line-height: 1.45; }
 .settings-content :deep(.settings-label input), .settings-content :deep(.settings-label select), .settings-content :deep(.settings-form input), .settings-content :deep(.settings-form select) { width: 100%; min-width: 0; }
 .settings-content :deep(.settings-actions) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.settings-content :deep(.settings-actions.speech-edit-actions) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .settings-content :deep(.settings-actions > button) { min-height: 40px; border-radius: 11px; padding: 9px 10px; font-size: 12px; }
 .settings-content :deep(.settings-secondary) { border-radius: 11px; background: var(--soft); color: var(--ink-soft); }
 .settings-content :deep(.settings-text-button) { color: var(--zhuhong); font-size: 11px; }
 .settings-content :deep(.settings-model-picker) { display: grid; gap: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--soft); }
-.settings-content :deep(.settings-model-picker-head) { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 11px; font-weight: 600; }
+.settings-content :deep(.settings-model-picker-head) { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 13px; font-weight: 500; }
 .settings-content :deep(.settings-model-picker select), .settings-content :deep(.settings-select-wrap select) { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
 .settings-content :deep(.settings-status) { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; }
 .settings-content :deep(.settings-footnote) { color: var(--ink-mute); font-size: 10px; line-height: 1.6; }
 .settings-panel { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 26px rgb(49 39 26 / 4%); }
 .settings-panel-heading { display: flex; min-width: 0; align-items: center; gap: 11px; }
-.settings-panel-heading h2 { color: var(--ink); font-size: 15px; font-weight: 650; line-height: 1.4; }
+.settings-panel-heading h2 { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.4; }
 .settings-panel-heading p { margin-top: 3px; color: var(--ink-mute); font-size: 11px; line-height: 1.5; }
 .settings-select-label { margin-top: 2px; }
 .settings-select-wrap { position: relative; display: flex; align-items: center; }
 .settings-select-wrap > svg { position: absolute; left: 14px; z-index: 1; color: var(--zhuhong); pointer-events: none; }
-.settings-select-wrap select { width: 100%; min-height: 50px; padding: 10px 38px 10px 44px; font-size: 13px; }
+.settings-select-wrap select { width: 100%; min-height: 50px; padding: 10px 32px 10px 12px; font-size: 13px; }
 .settings-select-wrap select:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
+.settings-voice-panel > :deep(.speech-control) { width: 100%; }
 .settings-voice-panel :deep(.speech-button) { width: 100%; min-height: 46px; border-radius: 12px; background: var(--zhuhong); color: var(--paper); font-size: 13px; }
 .settings-voice-panel :deep(.speech-button:hover) { background: var(--zhuhong-deep); }
 .settings-voice-help { color: var(--ink-mute); font-size: 10.5px; line-height: 1.55; }
 .settings-advanced { overflow: hidden; margin-top: 2px; border-top: 1px solid var(--line); }
-.settings-advanced summary { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 10px; color: var(--ink-soft); cursor: pointer; font-size: 11px; font-weight: 600; list-style: none; }
+.settings-advanced summary { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 10px; color: var(--ink-soft); cursor: pointer; font-size: 13px; font-weight: 500; list-style: none; }
 .settings-advanced summary::-webkit-details-marker { display: none; }
 .settings-advanced[open] summary > svg { transform: rotate(180deg); }
 .settings-advanced-body { padding-top: 8px; }

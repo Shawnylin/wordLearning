@@ -1,3 +1,5 @@
+import { useApiVaultStore } from '../stores/apiVault'
+import { readEncryptedApiSettings } from '../utils/apiVaultCrypto'
 import { useDailyStore } from '../stores/daily'
 import { useIdiomStore } from '../stores/idiom'
 import { useReviewStore } from '../stores/review'
@@ -59,7 +61,7 @@ function parseSyncPayload(value: unknown): LocalSyncPayload | null {
     avatarDataUrl: typeof rawProfile.avatarDataUrl === 'string' ? rawProfile.avatarDataUrl : '',
     avatarUpdatedAt: typeof rawProfile.avatarUpdatedAt === 'number' ? rawProfile.avatarUpdatedAt : 0
   }
-  return clone({ ...value, version: 2 as const, profile }) as LocalSyncPayload
+  return clone({ ...value, version: 2 as const, profile, apiSettings: readEncryptedApiSettings(value.apiSettings) }) as LocalSyncPayload
 }
 
 function chooseByTime<T>(local: T | undefined, remote: T | undefined, getTime: (value: T) => number, preferRemote: boolean): T | undefined {
@@ -174,6 +176,7 @@ export function mergeSyncPayload(local: LocalSyncPayload, remote: LocalSyncPaylo
   return {
     version: 2,
     capturedAt: Math.max(local.capturedAt, remote.capturedAt),
+    apiSettings: chooseByTime(local.apiSettings, remote.apiSettings, item => item.updatedAt, preferRemote),
     profile,
     idiom,
     review: mergeReview(local.review, remote.review, preferRemote),
@@ -181,7 +184,8 @@ export function mergeSyncPayload(local: LocalSyncPayload, remote: LocalSyncPaylo
   }
 }
 
-export function buildLocalSyncPayload(): LocalSyncPayload {
+export async function buildLocalSyncPayload(): Promise<LocalSyncPayload> {
+  const apiSettings = await useApiVaultStore().capture()
   const idiom = useIdiomStore()
   const review = useReviewStore()
   const daily = useDailyStore()
@@ -189,6 +193,7 @@ export function buildLocalSyncPayload(): LocalSyncPayload {
   return clone({
     version: 2 as const,
     capturedAt: Date.now(),
+    apiSettings,
     profile: readProfileIdentity(auth.currentUser?.username),
     idiom: idiom.exportSyncData(),
     review: review.exportSyncData(),
@@ -197,6 +202,7 @@ export function buildLocalSyncPayload(): LocalSyncPayload {
 }
 
 export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
+  await useApiVaultStore().accept(payload.apiSettings)
   useIdiomStore().restoreSyncData(clone(payload.idiom))
   useReviewStore().restoreSyncData(clone(payload.review))
   useDailyStore().restoreSyncData(clone(payload.daily))
@@ -208,8 +214,8 @@ export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
 }
 
 export function hasSameSyncContent(left: LocalSyncPayload, right: LocalSyncPayload): boolean {
-  return JSON.stringify({ profile: left.profile, idiom: left.idiom, review: left.review, daily: left.daily })
-    === JSON.stringify({ profile: right.profile, idiom: right.idiom, review: right.review, daily: right.daily })
+  return JSON.stringify({ apiSettings: left.apiSettings, profile: left.profile, idiom: left.idiom, review: left.review, daily: left.daily })
+    === JSON.stringify({ apiSettings: right.apiSettings, profile: right.profile, idiom: right.idiom, review: right.review, daily: right.daily })
 }
 
 export async function loadRemoteSyncPayload(userId: string, sinceUpdatedAt?: string): Promise<RemoteSyncSnapshot | null> {
@@ -239,7 +245,7 @@ export async function saveRemoteSyncPayload(userId: string, payload: LocalSyncPa
   const updatedAt = new Date().toISOString()
   const record = {
     user_id: userId,
-    payload: clone(payload),
+    payload: clone({ version: 2, capturedAt: payload.capturedAt, profile: payload.profile, idiom: payload.idiom, review: payload.review, daily: payload.daily, apiSettings: readEncryptedApiSettings(payload.apiSettings) }),
     schema_version: 2,
     local_updated_at: payload.capturedAt,
     updated_at: updatedAt

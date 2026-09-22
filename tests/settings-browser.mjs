@@ -1,0 +1,59 @@
+import { mkdir } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import assert from 'node:assert/strict'
+const require=createRequire(process.env.CODEX_NODE_MODULES ? `${process.env.CODEX_NODE_MODULES}/package.json` : import.meta.url)
+const {chromium}=require('playwright')
+const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:5174/wordLearning/'
+await mkdir('docs/.local', { recursive: true })
+const browser=await chromium.launch({channel:'msedge',headless:true})
+const context=await browser.newContext({viewport:{width:393,height:852}})
+const page=await context.newPage(); const errors=[];page.on('pageerror', e=>errors.push(e.message))
+await page.route('https://**/*',route=>{
+ const url=route.request().url()
+ if(url.includes('api.deepseek.com/user/balance'))return route.fulfill({json:{balance_infos:[{currency:'CNY',total_balance:'18.50'}]}})
+ if(url.includes('api.xiaomimimo.com/v1/models'))return route.fulfill({json:{data:[{id:'mimo-v2-omni'},{id:'mimo-v2-tts'}]}})
+ return route.fulfill({json:{}})
+})
+await page.goto(`${base}#/profile/models`)
+await page.getByRole('button',{name:'添加模型服务商',exact:true}).waitFor()
+const trigger=await page.getByRole('button',{name:'添加模型服务商',exact:true}).boundingBox()
+await page.getByRole('button',{name:'添加模型服务商',exact:true}).click()
+const motion=await page.locator('.provider-editor-dialog').evaluate(el=>{
+ const animation=el.getAnimations().find(a=>a.effect.getKeyframes().some(f=>'width' in f));
+ if(!animation)return null;
+ const frames=animation.effect.getKeyframes();animation.pause();animation.currentTime=0;
+ const start=el.getBoundingClientRect().toJSON();animation.currentTime=360;
+ const middle=el.getBoundingClientRect().toJSON();animation.play();return {frames,start,middle}
+})
+assert(motion,'provider opening must actually animate')
+assert(Math.abs(motion.start.x-trigger.x)<2 && Math.abs(motion.start.width-trigger.width)<2)
+assert(motion.middle.width>motion.start.width)
+await page.waitForTimeout(800)
+await page.getByLabel('名称',{exact:true}).fill('小米 MiMo')
+await page.locator('.provider-editor-dialog').getByLabel('API 地址',{exact:true}).fill('https://api.xiaomimimo.com/v1')
+await page.locator('.provider-editor-dialog').getByLabel('API Key',{exact:true}).fill('mock-mimo-key')
+await page.getByRole('button',{name:'获取列表',exact:true}).click()
+await page.getByText('已获取 2 个模型',{exact:true}).waitFor()
+assert.equal(await page.locator('.provider-editor-dialog select').count(),0)
+await page.locator('.provider-editor-dialog').getByRole('button',{name:'保存',exact:true}).click(); await page.waitForTimeout(600)
+await page.locator('#pdf-model-select').selectOption({label:'小米 MiMo · mimo-v2-omni'})
+await page.getByText('MiMo 朗读设置',{exact:true}).click()
+await page.locator('.speech-settings select').first().selectOption({label:'小米 MiMo · mimo-v2-tts'})
+const settings=await page.evaluate(async()=>{const {useSettingsStore}=await import('/wordLearning/src/stores/settings.ts'); const s=useSettingsStore();return {count:s.profiles.length,pdf:s.pdfConfig,speech:s.speechConfig,active:s.activeProfileId}})
+assert.equal(settings.count,1);assert.equal(settings.pdf.apiKey,settings.speech.apiKey);assert.equal(settings.pdf.model,'mimo-v2-omni');assert.equal(settings.speech.model,'mimo-v2-tts');assert.equal(settings.active,'')
+const buttons=await page.locator('.speech-edit-actions').evaluate(el=>[...el.children].map(e=>e.getBoundingClientRect().toJSON()))
+assert.equal(buttons.length,3);assert(buttons.every(r=>Math.abs(r.y-buttons[0].y)<2))
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)
+await page.screenshot({path:'docs/.local/models-mobile.png',fullPage:true})
+await page.getByRole('button',{name:'添加模型服务商',exact:true}).click();await page.waitForTimeout(110);await page.keyboard.press('Escape');await page.waitForTimeout(600)
+assert.equal(await page.locator('.provider-editor-dialog').count(),0)
+await page.emulateMedia({reducedMotion:'reduce'})
+await page.getByRole('button',{name:'添加模型服务商',exact:true}).click();await page.waitForTimeout(50);await page.keyboard.press('Escape');await page.waitForTimeout(50)
+assert.equal(await page.locator('.provider-editor-dialog').count(),0)
+await page.evaluate(async()=>{const {useSettingsStore}=await import('/wordLearning/src/stores/settings.ts');useSettingsStore().saveProfile({id:'deepseek',name:'DeepSeek',apiKey:'mock-deepseek-key',baseUrl:'https://api.deepseek.com',model:'deepseek-flash',models:['deepseek-flash']})})
+await page.goto(`${base}#/profile`)
+await page.getByText('¥18.50',{exact:true}).waitFor(); await page.getByText('在 MiMo 查看 ↗',{exact:true}).waitFor()
+await page.screenshot({path:'docs/.local/profile-mobile.png',fullPage:true})
+assert.deepEqual(errors,[])
+console.log(JSON.stringify({passed:['button-origin morph','interrupted close','reduced motion','provider save without model selection','PDF and speech share provider','speech buttons single row','multi-provider balances','mobile overflow'],errors}))
+await browser.close()

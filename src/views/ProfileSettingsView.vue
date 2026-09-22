@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import ProviderBalances from '../components/ProviderBalances.vue'
 import Motion from '../components/Motion.vue'
 import LiquidToggle from '../components/LiquidToggle.vue'
-import { onMounted, ref, watch, computed } from 'vue'
-import { fetchBalance, type ApiBalance } from '../api/deepseek'
+import { ref, computed } from 'vue'
 import { themeColorOptions, useThemeStore } from '../stores/theme'
 import { useIdiomStore } from '../stores/idiom'
 import { useRouter } from 'vue-router'
@@ -36,35 +36,7 @@ const showUpdateOptions = ref(false)
 const showDataOptions = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)
 
-const balances = ref<ApiBalance[]>([])
-const balanceLoading = ref(false)
-const balanceMessage = ref('')
 const appearanceLabel = computed(() => themeStore.followSystem ? '跟随系统' : themeStore.theme === 'dark' ? '深色' : '浅色')
-
-function formatBalance(balance: ApiBalance): string {
-  const amount = Number(balance.totalBalance)
-  const value = Number.isFinite(amount) ? amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : balance.totalBalance
-  const symbol = balance.currency === 'CNY' ? '¥' : balance.currency === 'USD' ? '$' : `${balance.currency} `
-  return `${symbol}${value}`
-}
-
-async function loadBalance() {
-  balances.value = []
-  if (!settings.hasApiKey()) { balanceMessage.value = '未配置 API'; return }
-  balanceLoading.value = true
-  balanceMessage.value = ''
-  try {
-    balances.value = await fetchBalance({ ...settings.apiConfig })
-    if (!balances.value.length) balanceMessage.value = '暂无余额'
-  } catch (error: unknown) {
-    balanceMessage.value = error instanceof Error ? error.message : '查询失败'
-  } finally {
-    balanceLoading.value = false
-  }
-}
-
-onMounted(loadBalance)
-watch(() => settings.activeProfileId, loadBalance)
 
 function handleClearHistory() {
   idiomStore.clearHistory()
@@ -156,12 +128,7 @@ function handleImport() {
             </div>
           </div></Motion>
 
-          <div class="profile-list-row profile-settings-row">
-            <span class="profile-row-icon text-gold"><Coins :size="18" /></span>
-            <span class="profile-row-main"><span class="profile-row-title">API 余额</span><span class="profile-row-caption">{{ balanceLoading ? '查询中…' : balanceMessage || '已更新' }}</span></span>
-            <span v-if="balances.length" class="profile-row-value max-w-[46%] truncate">{{ balances.map(formatBalance).join(' · ') }}</span>
-            <button class="profile-row-icon-button" type="button" :disabled="balanceLoading" aria-label="刷新 API 余额" @click="loadBalance"><RefreshCw :size="16" :class="{ 'animate-spin': balanceLoading }" /></button>
-          </div>
+          <ProviderBalances />
         </div>
       </section>
 

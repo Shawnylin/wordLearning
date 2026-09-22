@@ -12,15 +12,24 @@ export const useSettingsStore = defineStore('settings', () => {
   const reasoningEffort = ref<ReasoningEffort>('high')
   const profiles = ref<(ApiConfig & { id: string; name: string; models: string[] })[]>([])
   const activeProfileId = ref('')
+  const pdfProfileId = ref('')
+  const speechProfileId = ref('')
   const pdfConfig = ref<ApiConfig>({ apiKey: '', baseUrl: 'https://api.xiaomimimo.com/v1', model: '', thinkingEnabled: false })
   const pdfUseLearningModel = ref(false)
   const pdfApiConfig = computed(() => pdfUseLearningModel.value ? { ...apiConfig.value, thinkingEnabled: false } : { ...pdfConfig.value, thinkingEnabled: false })
   const apiConfig = computed<ApiConfig>(() => ({ apiKey: apiKey.value, baseUrl: baseUrl.value, model: model.value, thinkingEnabled: thinkingEnabled.value, reasoningEffort: reasoningEffort.value }))
   function saveProfile(profile: ApiConfig & { id: string; name: string; models: string[] }) {
     const index = profiles.value.findIndex(p => p.id === profile.id)
+    const previous = profiles.value[index]
+    if (previous) {
+      if (!pdfProfileId.value && pdfConfig.value.apiKey === previous.apiKey && pdfConfig.value.baseUrl === previous.baseUrl) pdfProfileId.value = previous.id
+      if (!speechProfileId.value && speechConfig.value.apiKey === previous.apiKey && speechConfig.value.baseUrl === previous.baseUrl) speechProfileId.value = previous.id
+    }
     if (index < 0) profiles.value.push({ ...profile })
     else profiles.value[index] = { ...profile }
-    selectProfile(profile.id)
+    if (activeProfileId.value === profile.id) selectProfile(profile.id)
+    if (pdfProfileId.value === profile.id) pdfConfig.value = { ...pdfConfig.value, apiKey: profile.apiKey, baseUrl: profile.baseUrl }
+    if (speechProfileId.value === profile.id) speechConfig.value = { ...speechConfig.value, apiKey: profile.apiKey, baseUrl: profile.baseUrl }
   }
   function selectProfile(id: string) {
     const profile = profiles.value.find(p => p.id === id)
@@ -31,11 +40,17 @@ export const useSettingsStore = defineStore('settings', () => {
     model.value = profile.model
   }
   function deleteProfile(id: string) {
+    const previous = profiles.value.find(profile => profile.id === id)
+    if (previous) {
+      if (!pdfProfileId.value && pdfConfig.value.apiKey === previous.apiKey && pdfConfig.value.baseUrl === previous.baseUrl) pdfProfileId.value = id
+      if (!speechProfileId.value && speechConfig.value.apiKey === previous.apiKey && speechConfig.value.baseUrl === previous.baseUrl) speechProfileId.value = id
+    }
+    if (pdfProfileId.value === id) { pdfProfileId.value = ''; pdfConfig.value.apiKey = '' }
+    if (speechProfileId.value === id) { speechProfileId.value = ''; speechConfig.value.apiKey = '' }
     profiles.value = profiles.value.filter(p => p.id !== id)
     if (activeProfileId.value === id) {
       activeProfileId.value = ''
       apiKey.value = ''
-      if (profiles.value[0]) selectProfile(profiles.value[0].id)
     }
   }
   /** 每次复习的词数（0 = 全部） */
@@ -58,7 +73,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    speechConfig, apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile, pdfConfig, pdfUseLearningModel, pdfApiConfig,
+    pdfProfileId, speechProfileId, speechConfig, apiKey, baseUrl, model, thinkingEnabled, reasoningEffort, profiles, activeProfileId, apiConfig, saveProfile, selectProfile, deleteProfile, pdfConfig, pdfUseLearningModel, pdfApiConfig,
     reviewTarget,
     setApiKey,
     clearApiKey,
@@ -68,6 +83,6 @@ export const useSettingsStore = defineStore('settings', () => {
 }, {
   persist: {
     key: 'settings-store',
-    paths: ['apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId', 'pdfConfig', 'pdfUseLearningModel', 'speechConfig']
+    paths: ['pdfProfileId', 'speechProfileId', 'apiKey', 'reviewTarget', 'baseUrl', 'model', 'thinkingEnabled', 'reasoningEffort', 'profiles', 'activeProfileId', 'pdfConfig', 'pdfUseLearningModel', 'speechConfig']
   }
 })
