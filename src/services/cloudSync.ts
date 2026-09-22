@@ -168,14 +168,18 @@ function mergeReview(local: ReviewSyncData, remote: ReviewSyncData, preferRemote
 }
 
 export function summarizeSyncPayload(payload: LocalSyncPayload): SyncSummary {
+  const dailyArticles = payload.daily.issues.flatMap(issue => issue.articles)
   return {
     words: Object.keys(payload.idiom.idiomCache).length,
     searches: payload.idiom.searchHistory.length,
     comparisons: payload.idiom.compareHistory.length,
     favorites: payload.idiom.favorites.length,
     reviewWords: Object.keys(payload.review.wordStats).length,
+    masteredReviewWords: Object.values(payload.review.wordStats).filter(stat => normalizeSyncReviewWordStat(stat).state === 'mastered').length,
     dailyIssues: payload.daily.issues.length,
-    dailyArticles: payload.daily.issues.reduce((total, issue) => total + issue.articles.length, 0)
+    dailyArticles: dailyArticles.length,
+    dailyStarredArticles: dailyArticles.filter(article => article.starred === true).length,
+    dailyCompletedArticles: dailyArticles.filter(article => typeof article.completedAt === 'number' && article.completedAt > 0).length
   }
 }
 

@@ -15,6 +15,27 @@ const snapshot = () => ({ version: 2, capturedAt: 1,
   daily: { issues: [], groups: [], selectedId: '' },
   review: { phase: 'idle', queue: [], done: [], levels: {}, thresholds: {}, wrongToday: {}, history: [], target: 10, startedAt: 0, elapsedMs: 0, lastResult: null, finishedToday: 0, lastFinishedDay: '', wordStats: {} },
 })
+test('repeated cloud merge keeps one review item and never downgrades newer mastery', () => {
+  const local = snapshot(), remote = snapshot()
+  local.review.wordStats = {
+    甲: { state: 'review', nextReviewAt: 500, interval: 12, correctCount: 4, wrongCount: 6, lastReviewedAt: 100 }
+  }
+  remote.review.wordStats = {
+    甲: { state: 'mastered', nextReviewAt: 5_000, interval: 30, correctCount: 8, wrongCount: 2, lastReviewedAt: 200 }
+  }
+
+  const once = mergeSyncPayload(local, remote)
+  const twice = mergeSyncPayload(once, remote)
+
+  assert.deepEqual(Object.keys(once.review.wordStats), ['甲'])
+  assert.deepEqual(Object.keys(twice.review.wordStats), ['甲'])
+  assert.deepEqual(twice.review.wordStats.甲, {
+    state: 'mastered', nextReviewAt: 5_000, interval: 30,
+    correctCount: 8, wrongCount: 6, lastReviewedAt: 200
+  })
+  assert(hasSameSyncContent(once, twice))
+})
+
 test('cloud merge preserves both devices, resolves fields independently, and is idempotent without mutating inputs', () => {
   const local = snapshot(), remote = snapshot()
   local.idiom.idiomCache = { shared: { word: '旧词义', createdAt: 10 }, localOnly: { word: '本机独有', createdAt: 10 } }

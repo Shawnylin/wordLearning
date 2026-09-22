@@ -22,6 +22,7 @@ import {
   nextRetrySchedule,
   readDecision,
   readSyncState,
+  sanitizeSyncError,
   saveDecision,
   saveSyncState,
   SYNC_DOMAINS
@@ -37,6 +38,11 @@ export const syncChoiceLabels: Record<SyncChoice, string> = {
   'merge-local-to-cloud': '合并到云端',
   'merge-cloud-to-local': '合并到本机'
 }
+
+const syncOperationLabels = {
+  ...syncChoiceLabels,
+  prepare: '读取并核对云端'
+} as const
 
 export const useCloudSyncStore = defineStore('cloudSync', () => {
   const activeUserId = ref('')
@@ -76,6 +82,14 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     return '资料或学习记录变更后自动合并'
   })
   const lastCompletedAt = computed(() => syncState.value.lastSyncAt || decision.value?.completedAt || 0)
+  const lastSyncTypeLabel = computed(() => syncState.value.lastSyncOperation
+    ? syncOperationLabels[syncState.value.lastSyncOperation]
+    : '尚无记录')
+  const lastSyncResultLabel = computed(() => syncState.value.lastSyncResult === 'success'
+    ? '成功'
+    : syncState.value.lastSyncResult === 'failure'
+      ? '失败'
+      : '尚无记录')
 
   function patchSyncState(patch: Partial<SyncState>) {
     syncState.value = { ...syncState.value, ...patch }
@@ -121,8 +135,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       pendingDomains: [...new Set([...syncState.value.pendingDomains, domain])],
       lastLocalChangeAt: now,
       retryCount: 0,
-      nextRetryAt: 0,
-      lastError: ''
+      nextRetryAt: 0
     })
     error.value = ''
     scheduleAutoSync()
@@ -144,7 +157,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     scheduleAutoSync()
   }
 
-  function recordFailure(message: string, queueUpload: boolean) {
+  function recordFailure(message: string, queueUpload: boolean, operation: SyncChoice | 'prepare', source: SyncSource | 'prepare', attemptedAt: number) {
     const pendingDomains = syncState.value.pendingDomains.length > 0 || !queueUpload
       ? syncState.value.pendingDomains
       : [...SYNC_DOMAINS]
@@ -153,6 +166,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       pendingDomains,
       retryCount: retry.retryCount,
       nextRetryAt: retry.nextRetryAt,
+      lastAttemptAt: attemptedAt,
+      lastSyncOperation: operation,
+      lastSyncSource: source,
+      lastSyncResult: 'failure',
       lastError: message
     })
     if (pendingDomains.length > 0) scheduleAutoSync()
@@ -165,9 +182,15 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
 
     const startedLocalChangeAt = syncState.value.lastLocalChangeAt
     const hadPendingChanges = pendingChanges.value
+    const attemptedAt = Date.now()
     syncing.value = true
     error.value = ''
     notice.value = ''
+    patchSyncState({
+      lastAttemptAt: attemptedAt,
+      lastSyncOperation: choice,
+      lastSyncSource: source
+    })
     try {
       let remoteRecord: RemoteSyncSnapshot | null = null
       let remote = remoteSnapshot.value
@@ -231,6 +254,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       patchSyncState({
         pendingDomains,
         lastSyncAt: completedAt,
+        lastAttemptAt: attemptedAt,
+        lastSyncOperation: choice,
+        lastSyncSource: source,
+        lastSyncResult: 'success',
         lastRemoteUpdatedAt: savedRecord?.updatedAt || remoteRecord?.updatedAt || syncState.value.lastRemoteUpdatedAt,
         retryCount: 0,
         nextRetryAt: 0,
@@ -250,10 +277,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       return true
     } catch (caught: unknown) {
       if (activeUserId.value !== userId) return false
-      const message = caught instanceof Error ? caught.message : '云同步失败，请稍后重试'
+      const message = sanitizeSyncError(caught, '云同步失败，请稍后重试')
       error.value = message
       const queueUpload = choice === 'merge-local-to-cloud' && Boolean(automaticChoice())
-      recordFailure(message, queueUpload)
+      recordFailure(message, queueUpload, choice, source, attemptedAt)
       return false
     } finally {
       if (activeUserId.value === userId) { syncing.value = false; scheduleAutoSync() }
@@ -275,6 +302,12 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     const storedState = readSyncState(userId, storedDecision?.completedAt || 0)
     syncState.value = storedState
     decision.value = storedDecision
+    const attemptedAt = Date.now()
+    patchSyncState({
+      lastAttemptAt: attemptedAt,
+      lastSyncOperation: 'prepare',
+      lastSyncSource: 'prepare'
+    })
     try {
       await useApiVaultStore().initialize(userId)
       const remoteRecord = await loadRemoteSyncPayload(userId)
@@ -321,6 +354,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       const completedAt = Date.now()
       patchSyncState({
         lastSyncAt: completedAt,
+        lastAttemptAt: attemptedAt,
+        lastSyncOperation: 'prepare',
+        lastSyncSource: 'prepare',
+        lastSyncResult: 'success',
         lastRemoteUpdatedAt: reconciledRecord?.updatedAt || remoteRecord?.updatedAt || storedState.lastRemoteUpdatedAt,
         retryCount: 0,
         nextRetryAt: 0,
@@ -330,7 +367,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       if (!decision.value) selectedChoice.value = 'merge-local-to-cloud'
     } catch (caught: unknown) {
       if (activeUserId.value !== userId) return false
-      const message = caught instanceof Error ? caught.message : '读取云端学习数据失败'
+      const message = sanitizeSyncError(caught, '读取云端学习数据失败')
       remoteLoadFailed.value = true
       prepared.value = true
       localSnapshot.value = await buildLocalSyncPayload()
@@ -338,7 +375,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
       remoteSnapshot.value = null
       remoteSummary.value = null
       error.value = message
-      recordFailure(message, false)
+      recordFailure(message, false, 'prepare', 'prepare', attemptedAt)
       if (!decision.value && !force) open.value = true
       if (!decision.value) selectedChoice.value = 'no-upload'
     } finally {
@@ -439,6 +476,8 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     statusLabel,
     autoSyncLabel,
     lastCompletedAt,
+    lastSyncTypeLabel,
+    lastSyncResultLabel,
     prepare,
     openWizard,
     closeWizard,

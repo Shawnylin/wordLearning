@@ -54,6 +54,10 @@ test('cloud sync state preserves storage keys, defaults and sanitization', () =>
     pendingDomains: [],
     lastLocalChangeAt: 0,
     lastSyncAt: 123,
+    lastAttemptAt: 0,
+    lastSyncOperation: '',
+    lastSyncSource: '',
+    lastSyncResult: '',
     lastRemoteUpdatedAt: '',
     retryCount: 0,
     nextRetryAt: 0,
@@ -64,6 +68,10 @@ test('cloud sync state preserves storage keys, defaults and sanitization', () =>
     pendingDomains: ['profile', 'profile', 'invalid', 'daily'],
     lastLocalChangeAt: 20,
     lastSyncAt: 30,
+    lastAttemptAt: 25,
+    lastSyncOperation: 'download',
+    lastSyncSource: 'manual',
+    lastSyncResult: 'failure',
     lastRemoteUpdatedAt: 'remote-1',
     retryCount: 2.9,
     nextRetryAt: 40,
@@ -73,6 +81,10 @@ test('cloud sync state preserves storage keys, defaults and sanitization', () =>
     pendingDomains: ['profile', 'daily'],
     lastLocalChangeAt: 20,
     lastSyncAt: 30,
+    lastAttemptAt: 25,
+    lastSyncOperation: 'download',
+    lastSyncSource: 'manual',
+    lastSyncResult: 'failure',
     lastRemoteUpdatedAt: 'remote-1',
     retryCount: 2,
     nextRetryAt: 40,
@@ -93,11 +105,34 @@ test('cloud sync storage read failures keep the original fallback behavior', () 
     pendingDomains: [],
     lastLocalChangeAt: 0,
     lastSyncAt: 321,
+    lastAttemptAt: 0,
+    lastSyncOperation: '',
+    lastSyncSource: '',
+    lastSyncResult: '',
     lastRemoteUpdatedAt: '',
     retryCount: 0,
     nextRetryAt: 0,
     lastError: ''
   })
+})
+
+test('sync status metadata sanitizes unknown values and redacts credentials from errors', () => {
+  const { deserializeSyncState, sanitizeSyncError } = loadCloudSyncState()
+  const state = deserializeSyncState(JSON.stringify({
+    lastAttemptAt: 50,
+    lastSyncOperation: 'bad-operation',
+    lastSyncSource: 'bad-source',
+    lastSyncResult: 'bad-result',
+    lastError: 'request https://example.test/path?token=abc failed; apiKey=secret-value; Bearer abc.def.ghi'
+  }))
+  assert.equal(state.lastAttemptAt, 50)
+  assert.equal(state.lastSyncOperation, '')
+  assert.equal(state.lastSyncSource, '')
+  assert.equal(state.lastSyncResult, '')
+  assert(!state.lastError.includes('example.test'))
+  assert(!state.lastError.includes('secret-value'))
+  assert(!state.lastError.includes('abc.def.ghi'))
+  assert.match(sanitizeSyncError('sessionToken=private-token failed'), /已隐藏/)
 })
 
 test('cloud sync retry and auto-sync timing constants remain unchanged', () => {

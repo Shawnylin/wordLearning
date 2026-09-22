@@ -31,7 +31,7 @@ function formatSummary(summary: typeof sync.localSummary) {
 
         </div>
       </div>
-      <span v-if="auth.signedIn" class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
+      <span v-if="auth.signedIn" class="profile-sync-time">上次成功 {{ formatTime(sync.lastCompletedAt) }}</span>
     </div>
 
     <div v-if="!auth.signedIn" class="profile-sync-unauth">
@@ -62,6 +62,7 @@ function formatSummary(summary: typeof sync.localSummary) {
         </div>
       </div>
 
+      <p class="profile-sync-meta">最近结果：{{ sync.lastSyncResultLabel }} · {{ sync.lastSyncTypeLabel }}</p>
       <p v-if="sync.error && !sync.open" class="profile-inline-feedback is-error" role="alert">{{ sync.error }}</p>
 
       <ApiVaultSettings />
@@ -82,6 +83,7 @@ function formatSummary(summary: typeof sync.localSummary) {
 .profile-sync-time { color: var(--ink-mute); }
 .profile-sync-main > .profile-sync-action { min-width: 104px; }
 .profile-sync-time { font-size: 11px; line-height: 1.45; white-space: nowrap; }
+.profile-sync-meta { margin-top: -4px; color: var(--ink-mute); font-size: 11px; line-height: 1.45; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
 .profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; }
 .profile-sync-unauth { padding: 8px 0; font-size: 13px; }

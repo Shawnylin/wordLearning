@@ -6,11 +6,18 @@ import type { CompareRecord, IdiomData, SearchRecord, TokenStats } from './idiom
 export type SyncChoice = 'no-upload' | 'download' | 'merge-local-to-cloud' | 'merge-cloud-to-local'
 
 export type SyncDomain = 'profile' | 'idiom' | 'review' | 'daily' | 'apiSettings'
+export type SyncOperation = SyncChoice | 'prepare'
+export type SyncRunSource = 'choice' | 'manual' | 'automatic' | 'background' | 'prepare'
+export type SyncRunResult = '' | 'success' | 'failure'
 
 export interface SyncState {
   pendingDomains: SyncDomain[]
   lastLocalChangeAt: number
   lastSyncAt: number
+  lastAttemptAt: number
+  lastSyncOperation: SyncOperation | ''
+  lastSyncSource: SyncRunSource | ''
+  lastSyncResult: SyncRunResult
   lastRemoteUpdatedAt: string
   retryCount: number
   nextRetryAt: number
@@ -107,6 +114,9 @@ export interface SyncSummary {
   comparisons: number
   favorites: number
   reviewWords: number
+  masteredReviewWords: number
   dailyIssues: number
   dailyArticles: number
+  dailyStarredArticles: number
+  dailyCompletedArticles: number
 }
