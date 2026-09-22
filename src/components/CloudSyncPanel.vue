@@ -69,6 +69,8 @@ function formatSummary(summary: typeof sync.localSummary) {
 
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
+.cloud-sync-heading > :first-child { min-width: 0; flex: 1 1 auto; }
+.cloud-sync-heading > .profile-sync-time { margin-left: auto; }
 .profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 14px; }
 .profile-sync-summary { display: grid; justify-items: stretch; color: var(--ink-mute); font-size: 11px; text-align: left; }
 .profile-sync-summary span { display: flex; min-height: 56px; align-items: center; gap: 7px; border-bottom: 1px solid var(--line); }
