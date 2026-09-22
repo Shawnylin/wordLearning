@@ -26,7 +26,6 @@ function formatTime(value: number) {
 
         </div>
       </div>
-      <button v-if="auth.signedIn" class="profile-row-value sync-mode" type="button" aria-label="同步方式" :disabled="sync.preparing || sync.syncing" @click="sync.openWizard">{{ sync.statusLabel }} · 设置</button>
     </div>
 
     <div v-if="!auth.signedIn" class="profile-sync-unauth">
@@ -35,10 +34,7 @@ function formatTime(value: number) {
     </div>
 
     <div v-else class="profile-sync-body">
-      <div class="profile-sync-summary">
-
-        <span>上次 {{ formatTime(sync.lastCompletedAt) }}</span>
-      </div>
+      <div class="profile-sync-summary"><span>本机与云端数据</span><span>{{ sync.statusLabel }}</span></div>
 
       <div class="profile-sync-actions">
         <button
@@ -52,6 +48,7 @@ function formatTime(value: number) {
           <RefreshCw v-else :size="16" />
           {{ sync.syncing ? '正在同步…' : '立即同步' }}
         </button>
+        <span class="profile-sync-time">上次 {{ formatTime(sync.lastCompletedAt) }}</span>
       </div>
 
 
@@ -64,10 +61,12 @@ function formatTime(value: number) {
 
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
-.profile-sync-body { display: grid; justify-items: center; gap: 10px; text-align: center; }
-.profile-sync-summary { font-size: 12px; }
-.profile-sync-actions { display: grid; width: min(100%, 220px); grid-template-columns: 1fr; }
+.profile-sync-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 14px; }
+.profile-sync-summary { display: grid; justify-items: start; gap: 2px; padding: 10px 0; font-size: 11px; text-align: left; }
+.profile-sync-summary span:last-child, .profile-sync-time { color: var(--ink-mute); }
+.profile-sync-actions { display: grid; justify-items: end; gap: 3px; min-width: 104px; }
+.profile-sync-time { font-size: 11px; line-height: 1.45; white-space: nowrap; }
 .sync-mode { color: var(--ink-mute); font-size: 12px; font-weight: 400; }
-.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; }
+.profile-sync-body > .vault-settings, .profile-sync-body > .profile-inline-feedback { width: 100%; grid-column: 1 / -1; }
 .profile-sync-unauth { padding: 8px 0; font-size: 13px; }
 </style>

@@ -135,8 +135,8 @@ function selectSpeechModel(key: string) {
         <section class="settings-panel settings-voice-panel" aria-labelledby="speech-tools-title">
           <div class="settings-panel-heading">
             <div><h2 id="speech-tools-title">语音测试与调试</h2></div>
+            <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" />
           </div>
-          <SpeechButton text="欢迎使用朗读。" label="语音测试" :config="settings.speechConfig" show-label />
           <div id="speech" class="settings-advanced-body"><SpeechSettings /></div>
         </section>
       </main>
@@ -161,9 +161,9 @@ function selectSpeechModel(key: string) {
 .settings-content :deep(.settings-icon-button) { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
 .settings-content :deep(.settings-icon-button:hover) { background: var(--zhuhong-deep); }
 .settings-content :deep(.settings-provider-list) { overflow: hidden; }
-.settings-content :deep(.settings-provider-row) { display: flex; min-width: 0; align-items: center; gap: 8px; min-height: 68px; border-bottom: 1px solid var(--line); }
+.settings-content :deep(.settings-provider-row) { display: flex; min-width: 0; align-items: center; gap: 6px; min-height: 54px; border-bottom: 1px solid var(--line); }
 .settings-content :deep(.settings-provider-row:last-child) { border-bottom: 0; }
-.settings-content :deep(.settings-provider-main) { display: flex; min-width: 0; flex: 1; align-items: center; gap: 11px; min-height: 64px; padding: 8px 0; color: var(--ink); text-align: left; }
+.settings-content :deep(.settings-provider-main) { display: flex; min-width: 0; flex: 1; align-items: center; gap: 8px; min-height: 52px; padding: 5px 0; color: var(--ink); text-align: left; }
 .settings-content :deep(.settings-provider-icon), .settings-content :deep(.settings-panel-icon) { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 11px; background: var(--soft); color: var(--zhuhong); }
 .settings-content :deep(.settings-provider-copy) { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .settings-content :deep(.settings-provider-copy strong) { overflow: hidden; color: var(--ink); font-size: 14px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
@@ -190,7 +190,7 @@ function selectSpeechModel(key: string) {
 .settings-content :deep(.settings-status) { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; }
 .settings-content :deep(.settings-footnote) { color: var(--ink-mute); font-size: 10px; line-height: 1.6; }
 .settings-panel { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 26px rgb(49 39 26 / 4%); }
-.settings-panel-heading { display: flex; min-width: 0; align-items: center; gap: 11px; }
+.settings-panel-heading { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 11px; }
 .settings-panel-heading h2 { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.4; }
 .settings-panel-heading p { margin-top: 3px; color: var(--ink-mute); font-size: 11px; line-height: 1.5; }
 .settings-model-roles { gap: 0; }
@@ -201,8 +201,7 @@ function selectSpeechModel(key: string) {
 .settings-select-wrap > svg { position: absolute; left: 14px; z-index: 1; color: var(--zhuhong); pointer-events: none; }
 .settings-select-wrap select { width: 100%; min-height: 50px; padding: 10px 32px 10px 12px; font-size: 13px; }
 .settings-select-wrap select:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 2px; }
-.settings-voice-panel > :deep(.speech-control) { width: 100%; }
-.settings-voice-panel :deep(.speech-button) { width: 100%; min-height: 46px; border-radius: 12px; background: var(--zhuhong); color: var(--paper); font-size: 13px; }
+.settings-voice-panel :deep(.speech-button) { width: 38px; min-width: 38px; height: 38px; min-height: 38px; border-radius: 50%; background: var(--zhuhong); color: var(--paper); }
 .settings-voice-panel :deep(.speech-button:hover) { background: var(--zhuhong-deep); }
 .settings-voice-help { color: var(--ink-mute); font-size: 10.5px; line-height: 1.55; }
 .settings-advanced { overflow: hidden; margin-top: 2px; border-top: 1px solid var(--line); }

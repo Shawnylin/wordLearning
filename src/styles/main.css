@@ -849,7 +849,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 
 .profile-section {
   min-width: 0;
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .profile-section:not(.profile-identity-card) {
@@ -1018,7 +1018,7 @@ html.dark .glass-card { box-shadow: var(--glass-shadow); }
 }
 
 .profile-settings {
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .profile-settings .profile-section:first-child {

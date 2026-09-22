@@ -38,8 +38,8 @@ async function refresh() {
     try {
       const result = await fetchBalance(provider)
       if (epoch !== generation) return
-      row.balances = result
-      if (!result.length) row.message = '暂无余额'
+      row.balances = result.filter(balance => String(balance.totalBalance).trim())
+      if (!row.balances.length) row.message = '暂无余额'
     } catch (error) {
       if (epoch === generation) row.message = error instanceof Error ? error.message : '查询失败'
     } finally { if (epoch === generation) row.loading = false }
@@ -64,10 +64,11 @@ onBeforeUnmount(() => { generation++ })
 </template>
 
 <style scoped>
-.provider-balances { padding: 12px 0; border-top: 1px solid var(--line); }
-.balance-heading { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; }
+.provider-balances { padding: 10px 0 0; border-top: 1px solid var(--line); }
+.balance-heading { display: flex; min-height: 30px; align-items: center; justify-content: space-between; color: var(--ink-mute); font-size: 11px; font-weight: 700; letter-spacing: .12em; }
 .balance-heading button { display: grid; place-items: center; width: 36px; height: 36px; color: var(--ink-mute); }
 .balance-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; gap: 12px; padding: 8px 0; font-size: 13px; }
+.balance-row:last-child { padding-bottom: 0; }
 .balance-provider { overflow-wrap: anywhere; color: var(--ink-soft); }
 .balance-row > :last-child { text-align: right; }
 .balance-row a { color: var(--zhuhong); }
