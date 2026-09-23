@@ -9,6 +9,14 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.1.1',
+    date: '2026-09-23',
+    title: '恢复学习卡片展开动效',
+    changes: [
+      '恢复学习与对比页面圆球展开、收回卡片时的原有节奏、中心轨迹和玻璃质感。'
+    ]
+  },
+  {
     version: '1.1.0',
     date: '2026-09-23',
     title: '阅读界面与交互动效优化',

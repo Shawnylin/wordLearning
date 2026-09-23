@@ -27,6 +27,12 @@ async function assertCenteredExpansion(trigger) {
   const origin = center(before)
   await trigger()
   await page.waitForFunction(() => document.querySelector('.generation-surface').getAnimations().length > 0)
+  const timing = await surface.evaluate(element => {
+    const animation = element.getAnimations().find(a => a.effect?.getKeyframes().some(frame => 'width' in frame && 'left' in frame))
+    return animation?.effect?.getTiming()
+  })
+  assert.equal(timing?.duration, 720, 'the orb expansion must retain its deliberate 720ms pacing')
+  assert.equal(String(timing?.easing).replaceAll(' ', ''), 'cubic-bezier(0.4,0,0.2,1)')
   for (const time of [40, 120, 220, 300, 420, 600, 710]) {
     const sample = await page.evaluate(async time => {
       const surface = document.querySelector('.generation-surface')

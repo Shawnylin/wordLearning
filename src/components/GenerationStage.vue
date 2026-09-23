@@ -70,7 +70,7 @@ watch(() => props.expanded, async expanded => {
   const centerY = expanded ? fromCenterY : toCenterY
   const frameWidth = expanded ? to.width : from.width
   const frameHeight = Math.min(expanded ? to.height : from.height, Math.max(80, 2 * centerY))
-  const options = { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--motion-spatial-duration')) || 500, easing: 'cubic-bezier(.22,1,.36,1)' }
+  const options = { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 720, easing: 'cubic-bezier(.4,0,.2,1)' }
   anchored.value = true
   await nextTick()
   if (token !== revision || !surface.value || !stageBody.value) return
@@ -138,7 +138,6 @@ onDeactivated(stopAnimation)
 html.dark .generation-stage:not(.is-active) .generation-surface { --control-glass-edge: rgb(255 255 255 / .2); }
 .is-active .generation-surface { left: 0; width: 100%; height: auto; border-radius: 24px; }
 .is-anchored .generation-surface { position: absolute; transform: translate(-50%, -50%); }
-.is-morphing .generation-surface { backdrop-filter: none; -webkit-backdrop-filter: none; }
 .generation-body { overflow-anchor: none; }
 .is-active:not(.is-morphing) .generation-surface { min-height: var(--frame-min-height, 0px); }
 .generation-result :deep(.animate-card-enter) { animation: none; }
