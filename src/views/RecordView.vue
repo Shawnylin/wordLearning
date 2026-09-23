@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, useId, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
@@ -29,6 +29,7 @@ const detailMode = ref<'idiom' | 'compare' | null>(null)
 const detailWord = ref<string | null>(null)
 const detailCompareId = ref<string | null>(null)
 const showFavoritesOnly = ref(false)
+const searchLiquidFilterId = `record-search-liquid-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
 
 // 批量管理状态
 const editMode = ref(false)
@@ -263,12 +264,15 @@ function doConfirmDelete() {
           <Motion><button
             v-if="hasAnyRecord"
             @click="toggleEditMode"
-            class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            class="record-manage-button flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors"
             :class="editMode
-              ? 'btn-primary'
+              ? 'is-managing btn-primary'
               : 'bg-soft text-ink-soft border border-line'"
           >
-            <component :is="editMode ? X : ListChecks" :size="16" />
+            <span class="record-manage-icon" aria-hidden="true">
+              <ListChecks class="record-manage-list-icon" :size="16" />
+              <X class="record-manage-done-icon" :size="16" />
+            </span>
             {{ editMode ? '完成' : '管理' }}
           </button></Motion>
         </div>
@@ -276,12 +280,14 @@ function doConfirmDelete() {
 
       <!-- Tab switcher -->
       <div class="mx-auto max-w-lg mb-4">
-        <div class="flex p-1 rounded-2xl bg-soft">
+        <div class="record-tabs grid grid-cols-2 p-1 rounded-2xl bg-soft" :class="{ 'is-compare': activeTab === 'compare' }">
+          <span class="record-tab-indicator" aria-hidden="true" />
           <button
             @click="switchTab('idiom')"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            class="record-tab-button flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            :aria-pressed="activeTab === 'idiom'"
             :class="activeTab === 'idiom'
-              ? 'bg-card text-zhuhong shadow-sm'
+              ? 'text-zhuhong'
               : 'text-ink-mute'"
           >
             <BookOpen :size="16" />
@@ -290,9 +296,10 @@ function doConfirmDelete() {
           </button>
           <button
             @click="switchTab('compare')"
-            class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            class="record-tab-button flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            :aria-pressed="activeTab === 'compare'"
             :class="activeTab === 'compare'
-              ? 'bg-card text-dai shadow-sm'
+              ? 'text-dai'
               : 'text-ink-mute'"
           >
             <GitCompare :size="16" />
@@ -303,8 +310,18 @@ function doConfirmDelete() {
       </div>
 
       <!-- Search bar + favorites filter -->
-      <div class="mx-auto max-w-lg mb-4 flex gap-2">
-        <div class="relative flex-1 flex items-center rounded-2xl bg-card shadow-sm border border-line overflow-hidden focus-within:ring-2 focus-within:ring-zhuhong/15 focus-within:border-zhuhong">
+      <div class="record-search-row mx-auto max-w-lg mb-4" :class="{ 'is-compare': activeTab === 'compare' }">
+        <svg class="record-search-filter" width="0" height="0" aria-hidden="true"><defs>
+          <filter :id="searchLiquidFilterId" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" />
+          </filter>
+        </defs></svg>
+        <div class="record-search-liquid" :style="{ filter: `url(#${searchLiquidFilterId}) drop-shadow(0 0 1px color-mix(in srgb, var(--ink) 24%, transparent)) drop-shadow(0 2px 3px color-mix(in srgb, var(--ink) 8%, transparent))` }" aria-hidden="true">
+          <span class="record-search-liquid-field" />
+          <span class="record-search-liquid-heart" :class="{ 'is-selected': showFavoritesOnly }" />
+        </div>
+        <label class="record-search-field flex items-center overflow-hidden">
           <div class="pl-4 text-ink-mute">
             <Search :size="18" />
           </div>
@@ -312,22 +329,23 @@ function doConfirmDelete() {
             v-model="searchQuery"
             type="text"
             :placeholder="activeTab === 'idiom' ? '搜索已学习的成语…' : '搜索对比记录中的词语…'"
-            class="flex-1 px-3 py-3 text-sm bg-transparent text-ink placeholder-ink-mute outline-none"
+            class="min-w-0 flex-1 px-3 py-3 text-sm bg-transparent text-ink placeholder-ink-mute outline-none"
           />
-        </div>
-        <Motion><button
-          v-if="activeTab === 'idiom'"
+        </label>
+        <button
+          type="button"
           @click="showFavoritesOnly = !showFavoritesOnly"
-          class="shrink-0 min-h-11 min-w-11 p-3 rounded-2xl border transition-colors duration-200"
-          :class="showFavoritesOnly
-            ? 'bg-zhuhong-soft border-zhuhong/30 text-zhuhong'
-            : 'bg-card border-line text-ink-mute hover:text-zhuhong'"
+          class="record-favorite-button grid place-items-center rounded-2xl"
+          :class="showFavoritesOnly ? 'is-selected text-zhuhong' : 'text-ink-mute hover:text-zhuhong'"
           :title="showFavoritesOnly ? '显示全部' : '仅显示收藏'"
           :aria-label="showFavoritesOnly ? '显示全部记录' : '仅显示收藏记录'"
           :aria-pressed="showFavoritesOnly"
+          :aria-hidden="activeTab === 'compare'"
+          :tabindex="activeTab === 'compare' ? -1 : 0"
+          :inert="activeTab === 'compare'"
         >
           <Heart :size="18" :fill="showFavoritesOnly ? 'currentColor' : 'none'" />
-        </button></Motion>
+        </button>
       </div>
 
       <!-- Batch action bar -->
@@ -358,19 +376,18 @@ function doConfirmDelete() {
             v-for="record in filteredHistory"
             :key="record.id"
             data-record-row
-            class="w-full flex items-center gap-1 px-2 rounded-2xl card hover:border-zhuhong/50 transition-colors duration-200 group"
-            :class="{ 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
+            class="record-row w-full flex items-center px-2 rounded-2xl card hover:border-zhuhong/50 group"
+            :class="{ 'is-managing': editMode, 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
           >
-            <button type="button" class="min-w-0 min-h-14 flex-1 flex items-center gap-3 px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-zhuhong" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onIdiomRowClick(record, $event)">
-            <Motion><div
-              v-if="editMode"
-              class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
-              :class="isSelected(record.id)
-                ? 'bg-zhuhong-solid border-zhuhong-solid text-paper-ink'
-                : 'border-line text-transparent'"
-            >
-              <Check :size="12" :stroke-width="3" />
-            </div></Motion>
+            <button type="button" class="record-row-main min-w-0 min-h-14 flex-1 flex items-center px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-zhuhong" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onIdiomRowClick(record, $event)">
+            <span class="record-select-slot" :class="{ 'is-visible': editMode }" aria-hidden="true">
+              <span class="record-select-orb flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors"
+                :class="isSelected(record.id)
+                  ? 'bg-zhuhong-solid border-zhuhong-solid text-paper-ink'
+                  : 'border-line text-transparent'">
+                <Check :size="12" :stroke-width="3" />
+              </span>
+            </span>
 
             <div class="min-w-0 flex-1 text-left">
               <p class="text-base font-semibold text-ink group-hover:text-zhuhong transition-colors flex items-center gap-1.5">
@@ -388,17 +405,18 @@ function doConfirmDelete() {
               </div>
             </div>
             </button>
-            <template v-if="!editMode">
-              <button
-                type="button"
-                @click="requestDeleteIdiom(record)"
-                class="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
-                :aria-label="`删除${record.word}`"
-                :title="`删除${record.word}`"
-              >
-                <Trash2 :size="16" />
-              </button>
-            </template>
+            <button
+              type="button"
+              @click="requestDeleteIdiom(record)"
+              class="record-row-delete grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft"
+              :aria-label="`删除${record.word}`"
+              :title="`删除${record.word}`"
+              :aria-hidden="editMode"
+              :tabindex="editMode ? -1 : 0"
+              :inert="editMode"
+            >
+              <Trash2 :size="16" />
+            </button>
           </div>
           </TransitionGroup>
         </div>
@@ -428,19 +446,18 @@ function doConfirmDelete() {
             v-for="record in filteredCompareHistory"
             :key="record.id"
             data-record-row
-            class="w-full flex items-center gap-1 px-2 rounded-2xl card hover:border-dai/50 transition-colors duration-200 group"
-            :class="{ 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
+            class="record-row w-full flex items-center px-2 rounded-2xl card hover:border-dai/50 group"
+            :class="{ 'is-managing': editMode, 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
           >
-            <button type="button" class="min-w-0 min-h-14 flex-1 flex items-center gap-3 px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-dai" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onCompareRowClick(record, $event)">
-            <Motion><div
-              v-if="editMode"
-              class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
-              :class="isSelected(record.id)
-                ? 'bg-dai-solid border-dai-solid text-paper-ink'
-                : 'border-line text-transparent'"
-            >
-              <Check :size="12" :stroke-width="3" />
-            </div></Motion>
+            <button type="button" class="record-row-main min-w-0 min-h-14 flex-1 flex items-center px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-dai" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onCompareRowClick(record, $event)">
+            <span class="record-select-slot" :class="{ 'is-visible': editMode }" aria-hidden="true">
+              <span class="record-select-orb flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors"
+                :class="isSelected(record.id)
+                  ? 'bg-dai-solid border-dai-solid text-paper-ink'
+                  : 'border-line text-transparent'">
+                <Check :size="12" :stroke-width="3" />
+              </span>
+            </span>
 
             <div class="min-w-0 flex-1 text-left">
               <CompareWords :words="record.words" variant="list" class="text-ink group-hover:text-dai" />
@@ -450,17 +467,18 @@ function doConfirmDelete() {
               </div>
             </div>
             </button>
-            <template v-if="!editMode">
-              <button
-                type="button"
-                @click="requestDeleteCompare(record)"
-                class="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
-                :aria-label="`删除${record.words.join('、')}`"
-                :title="`删除${record.words.join('、')}`"
-              >
-                <Trash2 :size="16" />
-              </button>
-            </template>
+            <button
+              type="button"
+              @click="requestDeleteCompare(record)"
+              class="record-row-delete grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft"
+              :aria-label="`删除${record.words.join('、')}`"
+              :title="`删除${record.words.join('、')}`"
+              :aria-hidden="editMode"
+              :tabindex="editMode ? -1 : 0"
+              :inert="editMode"
+            >
+              <Trash2 :size="16" />
+            </button>
           </div>
           </TransitionGroup>
         </div>
@@ -492,3 +510,108 @@ function doConfirmDelete() {
     />
   </div>
 </template>
+
+<style scoped>
+.record-manage-button { min-width: 82px; }
+.record-manage-icon { position: relative; flex: 0 0 16px; width: 16px; height: 16px; }
+.record-manage-icon svg { position: absolute; inset: 0; transition: opacity 220ms ease, transform 360ms cubic-bezier(.4, 0, .2, 1); }
+.record-manage-done-icon { opacity: 0; transform: translateY(5px) scale(.8); }
+.record-manage-button.is-managing .record-manage-list-icon { opacity: 0; transform: translateY(-5px) scale(.8); }
+.record-manage-button.is-managing .record-manage-done-icon { opacity: 1; transform: none; }
+.record-tabs { position: relative; isolation: isolate; }
+.record-tab-indicator {
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 12%, transparent);
+  transition: transform 440ms cubic-bezier(.4, 0, .2, 1);
+}
+.record-tabs.is-compare .record-tab-indicator { transform: translateX(100%); }
+.record-tab-button { position: relative; z-index: 1; min-width: 0; }
+
+.record-search-row { position: relative; isolation: isolate; height: 48px; }
+.record-search-filter { position: absolute; pointer-events: none; }
+.record-search-liquid { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.record-search-liquid-field,
+.record-search-liquid-heart { position: absolute; top: 0; height: 48px; border-radius: 16px; background: var(--card); }
+.record-search-liquid-field { left: 0; right: 56px; transition: right 560ms cubic-bezier(.4, 0, .2, 1); }
+.record-search-liquid-heart {
+  right: 0;
+  width: 48px;
+  transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 40ms, background-color 200ms ease;
+}
+.record-search-liquid-heart.is-selected { background: var(--zhuhong-soft); }
+.record-search-field {
+  position: absolute;
+  z-index: 1;
+  inset: 0 56px 0 0;
+  border: 0;
+  border-radius: 16px;
+  transition: right 560ms cubic-bezier(.4, 0, .2, 1), box-shadow 200ms ease;
+}
+.record-search-field:focus-within {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--zhuhong) 16%, transparent);
+}
+.record-favorite-button {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  opacity: 1;
+  visibility: visible;
+  transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 180ms ease 40ms, visibility 0s linear 0s, color 200ms ease;
+}
+.record-search-row.is-compare .record-search-liquid-field,
+.record-search-row.is-compare .record-search-field { right: 0; }
+.record-search-row.is-compare .record-search-liquid-heart,
+.record-search-row.is-compare .record-favorite-button { transform: translateX(-16px) scale(.72); opacity: 0; }
+.record-search-row.is-compare .record-search-liquid-heart { transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 300ms; }
+.record-search-row.is-compare .record-favorite-button { visibility: hidden; pointer-events: none; transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 140ms, visibility 0s linear 560ms; }
+
+.record-row { gap: 4px; transition: gap 420ms cubic-bezier(.4, 0, .2, 1), border-color 200ms ease, box-shadow 200ms ease; }
+.record-row.is-managing { gap: 0; }
+.record-select-slot {
+  flex: 0 0 0;
+  width: 0;
+  height: 20px;
+  margin-right: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(14px) scale(.76);
+  pointer-events: none;
+  transition: flex-basis 420ms cubic-bezier(.4, 0, .2, 1), width 420ms cubic-bezier(.4, 0, .2, 1), margin-right 420ms cubic-bezier(.4, 0, .2, 1), transform 420ms cubic-bezier(.4, 0, .2, 1), opacity 250ms ease;
+}
+.record-select-slot.is-visible { flex-basis: 20px; width: 20px; margin-right: 12px; opacity: 1; transform: none; }
+.record-row-delete {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 0;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: flex-basis 420ms cubic-bezier(.4, 0, .2, 1), width 420ms cubic-bezier(.4, 0, .2, 1), transform 420ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease, color 200ms ease, background-color 200ms ease;
+}
+.record-row.is-managing .record-row-delete { flex-basis: 0; width: 0; opacity: 0; transform: translateX(-12px) scale(.72); pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .record-tab-indicator,
+  .record-manage-icon svg,
+  .record-search-liquid-field,
+  .record-search-liquid-heart,
+  .record-search-field,
+  .record-favorite-button,
+  .record-row,
+  .record-select-slot,
+  .record-row-delete { transition-duration: .01ms !important; transition-delay: 0ms !important; }
+  .record-search-liquid { filter: none !important; }
+}
+</style>
