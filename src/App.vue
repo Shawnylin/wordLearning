@@ -34,6 +34,9 @@ const handleOnline = () => {
   appUpdate.checkOnForeground()
   cloudSync.handleForeground('online')
 }
+const resetPageScroll = () => {
+  document.getElementById('app')?.scrollTo({ top: 0, behavior: 'instant' })
+}
 
 // 同步初始化，避免闪烁
 themeStore.initTheme()
@@ -60,7 +63,7 @@ onBeforeUnmount(() => {
   <div class="app-shell min-h-screen bg-paper text-ink transition-colors duration-300" :class="{ 'nav-collapsed': navCollapsed }">
     <main class="app-main pb-safe">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
+        <transition name="fade" mode="out-in" @after-enter="resetPageScroll">
           <KeepAlive include="LearnView,DailyView">
             <component :is="Component" />
           </KeepAlive>

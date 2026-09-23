@@ -8,6 +8,7 @@ import {
   User,
   PanelLeftClose,
   PanelLeftOpen,
+  ArrowUp,
 } from "lucide-vue-next";
 import { useTabletLayout } from '../composables/useTabletLayout';
 
@@ -37,9 +38,9 @@ const navItems: NavItem[] = [
 const activeIndex = computed(() => {
   if (route.path.startsWith("/profile"))
     return navItems.findIndex((item) => item.name === "profile");
-  // 复习页归属「个人」分组，保持高亮
+  // 复习从记录进入，导航归属记录。
   if (route.name === "review")
-    return navItems.findIndex((item) => item.name === "profile");
+    return navItems.findIndex((item) => item.name === "record");
   const index = navItems.findIndex((item) => item.name === route.name);
   return index >= 0 ? index : 0;
 });
@@ -72,8 +73,14 @@ function navigateTo(item: NavItem) {
       });
     return;
   }
-  router.push(item.path);
-  document.getElementById("app")?.scrollTo({ top: 0, behavior: "smooth" });
+  if (route.path === item.path) {
+    document.getElementById("app")?.scrollTo({
+      top: 0,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+    return;
+  }
+  void router.push(item.path);
 }
 function readingMode(event: Event) {
   dailyCompact.value =
@@ -113,7 +120,7 @@ onBeforeUnmount(() =>
         <!-- 印章滑动指示器 -->
         <div
           id="bottom-nav-indicator"
-          class="absolute top-1 bottom-1 rounded-full bg-zhuhong-solid shadow-[0_2px_8px_-2px_rgba(178,58,44,0.6)]"
+          class="nav-indicator absolute top-1 bottom-1 rounded-full bg-zhuhong-solid"
           :style="indicatorStyle"
         />
 
@@ -123,7 +130,7 @@ onBeforeUnmount(() =>
           :key="item.name"
           @click="navigateTo(item)"
           :aria-label="compact && item.name === 'report' ? '返回日报顶部' : item.label"
-          :title="item.label"
+          :title="compact && item.name === 'report' ? '返回顶部' : item.label"
           :aria-hidden="compact && item.name !== 'report'"
           :aria-current="activeIndex === index ? 'page' : undefined"
           :tabindex="compact && item.name !== 'report' ? -1 : 0"
@@ -137,7 +144,7 @@ onBeforeUnmount(() =>
           ]"
         >
           <component
-            :is="item.icon"
+            :is="compact && item.name === 'report' ? ArrowUp : item.icon"
             :size="20"
             :stroke-width="
               activeIndex ===
@@ -146,8 +153,8 @@ onBeforeUnmount(() =>
                 : 2.1
             "
           />
-          <span class="nav-label text-[11px] font-medium tracking-wide">{{
-            item.label
+          <span class="nav-label text-xs font-medium tracking-wide">{{
+            compact && item.name === 'report' ? '返回顶部' : item.label
           }}</span>
         </button>
       </div>
@@ -159,8 +166,8 @@ onBeforeUnmount(() =>
 .app-nav { padding-bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px)); }
 .nav-frame {
   transition:
-    max-width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    padding 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+    max-width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    padding var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1);
 }
 .nav-frame.compact {
   max-width: 72px;
@@ -176,6 +183,7 @@ onBeforeUnmount(() =>
   -webkit-backdrop-filter: blur(22px) saturate(118%);
   transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.nav-indicator { box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .nav-shell { background: var(--card); }
 }
@@ -184,8 +192,8 @@ onBeforeUnmount(() =>
 }
 #bottom-nav-indicator {
   transition:
-    width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    left 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    left var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
     top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.42s ease;
 }
@@ -193,11 +201,11 @@ onBeforeUnmount(() =>
   min-width: 0;
   overflow: hidden;
   transition:
-    flex 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    flex var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
     padding 0.38s ease,
     opacity 0.42s ease,
-    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
     color 0.3s ease;
 }
 .nav-item:not([aria-current="page"]) svg {

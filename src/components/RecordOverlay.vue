@@ -14,7 +14,8 @@ let targetRect: DOMRect
 let rowGhost: HTMLElement | undefined
 let hiddenTitles: HTMLElement[] = []
 let opening: Promise<unknown> = Promise.resolve()
-const duration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 680
+let openingComplete = false
+const duration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--motion-spatial-duration')) || 500
 const easing = 'cubic-bezier(.22,1,.36,1)'
 function animate(element: HTMLElement, frames: Keyframe[], ms = duration(), curve = easing) {
   const animation = element.animate(frames, { duration: ms, easing: curve, fill: 'forwards' })
@@ -132,7 +133,8 @@ onMounted(() => {
     animate(content.value!, [{ opacity: 0 }, { opacity: 0, offset: .65 }, { opacity: 1 }], duration(), 'linear'),
     moveRowDetails(false)
   ]).then(() => {
-    if (disposed) return
+    if (disposed || closing) return
+    openingComplete = true
     // Return geometry to CSS after the shared transition so rotation and
     // Split View resizing keep the open panel inside the current viewport.
     animations.forEach(animation => animation.cancel())
@@ -144,12 +146,19 @@ onMounted(() => {
 async function close() {
   if (closing) return
   closing = true
-  // Let a quick back tap finish the shared motion before reversing it.
-  await opening
+  dialog.value!.classList.add('closing')
+  if (!openingComplete) {
+    // Reverse every running track from its current frame, including the shared title.
+    animations.forEach(animation => {
+      if (animation.playState === 'running') animation.reverse()
+    })
+    await opening
+    if (!disposed) emit('close')
+    return
+  }
   if (disposed) return
   targetRect = panel.value!.getBoundingClientRect()
   Object.assign(panel.value!.style, frame(targetRect, 24))
-  dialog.value!.classList.add('closing')
   const sourceRect = props.source?.getBoundingClientRect() || targetRect
   if (rowGhost) {
     Object.assign(rowGhost.style, frame(sourceRect, 16))
@@ -176,7 +185,7 @@ onBeforeUnmount(() => {
   dialog.value?.close()
   document.getElementById('app')!.style.overflowY = oldOverflow
   // The row becomes interactive again on the following Vue update.
-  requestAnimationFrame(() => props.source?.focus({ preventScroll: true }))
+  requestAnimationFrame(() => props.source?.querySelector('button')?.focus({ preventScroll: true }))
 })
 </script>
 
@@ -195,10 +204,10 @@ onBeforeUnmount(() => {
 
 <style>
 .record-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); border: 0; outline: none; background: transparent; color: var(--ink); overflow: hidden; }
-.record-dialog::backdrop { background: rgb(20 19 17 / .25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: record-backdrop 680ms ease both; }
-.record-dialog.closing::backdrop { animation: record-backdrop-out 680ms ease both; }
-.record-panel { position: fixed; left: max(16px, calc((100vw - 512px) / 2)); top: max(16px, env(safe-area-inset-top)); width: min(calc(100% - 32px), 512px); height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); border-radius: 24px; background: var(--glass-fill); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), 0 24px 64px rgb(0 0 0 / .12); overflow: hidden; transition: none; }
-.record-content { height: 100%; overflow-y: auto; overscroll-behavior: contain; transition: none; }
+.record-dialog::backdrop { background: rgb(20 19 17 / .25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: record-backdrop var(--motion-spatial-duration) ease both; }
+.record-dialog.closing::backdrop { animation: record-backdrop-out var(--motion-spatial-duration) ease both; }
+.record-panel { position: fixed; left: max(16px, calc((100vw - 512px) / 2)); top: max(16px, env(safe-area-inset-top)); width: min(calc(100% - 32px), 512px); min-height: min(58dvh, 420px); max-height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); border-radius: 24px; background: var(--glass-fill); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow), 0 24px 64px rgb(0 0 0 / .12); overflow: hidden; transition: none; }
+.record-content { max-height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); overflow-y: auto; overscroll-behavior: contain; transition: none; }
 .record-back { display: block; position: sticky; top: 0; z-index: 2; padding: 16px 20px; width: 100%; text-align: left; color: var(--ink-soft); background: var(--glass-fill); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 0; outline: none; box-shadow: none; -webkit-tap-highlight-color: transparent; }
 .record-back:focus, .record-back:focus-visible, .record-back:active { outline: none; box-shadow: none; }
 .record-back:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
@@ -249,7 +258,7 @@ onBeforeUnmount(() => {
     left: calc((100vw - min(760px, 100vw - 64px)) / 2);
     top: max(32px, env(safe-area-inset-top));
     width: min(760px, calc(100vw - 64px));
-    height: calc(100dvh - max(32px, env(safe-area-inset-top)) - max(32px, env(safe-area-inset-bottom)));
+    max-height: calc(100dvh - max(32px, env(safe-area-inset-top)) - max(32px, env(safe-area-inset-bottom)));
   }
   .record-content > .max-w-lg { max-width: none; }
   .record-panel .idiom-heading { margin: 0 32px 28px; padding-top: 28px; }
@@ -263,8 +272,9 @@ onBeforeUnmount(() => {
   .record-panel .compare-heading .compare-words--count-4 { font-size: 42px; }
   .record-panel .compare-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; padding: 0 32px 32px; }
   .record-back { padding: 18px 28px; }
+  .record-content { max-height: calc(100dvh - max(32px, env(safe-area-inset-top)) - max(32px, env(safe-area-inset-bottom))); }
 }
-@keyframes record-backdrop { from { backdrop-filter: blur(0); background: transparent; } }
-@keyframes record-backdrop-out { to { backdrop-filter: blur(0); background: transparent; } }
+@keyframes record-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@keyframes record-backdrop-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .record-dialog::backdrop { animation: none !important; } }
 </style>

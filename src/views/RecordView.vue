@@ -6,13 +6,14 @@ import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
 import type { SearchRecord, CompareRecord } from '../types/idiom'
 import {
-  Search, Clock, Trash2, ChevronRight, BookOpen, GitCompare,
+  Search, Clock, Trash2, BookOpen, GitCompare,
   AlertCircle, Heart, ListChecks, Check, Shuffle, X
 } from 'lucide-vue-next'
 import IdiomCard from '../components/IdiomCard.vue'
 import CompareWords from '../components/CompareWords.vue'
 import CompareCard from '../components/CompareCard.vue'
 import RecordOverlay from '../components/RecordOverlay.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const router = useRouter()
 const idiomStore = useIdiomStore()
@@ -159,7 +160,7 @@ function onIdiomRowClick(record: SearchRecord, event: Event) {
   if (editMode.value) {
     toggleSelect(record.id)
   } else {
-    sourceRow.value = event.currentTarget as HTMLElement
+    sourceRow.value = (event.currentTarget as HTMLElement).closest<HTMLElement>('[data-record-row]')
     viewIdiom(record.word)
   }
 }
@@ -168,7 +169,7 @@ function onCompareRowClick(record: CompareRecord, event: Event) {
   if (editMode.value) {
     toggleSelect(record.id)
   } else {
-    sourceRow.value = event.currentTarget as HTMLElement
+    sourceRow.value = (event.currentTarget as HTMLElement).closest<HTMLElement>('[data-record-row]')
     viewCompare(record.id)
   }
 }
@@ -208,7 +209,7 @@ function doConfirmDelete() {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 pt-8 pb-4">
+  <div class="min-h-screen px-4 pt-6 pb-4">
     <RecordOverlay v-if="detailMode" :source="sourceRow" @close="backToList">
       <Motion><div
         v-if="detailError"
@@ -249,7 +250,7 @@ function doConfirmDelete() {
     <!-- List stays mounted beneath the detail card. -->
     <div :inert="!!detailMode">
       <div class="mx-auto max-w-lg mb-4 flex items-center justify-between">
-        <h1 class="font-kai text-3xl text-ink leading-tight">学习记录</h1>
+        <h1 class="app-page-title font-kai text-ink">学习记录</h1>
         <div class="flex items-center gap-2">
           <button
             type="button"
@@ -317,11 +318,13 @@ function doConfirmDelete() {
         <Motion><button
           v-if="activeTab === 'idiom'"
           @click="showFavoritesOnly = !showFavoritesOnly"
-          class="shrink-0 p-3 rounded-2xl shadow-sm border transition-colors duration-200"
+          class="shrink-0 min-h-11 min-w-11 p-3 rounded-2xl border transition-colors duration-200"
           :class="showFavoritesOnly
             ? 'bg-zhuhong-soft border-zhuhong/30 text-zhuhong'
             : 'bg-card border-line text-ink-mute hover:text-zhuhong'"
           :title="showFavoritesOnly ? '显示全部' : '仅显示收藏'"
+          :aria-label="showFavoritesOnly ? '显示全部记录' : '仅显示收藏记录'"
+          :aria-pressed="showFavoritesOnly"
         >
           <Heart :size="18" :fill="showFavoritesOnly ? 'currentColor' : 'none'" />
         </button></Motion>
@@ -354,13 +357,11 @@ function doConfirmDelete() {
           <div
             v-for="record in filteredHistory"
             :key="record.id"
-            @click="onIdiomRowClick(record, $event)"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl card hover:border-zhuhong/50 transition-all duration-200 group cursor-pointer"
+            data-record-row
+            class="w-full flex items-center gap-1 px-2 rounded-2xl card hover:border-zhuhong/50 transition-colors duration-200 group"
             :class="{ 'border-zhuhong ring-1 ring-zhuhong/25': editMode && isSelected(record.id) }"
-            role="button"
-            tabindex="0"
-            @keydown.enter="onIdiomRowClick(record, $event)"
           >
+            <button type="button" class="min-w-0 min-h-14 flex-1 flex items-center gap-3 px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-zhuhong" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onIdiomRowClick(record, $event)">
             <Motion><div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
@@ -386,15 +387,17 @@ function doConfirmDelete() {
                 <span class="text-xs text-ink-mute">{{ formatTime(record.timestamp) }}</span>
               </div>
             </div>
+            </button>
             <template v-if="!editMode">
               <button
-                @click.stop="requestDeleteIdiom(record)"
-                class="shrink-0 p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
-                title="删除记录"
+                type="button"
+                @click="requestDeleteIdiom(record)"
+                class="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+                :aria-label="`删除${record.word}`"
+                :title="`删除${record.word}`"
               >
                 <Trash2 :size="16" />
               </button>
-              <ChevronRight :size="18" class="text-ink-mute group-hover:text-zhuhong transition-colors" />
             </template>
           </div>
           </TransitionGroup>
@@ -424,13 +427,11 @@ function doConfirmDelete() {
           <div
             v-for="record in filteredCompareHistory"
             :key="record.id"
-            @click="onCompareRowClick(record, $event)"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl card hover:border-dai/50 transition-all duration-200 group cursor-pointer"
+            data-record-row
+            class="w-full flex items-center gap-1 px-2 rounded-2xl card hover:border-dai/50 transition-colors duration-200 group"
             :class="{ 'border-dai ring-1 ring-dai/25': editMode && isSelected(record.id) }"
-            role="button"
-            tabindex="0"
-            @keydown.enter="onCompareRowClick(record, $event)"
           >
+            <button type="button" class="min-w-0 min-h-14 flex-1 flex items-center gap-3 px-1 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-dai" :aria-pressed="editMode ? isSelected(record.id) : undefined" @click="onCompareRowClick(record, $event)">
             <Motion><div
               v-if="editMode"
               class="flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-colors"
@@ -448,15 +449,17 @@ function doConfirmDelete() {
                 <span class="text-xs text-ink-mute">{{ formatTime(record.createdAt) }}</span>
               </div>
             </div>
+            </button>
             <template v-if="!editMode">
               <button
-                @click.stop="requestDeleteCompare(record)"
-                class="shrink-0 p-1.5 rounded-lg text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
-                title="删除记录"
+                type="button"
+                @click="requestDeleteCompare(record)"
+                class="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-xl text-ink-mute hover:text-zhuhong hover:bg-zhuhong-soft transition-colors"
+                :aria-label="`删除${record.words.join('、')}`"
+                :title="`删除${record.words.join('、')}`"
               >
                 <Trash2 :size="16" />
               </button>
-              <ChevronRight :size="18" class="shrink-0 text-ink-mute group-hover:text-dai transition-colors" />
             </template>
           </div>
           </TransitionGroup>
@@ -480,34 +483,12 @@ function doConfirmDelete() {
       </div></Motion>
     </div>
 
-    <!-- Delete Confirm Modal -->
-    <Teleport to="body">
-      <Motion><div
-        v-if="confirmDelete"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        @click.self="confirmDelete = null"
-      >
-        <div class="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-card p-6 shadow-xl border border-line">
-          <h3 class="text-lg font-semibold text-ink mb-2">删除记录？</h3>
-          <p class="text-sm text-ink-soft mb-6">
-            确定要删除 {{ confirmDelete.label }} 吗？此操作不会删除已缓存的词语内容，且不可恢复。
-          </p>
-          <div class="flex gap-3">
-            <button
-              @click="confirmDelete = null"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium text-ink-soft bg-soft hover:opacity-80 transition-colors"
-            >
-              取消
-            </button>
-            <button
-              @click="doConfirmDelete"
-              class="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary transition-colors"
-            >
-              确认删除
-            </button>
-          </div>
-        </div>
-      </div></Motion>
-    </Teleport>
+    <ConfirmDialog
+      v-if="confirmDelete"
+      title="删除记录？"
+      :description="`确定要删除 ${confirmDelete.label} 吗？此操作不会删除已缓存的词语内容，且不可恢复。`"
+      @cancel="confirmDelete = null"
+      @confirm="doConfirmDelete"
+    />
   </div>
 </template>

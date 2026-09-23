@@ -169,7 +169,7 @@ fieldset:disabled { opacity: .65; }
 .provider-editor-content { display: grid; gap: 14px; padding: 20px; }
 .provider-editor-heading { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .provider-editor-heading h2 { color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.4; }
-.provider-editor-heading p:last-child { margin-top: 4px; color: var(--ink-mute); font-size: 11px; line-height: 1.55; }
+.provider-editor-heading p:last-child { margin-top: 4px; color: var(--ink-mute); font-size: 12px; line-height: 1.55; }
 .provider-editor-close { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 50%; background: var(--soft); color: var(--ink-soft); }
 .provider-editor-close:hover { color: var(--zhuhong); }
 .provider-editor-dialog .settings-form { display: grid; gap: 11px; }
@@ -178,14 +178,14 @@ fieldset:disabled { opacity: .65; }
 .provider-editor-dialog .settings-model-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 13px; font-weight: 500; }
 .provider-editor-dialog .settings-model-picker select { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
 .provider-editor-dialog .settings-model-current { display: grid; gap: 3px; color: var(--ink); font-size: 12px; }
-.provider-editor-dialog .settings-model-current span { color: var(--ink-mute); font-size: 10px; }
+.provider-editor-dialog .settings-model-current span { color: var(--ink-mute); font-size: 12px; }
 .provider-editor-dialog .settings-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.provider-editor-dialog .settings-actions > button { min-height: 40px; border-radius: 11px; padding: 9px 10px; font-size: 12px; }
+.provider-editor-dialog .settings-actions > button { min-height: 44px; border-radius: 11px; padding: 9px 10px; font-size: 13px; }
 .provider-editor-dialog .settings-secondary { border-radius: 11px; background: var(--soft); color: var(--ink-soft); }
-.provider-editor-dialog .settings-text-button { color: var(--zhuhong); font-size: 11px; }
-.provider-editor-dialog .settings-status { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 11px; line-height: 1.5; }
+.provider-editor-dialog .settings-text-button { color: var(--zhuhong); font-size: 12px; }
+.provider-editor-dialog .settings-status { padding: 8px 10px; border-radius: 10px; background: var(--soft); font-size: 12px; line-height: 1.5; }
 .provider-editor-dialog .settings-status.text-zhuhong { border: 1px solid color-mix(in srgb, var(--zhuhong) 30%, transparent); background: var(--zhuhong-soft); }
-.provider-editor-dialog .settings-footnote { color: var(--ink-mute); font-size: 10px; line-height: 1.6; }
+.provider-editor-dialog .settings-footnote { color: var(--ink-mute); font-size: 12px; line-height: 1.6; }
 @media (max-width: 520px) { .provider-editor-dialog { max-height: min(84dvh, 760px); } .provider-editor-content { padding: 17px; } }
 @media (min-width: 768px) {
   input, select { margin-top: 4px; padding: 9px 11px; font-size: 15px; }

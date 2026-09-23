@@ -75,13 +75,13 @@ async function saveName() {
 </script>
 
 <template>
-  <div class="profile-account-page px-4 pb-5 pt-5 sm:pt-7">
+  <div class="profile-account-page px-4 pb-5 pt-6 sm:pt-7">
     <div class="profile-account-layout mx-auto">
       <header class="profile-title-row">
         <button class="profile-back-button" type="button" aria-label="返回个人" @click="router.push('/profile')">
           <ArrowLeft :size="17" aria-hidden="true" />
         </button>
-        <h1 class="font-kai text-3xl text-ink">个人资料</h1>
+        <h1 class="app-subpage-title font-kai text-ink">个人资料</h1>
       </header>
 
       <section class="profile-section profile-account-editor" aria-labelledby="profile-account-title">

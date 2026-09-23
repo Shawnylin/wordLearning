@@ -8,6 +8,7 @@ import DailyHistoryContent from "../components/DailyHistoryContent.vue";
 import DailyIssueReader from "../components/DailyIssueReader.vue";
 import DailyStudySheet from "../components/DailyStudySheet.vue";
 import DailyPdfImport from "../components/DailyPdfImport.vue";
+import ConfirmDialog from "../components/ConfirmDialog.vue";
 import { useDailyStore } from "../stores/daily";
 import { useSettingsStore } from "../stores/settings";
 import { useMorphOverlay } from '../composables/useMorphOverlay';
@@ -49,6 +50,11 @@ const historyManaging = ref(false),
   draggedIssueId = ref(""),
   dragOverGroupId = ref(""),
   selectedText = ref("");
+const pendingDeleteIssue = ref<string | null>(null);
+const pendingDeleteTitle = computed(() => {
+  const issue = daily.issues.find(item => item.id === pendingDeleteIssue.value);
+  return issue?.articles[0]?.shortTitle || issue?.articles[0]?.title || '这份日报';
+});
 const historyGroups = computed(() => daily.groups.map(group => ({
   ...group,
   issues: daily.issues.filter(issue => issue.groupId === group.id),
@@ -156,7 +162,12 @@ function rowClick(id: string) {
   chooseIssue(id);
 }
 function removeIssue(id: string) {
-  daily.deleteIssue(id);
+  pendingDeleteIssue.value = id;
+}
+function confirmRemoveIssue() {
+  if (!pendingDeleteIssue.value) return;
+  daily.deleteIssue(pendingDeleteIssue.value);
+  pendingDeleteIssue.value = null;
   swipedId.value = "";
 }
 function onScroll() {
@@ -198,7 +209,7 @@ onBeforeUnmount(() => {
       "
     >
       <header class="flex items-center justify-between gap-2">
-        <h1 class="font-kai text-2xl text-ink whitespace-nowrap">每日精读</h1>
+        <h1 class="app-page-title font-kai text-ink whitespace-nowrap">每日精读</h1>
         <div class="flex items-center gap-2 shrink-0">
           <DailyGenerateMenu
             :loading="daily.loading"
@@ -312,6 +323,13 @@ onBeforeUnmount(() => {
       ></Teleport
     >
     <DailyPdfImport ref="pdfImporter" />
+    <ConfirmDialog
+      v-if="pendingDeleteIssue"
+      title="删除日报？"
+      :description="`确定要删除「${pendingDeleteTitle}」吗？删除后无法恢复，已经学习的词语会保留。`"
+      @cancel="pendingDeleteIssue = null"
+      @confirm="confirmRemoveIssue"
+    />
   </div>
 </template>
 

@@ -12,5 +12,9 @@
   --profile-field-height: 44px;
   --profile-control-radius: 10px;
   --profile-action-radius: 11px;
+  --page-title-size: 30px;
+  --subpage-title-size: 26px;
   --motion-feedback-duration: 180ms;
+  --motion-content-duration: 220ms;
+  --motion-spatial-duration: 500ms;
 }

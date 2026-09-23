@@ -186,7 +186,7 @@ function segments(content: string, words: string[]) {
   background: transparent;
 }
 .star-button.active {
-  color: #ffc72c;
+  color: var(--gold);
 }
 .daily-prose {
   -webkit-user-select: text;

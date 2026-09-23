@@ -16,7 +16,7 @@ const router = useRouter()
           @click="router.push('/profile')"
         ><ArrowLeft :size="20" /></button>
         <div>
-          <h1 class="font-kai text-3xl text-ink">更新日志</h1>
+          <h1 class="app-subpage-title font-kai text-ink">更新日志</h1>
           <p class="mt-1 text-sm text-ink-mute">了解每个版本带来的变化</p>
         </div>
       </header>

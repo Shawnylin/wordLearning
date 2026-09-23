@@ -24,7 +24,7 @@
 .profile-eyebrow {
   margin-bottom: 5px;
   color: var(--ink-mute);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: .18em;
   line-height: 1;
@@ -165,7 +165,7 @@
 
 .profile-section-heading h2 {
   color: var(--ink-mute);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .12em;
 }
@@ -227,7 +227,7 @@
 .profile-row-caption,
 .profile-row-value {
   color: var(--ink-mute);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -237,6 +237,16 @@
   overflow-wrap: anywhere;
   text-align: right;
 }
+
+.profile-page .profile-settings .profile-section:not(.profile-stats-section) {
+  padding-inline: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.profile-page .profile-settings .profile-section:not(.profile-stats-section) .profile-list { border-top: 0; }
 
 .profile-row-chevron {
   flex: none;

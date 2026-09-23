@@ -84,7 +84,7 @@ defineExpose({ focusWord })
 </template>
 
 <style scoped>
-.study-command { --motion: 560ms cubic-bezier(.22,1,.36,1); --fill: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%); position: relative; max-width: 760px; margin: 8px auto 20px; height: 56px; transition: height var(--motion); isolation: isolate; }
+.study-command { --motion: var(--motion-spatial-duration) cubic-bezier(.22,1,.36,1); --fill: color-mix(in srgb, var(--soft) 92%, var(--ink) 8%); position: relative; max-width: 760px; margin: 8px auto 20px; height: 56px; transition: height var(--motion); isolation: isolate; }
 .study-command.has-extra { height: 124px; }
 .liquid-defs { position: absolute; pointer-events: none; }
 .input-area, .background-inputs { position: relative; width: 100%; height: 100%; transition: width var(--motion); }
@@ -117,7 +117,7 @@ defineExpose({ focusWord })
 .extra-field-leave-active { pointer-events: none !important; }
 .extra-field-enter-active button { animation: delete-reveal 420ms 120ms both; }
 .remove-icon-enter-active, .remove-icon-leave-active { transition: opacity 220ms ease, transform 300ms ease, flex-basis 300ms ease, width 300ms ease; }
-.remove-icon-enter-from, .remove-icon-leave-to { opacity: 0; transform: scale(.4) rotate(-60deg); flex-basis: 0 !important; width: 0 !important; }
+.remove-icon-enter-from, .remove-icon-leave-to { opacity: 0; transform: translateY(4px) scale(.9); flex-basis: 0 !important; width: 0 !important; }
 .study-top-action { --control-glass-fill: color-mix(in srgb, var(--card) 82%, var(--ink) 18%); position: absolute; right: 0; top: 0; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-soft); opacity: 0; transform: translateX(-28px) scale(.7); pointer-events: none; transition: transform var(--motion), opacity 240ms ease, background 240ms ease, color 180ms ease; }
 .has-action .study-top-action { opacity: 1; transform: none; pointer-events: auto; }
 .study-top-action.ready { --control-glass-fill: var(--zhuhong-solid); --control-glass-edge: color-mix(in srgb, var(--zhuhong-solid) 76%, black); color: #fff; }
@@ -125,8 +125,7 @@ defineExpose({ focusWord })
 .study-field input:disabled, .study-field button:disabled { opacity: .55; }
 button:focus-visible { outline: 2px solid var(--zhuhong); outline-offset: 3px; }
 .action-icon-enter-active, .action-icon-leave-active { transition: transform 180ms ease, opacity 180ms ease; }
-.action-icon-enter-from { opacity: 0; transform: rotate(-90deg) scale(.5); }
-.action-icon-leave-to { opacity: 0; transform: rotate(90deg) scale(.5); }
+.action-icon-enter-from, .action-icon-leave-to { opacity: 0; transform: translateY(4px) scale(.9); }
 @keyframes delete-reveal { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes command-liquid-release {
   0%, 42% { opacity: .42; }

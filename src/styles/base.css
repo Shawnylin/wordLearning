@@ -70,8 +70,8 @@ html.app-update-entering #app {
   }
 }
 
-/* 主题切换的柔和过渡（只作用于颜色类属性，避免布局抖动） */
-* {
-  transition: background-color 320ms ease, border-color 320ms ease, color 240ms ease, box-shadow 240ms ease, opacity 200ms ease, filter 200ms ease;
+/* Limit theme transitions to surfaces and controls. Local interaction motion owns opacity and transforms. */
+:where(body, .app-shell, .card, .glass-card, .glass-control, .profile-section, .settings-panel, button, input, textarea, select) {
+  transition: background-color 240ms ease, border-color 240ms ease, color 200ms ease;
 }
 

@@ -148,11 +148,11 @@ async function confirmRestore() {
 </script>
 
 <template>
-  <div :class="props.embedded ? 'profile-settings' : 'min-h-screen px-4 pb-5 pt-8'">
+  <div :class="props.embedded ? 'profile-settings' : 'min-h-screen px-4 pb-5 pt-6'">
     <div class="profile-settings-layout mx-auto max-w-lg">
       <header v-if="!props.embedded" class="profile-title-row">
         <button class="profile-back-button" type="button" aria-label="返回个人" @click="router.push('/profile')">←</button>
-        <h1 class="font-kai text-3xl text-ink">设置</h1>
+        <h1 class="app-subpage-title font-kai text-ink">设置</h1>
       </header>
 
       <section class="profile-section profile-stats-section" aria-labelledby="profile-stats-title">

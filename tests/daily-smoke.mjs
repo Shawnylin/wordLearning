@@ -117,6 +117,7 @@ try {
   assert.equal(await history.getByRole('textbox', {name:'分组名称'}).first().inputValue(), '重命名分组')
   assert.equal(await history.getByLabel('移动原文甲到其他分组').inputValue(), 'group-b')
   await history.getByRole('button', {name:'删除原文甲',exact:true}).click()
+  await page.getByRole('dialog', {name:'删除日报？'}).getByRole('button', {name:'确认删除'}).click()
   assert.equal(await history.getByText('原文甲', {exact:true}).count(), 0)
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('daily-store')))
   assert.deepEqual(saved.issues.map(issue => issue.id), ['b'])

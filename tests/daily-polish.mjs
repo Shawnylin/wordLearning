@@ -56,6 +56,7 @@ await row.dispatchEvent('pointerup',{pointerId:1,clientX:box.x+150,clientY:box.y
 await page.waitForTimeout(350)
 assert.notEqual(await row.evaluate(el => getComputedStyle(el).transform),'none')
 const remove = panel.getByRole('button',{name:'删除高质量发展新实践'}); await remove.waitFor(); await remove.click()
+await page.getByRole('dialog',{name:'删除日报？'}).getByRole('button',{name:'确认删除'}).click()
 assert.equal(await panel.getByText('高质量发展新实践',{exact:true}).count(),0)
 await panel.getByRole('button',{name:'关闭历史日报'}).click(); await panel.waitFor({state:'detached'})
 await page.getByRole('button',{name:'生成日报',exact:true}).click(); await page.getByRole('button',{name:/PDF 日报导入/}).click()

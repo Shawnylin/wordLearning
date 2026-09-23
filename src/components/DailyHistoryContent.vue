@@ -300,7 +300,7 @@ function rowStyle(id: string) {
   color: var(--ink-mute);
 }
 .history-star.active {
-  color: #ffc72c;
+  color: var(--gold);
 }
 .history-date {
   color: var(--ink-mute);

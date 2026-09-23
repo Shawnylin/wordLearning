@@ -31,7 +31,7 @@ watch(active, () => scroller.value?.scrollTo({ top: 0 }))
         <p v-else class="text-sm leading-7 whitespace-pre-wrap break-words">{{ text || (loading ? '正在生成…' : '暂无内容') }}</p>
       </div></Transition>
     </div>
-    <footer class="text-[10px] text-ink-mute px-4 py-2 shrink-0 border-t border-line">{{ loading ? '正在生成，内容实时更新…' : `已保存到记录 · ${idiom.tokenUsage ?? 0} tokens` }}</footer>
+    <footer class="text-xs text-ink-mute px-4 py-2 shrink-0 border-t border-line">{{ loading ? '正在生成，内容实时更新…' : `已保存到记录 · ${idiom.tokenUsage ?? 0} tokens` }}</footer>
   </div>
 </template>
 <style scoped>

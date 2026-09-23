@@ -15,7 +15,8 @@ function run(el: Element, done: () => void, entering: boolean) {
   const inert = node.inert
   if (!entering) node.inert = true
   if (!fixed) node.style.overflow = 'clip'
-  const animation = node.animate(entering ? frames : [...frames].reverse(), { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' })
+  const duration = Number.parseFloat(style.getPropertyValue('--motion-content-duration')) || 220
+  const animation = node.animate(entering ? frames : [...frames].reverse(), { duration, easing: 'cubic-bezier(.22,1,.36,1)' })
   animations.set(el, animation)
   const restore = () => { node.style.overflow = overflow; node.inert = inert; animations.delete(el) }
   animation.onfinish = () => { restore(); done() }

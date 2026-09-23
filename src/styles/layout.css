@@ -1,6 +1,8 @@
 /* Tablet canvas follows available width, including iPad Split View. */
 .app-shell { --nav-width: 160px; }
 .app-shell.nav-collapsed { --nav-width: 68px; }
+.app-page-title { font-size: var(--page-title-size); line-height: 1.2; letter-spacing: .06em; }
+.app-subpage-title { font-size: var(--subpage-title-size); line-height: 1.25; letter-spacing: .04em; }
 .app-main { transition: padding-left 420ms cubic-bezier(.22,1,.36,1); }
 .app-main > * {
   transition: padding 420ms cubic-bezier(.22,1,.36,1), max-width 420ms cubic-bezier(.22,1,.36,1), opacity 180ms ease;

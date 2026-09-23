@@ -67,8 +67,8 @@ function startReview(extra = false) {
   reviewStore.startSession(amount, reviewWords.value)
 }
 
-function goReport() {
-  router.push('/profile')
+function goRecords() {
+  router.push('/record')
 }
 
 function openWord(word: string) {
@@ -99,7 +99,7 @@ const downOverlay = computed(() => {
 })
 
 function onPointerDown(e: PointerEvent) {
-  if (reviewStore.phase !== 'reviewing' || !currentIdiom.value || leaving.value) return
+  if (reviewStore.phase !== 'reviewing' || !currentIdiom.value || leaving.value || flipped.value || (e.target as Element).closest('button')) return
   drag.active = true
   drag.x = e.clientX
   drag.y = e.clientY
@@ -135,6 +135,10 @@ function onPointerUp() {
   } else {
     snapBack()
   }
+}
+
+function toggleFlip() {
+  if (reviewStore.phase === 'reviewing' && currentIdiom.value && !leaving.value) flipped.value = !flipped.value
 }
 
 function snapBack() {
@@ -207,13 +211,13 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
       <!-- 顶部 -->
       <div class="mb-4 flex items-center justify-between">
         <button
-          @click="goReport"
+          @click="goRecords"
           class="flex items-center gap-1.5 text-ink-soft hover:text-ink transition-colors"
         >
           <ArrowLeft :size="18" />
-          <span class="text-sm font-medium">个人</span>
+          <span class="text-sm font-medium">记录</span>
         </button>
-        <h1 class="font-kai text-3xl text-ink leading-tight">今日复习</h1>
+        <h1 class="app-subpage-title font-kai text-ink">今日复习</h1>
         <span class="w-16 text-right text-xs text-ink-mute">
           {{ todayGoal > 0 ? `${todayCompleted}/${todayGoal}` : '' }}
         </span>
@@ -234,15 +238,15 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
         <div class="grid grid-cols-3 gap-2 mb-5">
           <div class="rounded-2xl bg-soft px-3 py-3 text-center">
             <p class="font-serif text-xl font-bold text-ink">{{ dueCount }}</p>
-            <p class="mt-0.5 text-[11px] text-ink-mute">今日待复习</p>
+            <p class="mt-0.5 text-xs text-ink-mute">今日待复习</p>
           </div>
           <div class="rounded-2xl bg-soft px-3 py-3 text-center">
             <p class="font-serif text-xl font-bold text-ink">{{ todayGoal }}</p>
-            <p class="mt-0.5 text-[11px] text-ink-mute">今日目标</p>
+            <p class="mt-0.5 text-xs text-ink-mute">今日目标</p>
           </div>
           <div class="rounded-2xl bg-soft px-3 py-3 text-center">
             <p class="font-serif text-xl font-bold text-bamboo">{{ todayCompleted }}</p>
-            <p class="mt-0.5 text-[11px] text-ink-mute">今日已完成</p>
+            <p class="mt-0.5 text-xs text-ink-mute">今日已完成</p>
           </div>
         </div>
 
@@ -321,7 +325,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
         <!-- 卡片 -->
         <div
           class="relative h-[24rem]"
-          style="touch-action: none; -webkit-user-select: none; user-select: none"
+          :style="{ touchAction: flipped ? 'pan-y' : 'none', userSelect: flipped ? 'text' : 'none' }"
           @pointerdown="onPointerDown"
           @pointermove="onPointerMove"
           @pointerup="onPointerUp"
@@ -356,7 +360,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
                     :class="i <= reviewStore.levelOfCurrent ? 'bg-zhuhong' : 'bg-line'"
                   />
                 </div>
-                <p class="text-[11px] text-ink-mute mt-2">
+                <p class="text-xs text-ink-mute mt-2">
                   {{
                     reviewStore.thresholdOfCurrent - reviewStore.levelOfCurrent > 0
                       ? `再连续答对 ${reviewStore.thresholdOfCurrent - reviewStore.levelOfCurrent} 次即完成`
@@ -364,9 +368,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
                   }}
                 </p>
 
-                <p class="absolute bottom-4 inset-x-0 text-[11px] text-ink-mute">
-                  轻点卡片查看释义
-                </p>
+                <button type="button" class="absolute bottom-3 inset-x-6 min-h-9 text-xs font-medium text-zhuhong focus-visible:outline-2 focus-visible:outline-zhuhong" @click.stop="toggleFlip">查看释义</button>
               </div>
 
               <!-- 背面（释义） -->
@@ -377,6 +379,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
                       <BookOpen :size="12" />
                     </div>
                     <h3 class="text-xs font-semibold text-ink-soft">释义</h3>
+                    <button type="button" class="ml-auto min-h-9 px-2 text-xs font-medium text-zhuhong focus-visible:outline-2 focus-visible:outline-zhuhong" @click.stop="toggleFlip">返回正面</button>
                   </div>
                   <p class="text-base leading-relaxed text-ink-soft">
                     {{ currentIdiom?.explanation || '暂无释义' }}
@@ -390,7 +393,6 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
                     </div>
                     <p class="text-base leading-relaxed text-ink-soft">{{ currentIdiom.usage }}</p>
                   </template>
-                  <p class="text-[11px] text-ink-mute mt-5">轻点卡片翻回正面</p>
                 </div>
               </div>
             </div>
@@ -455,7 +457,7 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
             已掌握
           </button>
         </div>
-        <p class="text-center text-[11px] text-ink-mute mt-3">
+        <p class="text-center text-xs text-ink-mute mt-3">
           上滑答对 · 下滑答错 · 左右滑浏览 · 轻点看释义
         </p>
       </div>
@@ -527,10 +529,10 @@ const confettiPieces = Array.from({ length: 16 }, (_, i) => ({
               {{ todayGoalMet ? '继续复习' : '继续完成今日目标' }}
             </button>
             <button
-              @click="goReport"
+              @click="goRecords"
               class="w-full py-2.5 rounded-2xl bg-soft text-ink-soft text-sm font-medium hover:opacity-80 transition-colors"
             >
-              返回个人
+              返回记录
             </button>
           </div>
         </div>

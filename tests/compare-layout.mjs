@@ -25,7 +25,7 @@ for(const width of [320,393,430,768]) {
   await page.evaluate(record=>localStorage.setItem('idiom-store',JSON.stringify({idiomCache:{},searchHistory:[],compareHistory:[record],compareCache:{},favorites:[],queryCounts:{},tokenStats:{totalTokens:0,requestCount:0}})),record)
   await page.reload()
   await page.getByRole('button',{name:/对比记录/}).click()
-  const row=page.locator('[role=button]').filter({hasText:words[0]}).first()
+  const row=page.locator('[data-record-row] > button:first-child').filter({hasText:words[0]}).first()
   await row.waitFor()
   await bounds('.compare-words--list')
   assert.equal(await row.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true)

@@ -1,25 +1,25 @@
 /* Quiet glass: neutral translucent body, a narrow lit rim and a shallow inner edge. */
 :root {
-  --glass-fill: rgba(255, 255, 255, .78);
-  --glass-edge: rgba(255, 255, 255, .86);
-  --glass-shadow: inset 0 1px 0 rgba(255,255,255,.96), inset 0 -2px 3px rgba(94,99,103,.055), 0 0 0 1px rgba(85,91,96,.075), 0 10px 26px -18px rgba(40,47,53,.22);
-  --glass-header-light: rgba(255,255,255,.45);
-  --glass-header-shade: rgba(128,143,151,.045);
+  --glass-fill: color-mix(in srgb, var(--card) 78%, transparent);
+  --glass-edge: color-mix(in srgb, var(--card) 86%, transparent);
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, var(--card) 96%, transparent), inset 0 -2px 3px color-mix(in srgb, var(--ink) 6%, transparent), 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent), 0 10px 26px -18px color-mix(in srgb, var(--ink) 22%, transparent);
+  --glass-header-light: color-mix(in srgb, var(--card) 45%, transparent);
+  --glass-header-shade: color-mix(in srgb, var(--ink) 4%, transparent);
   --nav-glass-fill: color-mix(in srgb, var(--card) 44%, transparent);
   --control-glass-fill: color-mix(in srgb, var(--card) 42%, transparent);
   --control-glass-edge: color-mix(in srgb, var(--card) 78%, transparent);
-  --control-glass-shadow: inset 0 1px 0 rgb(255 255 255 / .8), inset 0 -1px 2px rgb(75 85 95 / .05), 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent), 0 8px 22px -14px color-mix(in srgb, var(--ink) 20%, transparent);
+  --control-glass-shadow: inset 0 1px 0 color-mix(in srgb, var(--card) 80%, transparent), inset 0 -1px 2px color-mix(in srgb, var(--ink) 5%, transparent), 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent), 0 8px 22px -14px color-mix(in srgb, var(--ink) 20%, transparent);
 }
 html.dark {
-  --glass-fill: rgba(33, 34, 35, .82);
-  --glass-edge: rgba(255,255,255,.10);
-  --glass-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -2px 3px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.14), 0 10px 26px -18px rgba(0,0,0,.5);
-  --glass-header-light: rgba(255,255,255,.035);
-  --glass-header-shade: rgba(145,160,171,.035);
+  --glass-fill: color-mix(in srgb, var(--card) 82%, transparent);
+  --glass-edge: color-mix(in srgb, var(--ink) 10%, transparent);
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), inset 0 -2px 3px rgb(0 0 0 / .16), 0 0 0 1px rgb(0 0 0 / .14), 0 10px 26px -18px rgb(0 0 0 / .5);
+  --glass-header-light: color-mix(in srgb, var(--ink) 3.5%, transparent);
+  --glass-header-shade: color-mix(in srgb, var(--ink) 3.5%, transparent);
   --nav-glass-fill: color-mix(in srgb, var(--card) 48%, transparent);
   --control-glass-fill: color-mix(in srgb, var(--card) 50%, transparent);
-  --control-glass-edge: rgb(255 255 255 / .14);
-  --control-glass-shadow: inset 0 1px 0 rgb(255 255 255 / .13), inset 0 -1px 2px rgb(0 0 0 / .12), 0 8px 22px -14px rgb(0 0 0 / .4);
+  --control-glass-edge: color-mix(in srgb, var(--ink) 14%, transparent);
+  --control-glass-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 13%, transparent), inset 0 -1px 2px rgb(0 0 0 / .12), 0 8px 22px -14px rgb(0 0 0 / .4);
 }
 .glass-control {
   background: var(--control-glass-fill);
