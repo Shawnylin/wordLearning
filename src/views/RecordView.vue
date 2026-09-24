@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Motion from '../components/Motion.vue'
-import { ref, computed, useId, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdiomStore } from '../stores/idiom'
 import { useSettingsStore } from '../stores/settings'
@@ -29,7 +29,6 @@ const detailMode = ref<'idiom' | 'compare' | null>(null)
 const detailWord = ref<string | null>(null)
 const detailCompareId = ref<string | null>(null)
 const showFavoritesOnly = ref(false)
-const searchLiquidFilterId = `record-search-liquid-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
 
 // 批量管理状态
 const editMode = ref(false)
@@ -311,17 +310,7 @@ function doConfirmDelete() {
 
       <!-- Search bar + favorites filter -->
       <div class="record-search-row mx-auto max-w-lg mb-4" :class="{ 'is-compare': activeTab === 'compare' }">
-        <svg class="record-search-filter" width="0" height="0" aria-hidden="true"><defs>
-          <filter :id="searchLiquidFilterId" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
-            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" />
-          </filter>
-        </defs></svg>
-        <div class="record-search-liquid" :style="{ filter: `url(#${searchLiquidFilterId}) drop-shadow(0 0 1px color-mix(in srgb, var(--ink) 24%, transparent)) drop-shadow(0 2px 3px color-mix(in srgb, var(--ink) 8%, transparent))` }" aria-hidden="true">
-          <span class="record-search-liquid-field" />
-          <span class="record-search-liquid-heart" :class="{ 'is-selected': showFavoritesOnly }" />
-        </div>
-        <label class="record-search-field flex items-center overflow-hidden">
+        <label class="record-search-field flex items-center">
           <div class="pl-4 text-ink-mute">
             <Search :size="18" />
           </div>
@@ -329,7 +318,7 @@ function doConfirmDelete() {
             v-model="searchQuery"
             type="text"
             :placeholder="activeTab === 'idiom' ? '搜索已学习的成语…' : '搜索对比记录中的词语…'"
-            class="min-w-0 flex-1 px-3 py-3 text-sm bg-transparent text-ink placeholder-ink-mute outline-none"
+            class="min-w-0 flex-1 px-3 py-3 text-base bg-transparent text-ink placeholder-ink-mute outline-none"
           />
         </label>
         <button
@@ -535,22 +524,13 @@ function doConfirmDelete() {
 .record-tab-button { position: relative; z-index: 1; min-width: 0; }
 
 .record-search-row { position: relative; isolation: isolate; height: 48px; }
-.record-search-filter { position: absolute; pointer-events: none; }
-.record-search-liquid { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.record-search-liquid-field,
-.record-search-liquid-heart { position: absolute; top: 0; height: 48px; border-radius: 16px; background: var(--card); }
-.record-search-liquid-field { left: 0; right: 56px; transition: right 560ms cubic-bezier(.4, 0, .2, 1); }
-.record-search-liquid-heart {
-  right: 0;
-  width: 48px;
-  transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 40ms, background-color 200ms ease;
-}
-.record-search-liquid-heart.is-selected { background: var(--zhuhong-soft); }
 .record-search-field {
   position: absolute;
   z-index: 1;
   inset: 0 56px 0 0;
-  border: 0;
+  border: 1px solid var(--glass-edge);
+  background: var(--card);
+  box-shadow: var(--control-glass-shadow);
   border-radius: 16px;
   transition: right 560ms cubic-bezier(.4, 0, .2, 1), box-shadow 200ms ease;
 }
@@ -564,16 +544,17 @@ function doConfirmDelete() {
   right: 0;
   width: 48px;
   height: 48px;
-  border: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--control-glass-shadow);
   opacity: 1;
   visibility: visible;
   transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 180ms ease 40ms, visibility 0s linear 0s, color 200ms ease;
 }
-.record-search-row.is-compare .record-search-liquid-field,
+.record-favorite-button.is-selected { background: var(--zhuhong-soft); }
 .record-search-row.is-compare .record-search-field { right: 0; }
-.record-search-row.is-compare .record-search-liquid-heart,
 .record-search-row.is-compare .record-favorite-button { transform: translateX(-16px) scale(.72); opacity: 0; }
-.record-search-row.is-compare .record-search-liquid-heart { transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 300ms; }
 .record-search-row.is-compare .record-favorite-button { visibility: hidden; pointer-events: none; transition: transform 560ms cubic-bezier(.4, 0, .2, 1), opacity 220ms ease 140ms, visibility 0s linear 560ms; }
 
 .record-row { gap: 4px; transition: gap 420ms cubic-bezier(.4, 0, .2, 1), border-color 200ms ease, box-shadow 200ms ease; }
@@ -605,13 +586,10 @@ function doConfirmDelete() {
 @media (prefers-reduced-motion: reduce) {
   .record-tab-indicator,
   .record-manage-icon svg,
-  .record-search-liquid-field,
-  .record-search-liquid-heart,
   .record-search-field,
   .record-favorite-button,
   .record-row,
   .record-select-slot,
   .record-row-delete { transition-duration: .01ms !important; transition-delay: 0ms !important; }
-  .record-search-liquid { filter: none !important; }
 }
 </style>

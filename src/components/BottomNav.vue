@@ -46,6 +46,70 @@ const activeIndex = computed(() => {
 });
 
 const count = navItems.length;
+const shell = ref<HTMLElement>();
+const position = ref(activeIndex.value);
+const pressed = ref(false);
+let pointerId: number | null = null;
+let startX = 0;
+let dragged = false;
+let animationFrame = 0;
+function settle(index = activeIndex.value) {
+  cancelAnimationFrame(animationFrame);
+  const from = position.value;
+  const start = performance.now();
+  const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360;
+  function tick(now: number) {
+    const progress = duration ? Math.min(1, (now - start) / duration) : 1;
+    position.value = from + (index - from) * (1 - Math.pow(1 - progress, 3));
+    if (progress < 1) animationFrame = requestAnimationFrame(tick);
+  }
+  animationFrame = requestAnimationFrame(tick);
+}
+function pointerPosition(clientX: number) {
+  const rect = shell.value!.getBoundingClientRect();
+  const cell = (shell.value!.clientWidth - 12) / count;
+  return Math.max(0, Math.min(count - 1, (clientX - rect.left - shell.value!.clientLeft - 6) / cell - .5));
+}
+function press(event: PointerEvent) {
+  if (tablet.value || compact.value || !event.isPrimary || event.button !== 0 || pointerId !== null) return;
+  if (!(event.target as HTMLElement).closest('.nav-item')) return;
+  cancelAnimationFrame(animationFrame);
+  pointerId = event.pointerId;
+  startX = event.clientX;
+  dragged = false;
+  pressed.value = true;
+  shell.value!.setPointerCapture(event.pointerId);
+}
+function drag(event: PointerEvent) {
+  if (event.pointerId !== pointerId) return;
+  if (Math.abs(event.clientX - startX) > 4) dragged = true;
+  if (dragged) position.value = pointerPosition(event.clientX);
+}
+function release(event: PointerEvent) {
+  if (event.pointerId !== pointerId) return;
+  const rect = shell.value!.getBoundingClientRect();
+  const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top - 20 && event.clientY <= rect.bottom + 20;
+  const index = Math.round(pointerPosition(event.clientX));
+  cancelPress();
+  if (inside) { settle(index); navigateTo(navItems[index]!); }
+}
+function cancelPress() {
+  const id = pointerId;
+  pointerId = null;
+  pressed.value = false;
+  if (id !== null && shell.value?.hasPointerCapture(id)) shell.value.releasePointerCapture(id);
+  settle();
+}
+function clickItem(event: MouseEvent, item: NavItem) {
+  // Mobile pointer release owns navigation; preserve keyboard and assistive clicks.
+  if (event.detail === 0 || tablet.value || compact.value) navigateTo(item);
+}
+function itemStyle(index: number) {
+  const weight = Math.max(0, 1 - Math.abs(position.value - index));
+  return { color: `color-mix(in srgb, var(--color-paper-ink) ${weight * 100}%, var(--ink-soft))` };
+}
+watch(activeIndex, () => settle());
+watch([tablet, compact], () => cancelPress());
 
 // 指示器定位：绝对定位的百分比相对容器的 padding-box（不含 1px 边框），
 // 而按钮平分的是内容区（padding-box 减去两侧 p-1.5 = 6px 内边距）。
@@ -58,7 +122,7 @@ const indicatorStyle = computed(() => tablet.value ? {
     : `calc((100% - 12px) / ${count})`,
   left: compact.value
     ? "calc(50% - 24px)"
-    : `calc((100% - 12px) * ${activeIndex.value} / ${count} + 6px)`,
+    : `calc((100% - 12px) * ${position.value} / ${count} + 6px)`,
 }));
 
 function navigateTo(item: NavItem) {
@@ -94,9 +158,10 @@ watch(
   },
 );
 onMounted(() => window.addEventListener("daily-reading-mode", readingMode));
-onBeforeUnmount(() =>
-  window.removeEventListener("daily-reading-mode", readingMode),
-);
+onBeforeUnmount(() => {
+  cancelAnimationFrame(animationFrame);
+  window.removeEventListener("daily-reading-mode", readingMode);
+});
 </script>
 
 <template>
@@ -115,6 +180,11 @@ onBeforeUnmount(() =>
     >
       <div
         id="primary-nav-items"
+        ref="shell"
+        :class="{ 'is-pressed': pressed }"
+        @pointerdown="press" @pointermove="drag" @pointerup="release"
+        @pointercancel="cancelPress" @lostpointercapture="pointerId !== null && cancelPress()"
+        @contextmenu.prevent
         class="nav-shell glass-card relative flex items-center rounded-full border p-1.5"
       >
         <!-- 印章滑动指示器 -->
@@ -128,7 +198,8 @@ onBeforeUnmount(() =>
         <button
           v-for="(item, index) in navItems"
           :key="item.name"
-          @click="navigateTo(item)"
+          @click="clickItem($event, item)"
+          :style="itemStyle(index)"
           :aria-label="compact && item.name === 'report' ? '返回日报顶部' : item.label"
           :title="compact && item.name === 'report' ? '返回顶部' : item.label"
           :aria-hidden="compact && item.name !== 'report'"
@@ -193,7 +264,7 @@ onBeforeUnmount(() =>
 #bottom-nav-indicator {
   transition:
     width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    left var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(.22,1,.36,1),
     top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.42s ease;
 }
@@ -205,12 +276,13 @@ onBeforeUnmount(() =>
     width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
     padding 0.38s ease,
     opacity 0.42s ease,
-    transform var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.3s ease;
+    transform var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1);
 }
-.nav-item:not([aria-current="page"]) svg {
-  color: color-mix(in srgb, var(--ink) 78%, var(--ink-soft));
-}
+.nav-item svg { color: inherit; }
+.nav-shell, .nav-shell * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.nav-shell { touch-action: none; }
+.nav-shell.is-pressed #bottom-nav-indicator { transform: scale(1.06); }
+.nav-item { -webkit-tap-highlight-color: transparent; }
 .nav-frame.compact .nav-item:not(.report-item) {
   flex: 0 0 0;
   width: 0;

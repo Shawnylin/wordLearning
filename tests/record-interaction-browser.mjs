@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict'
+import { launchBrowser, base } from './helpers/browser.mjs'
+const browser = await launchBrowser()
+const page = await browser.newPage({viewport:{width:393,height:852},isMobile:true,hasTouch:true})
+const errors=[];page.on('pageerror',e=>errors.push(e.message))
+await page.addInitScript(() => localStorage.setItem('idiom-store', JSON.stringify({idiomCache:{'画龙点睛':{word:'画龙点睛',pinyin:'hua long dian jing',explanation:'比喻在关键处点明要旨。',relatedIdioms:[]}},searchHistory:[{id:'test',word:'画龙点睛',timestamp:Date.now()}],compareHistory:[],compareCache:{},favorites:[],queryCounts:{},tokenStats:{totalTokens:0,requestCount:0}})))
+await page.goto(`${base}#/learn?word=画龙点睛`)
+await page.locator('.idiom-heading').waitFor()
+const sync = await page.evaluate(() => {
+  const store = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('idiom')
+  const current = store.currentIdiom
+  store.currentCompare={id:'active',words:['甲','乙'],content:{meaningDiff:'对比'},createdAt:1}
+  const comparison=store.currentCompare
+  store.idiomLoading=true
+  store.idiomError='保留当前请求状态'
+  store.restoreSyncData(JSON.parse(JSON.stringify(store.exportSyncData())),true)
+  const result={idiom:store.currentIdiom===current,comparison:store.currentCompare===comparison,loading:store.idiomLoading,error:store.idiomError}
+  store.idiomLoading=false;store.idiomError=''
+  return result
+})
+assert.deepEqual(sync,{idiom:true,comparison:true,loading:true,error:'保留当前请求状态'})
+assert.equal(await page.getByText('暂无可显示内容',{exact:false}).count(),0)
+await page.locator('nav').getByRole('button',{name:'记录',exact:true}).click()
+await page.locator('.record-row-main').waitFor()
+await page.waitForTimeout(400)
+assert.equal(await page.locator('.record-search-field input').evaluate(e=>getComputedStyle(e).fontSize),'16px')
+assert.equal(await page.locator('html').evaluate(e=>getComputedStyle(e).touchAction),'manipulation')
+const favorite=await page.locator('.record-favorite-button').evaluate(e=>({radius:getComputedStyle(e).borderRadius,filter:getComputedStyle(e.parentElement).filter,width:e.offsetWidth,height:e.offsetHeight}))
+assert.deepEqual(favorite,{radius:'16px',filter:'none',width:48,height:48})
+await page.screenshot({path:'docs/.local/browser-artifacts/record-controls-fixed.png'})
+await page.locator('.record-row-main').click()
+await page.waitForTimeout(110)
+const title=page.locator('.record-shared-title')
+const first=await title.boundingBox()
+await page.waitForTimeout(90)
+const second=await title.boundingBox()
+assert(second.width>first.width,`title should enlarge: ${first.width} -> ${second.width}`)
+await page.screenshot({path:'docs/.local/browser-artifacts/record-title-fixed.png'})
+await page.waitForFunction(()=>!document.querySelector('.record-shared-title'))
+await page.locator('.record-back').click()
+await page.waitForTimeout(100)
+assert.equal(await title.count(),1)
+await page.locator('.record-dialog').waitFor({state:'detached'})
+const record=await page.locator('nav').getByRole('button',{name:'记录',exact:true}).boundingBox()
+const learn=await page.locator('nav').getByRole('button',{name:'学习',exact:true}).boundingBox()
+const x=record.x+record.width/2,y=record.y+record.height/2
+await page.mouse.move(x,y);await page.mouse.down();await page.waitForTimeout(200)
+assert.equal(await page.locator('.nav-shell').evaluate(e=>getComputedStyle(e).userSelect),'none')
+assert((await page.locator('#bottom-nav-indicator').evaluate(e=>new DOMMatrix(getComputedStyle(e).transform).a))>1)
+await page.mouse.move((x+learn.x+learn.width/2)/2,y,{steps:6})
+const middleColor=await page.locator('nav').getByRole('button',{name:'日报',exact:true}).evaluate(e=>getComputedStyle(e).color)
+await page.mouse.move(learn.x+learn.width/2,y,{steps:6});await page.mouse.up()
+await page.waitForURL('**#/learn')
+assert(middleColor)
+await page.waitForTimeout(400)
+assert.equal(await page.locator('nav').getByRole('button',{name:'学习',exact:true}).getAttribute('aria-current'),'page')
+assert.deepEqual(errors,[])
+console.log('PASS: sync preserves current/streaming state; title expands and returns; controls, zoom policy and drag navigation')
+await browser.close()

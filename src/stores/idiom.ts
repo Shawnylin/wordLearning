@@ -528,7 +528,7 @@ export const useIdiomStore = defineStore('idiom', () => {
     }
   }
 
-  function restoreSyncData(data: IdiomSyncData) {
+  function restoreSyncData(data: IdiomSyncData, preserveCurrent = false) {
     idiomCache.value = data.idiomCache
     searchHistory.value = data.searchHistory
     compareCache.value = data.compareCache
@@ -536,9 +536,12 @@ export const useIdiomStore = defineStore('idiom', () => {
     tokenStats.value = data.tokenStats
     favorites.value = data.favorites
     queryCounts.value = data.queryCounts
-    currentIdiom.value = null
-    currentCompare.value = null
-    clearError()
+    // Background sync must not interrupt reading or streaming. Backup restores reset it.
+    if (!preserveCurrent) {
+      currentIdiom.value = null
+      currentCompare.value = null
+      clearError()
+    }
   }
 
   return {

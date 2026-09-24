@@ -15,7 +15,11 @@ let rowGhost: HTMLElement | undefined
 let hiddenTitles: HTMLElement[] = []
 let opening: Promise<unknown> = Promise.resolve()
 let openingComplete = false
-const duration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--motion-spatial-duration')) || 500
+const duration = () => {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return 0
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--motion-spatial-duration').trim()
+  return (Number.parseFloat(value) * (value.endsWith('ms') ? 1 : 1000)) || 500
+}
 const easing = 'cubic-bezier(.22,1,.36,1)'
 function animate(element: HTMLElement, frames: Keyframe[], ms = duration(), curve = easing) {
   const animation = element.animate(frames, { duration: ms, easing: curve, fill: 'forwards' })
@@ -79,14 +83,17 @@ async function moveTitles(reverse: boolean) {
     floating.textContent = source.textContent
     floating.style.fontFamily = getComputedStyle(target).fontFamily
     dialog.value!.append(floating)
-    // Range rectangles describe glyphs, not line boxes. Align both endpoints
-    // after applying their typography so there is no baseline jump at handoff.
+    // Keep a fixed glyph layout and scale it continuously. Repeated font-size
+    // layout can snap fallback CJK glyphs and lose the shared enlargement.
+    const baseSize = Math.max(parseFloat(String(from.fontSize)), parseFloat(String(to.fontSize)))
     const align = (keyframe: Keyframe): Keyframe => {
-      Object.assign(floating.style, keyframe)
+      const scale = parseFloat(String(keyframe.fontSize)) / baseSize
+      const spacing = String(keyframe.letterSpacing)
+      Object.assign(floating.style, keyframe, { left: '0px', top: '0px', fontSize: `${baseSize}px`, letterSpacing: spacing === 'normal' ? '0px' : `${parseFloat(spacing) / scale}px` })
       const range = document.createRange()
       range.selectNodeContents(floating)
       const glyph = range.getBoundingClientRect()
-      return { ...keyframe, left: `${2 * parseFloat(String(keyframe.left)) - glyph.left}px`, top: `${2 * parseFloat(String(keyframe.top)) - glyph.top}px` }
+      return { ...keyframe, fontSize: `${baseSize}px`, letterSpacing: floating.style.letterSpacing, left: `${parseFloat(String(keyframe.left)) - glyph.left * scale}px`, top: `${parseFloat(String(keyframe.top)) - glyph.top * scale}px`, transform: `scale(${scale})` }
     }
     const alignedFrom = align(from)
     const alignedTo = align(to)
@@ -252,7 +259,7 @@ onBeforeUnmount(() => {
 .record-panel .compare-sections .pl-9 { padding-left: 0; }
 .record-panel .compare-sections p { font-size: 15px; line-height: 1.9; overflow-wrap: anywhere; }
 .record-row-ghost { position: fixed !important; pointer-events: none; transition: none !important; z-index: 3; }
-.record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; }
+.record-shared-title { position: fixed; display: block; line-height: normal; white-space: pre; pointer-events: none; z-index: 4; transition: none; transform-origin: top left; will-change: transform, left, top; }
 @media (min-width: 768px) {
   .record-panel {
     left: calc((100vw - min(760px, 100vw - 64px)) / 2);

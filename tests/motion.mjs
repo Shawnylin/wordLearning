@@ -97,7 +97,10 @@ assert.equal(await page.locator('.record-favorite-button').evaluate(el => getCom
 await row.click()
 await page.waitForTimeout(160)
 assert.equal(await page.locator('.record-shared-title').count(),1)
-const font = await page.locator('.record-shared-title').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))
+const font = await page.locator('.record-shared-title').evaluate(el => {
+  const style = getComputedStyle(el)
+  return parseFloat(style.fontSize) * new DOMMatrix(style.transform).a
+})
 assert(font>16 && font<48)
 const outgoingTime = await page.locator('.record-row-ghost [data-row-time]').evaluate(el => ({ opacity: +getComputedStyle(el).opacity, y: new DOMMatrix(getComputedStyle(el).transform).m42 }))
 assert(outgoingTime.opacity < 1 && outgoingTime.y > 0)

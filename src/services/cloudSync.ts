@@ -246,7 +246,7 @@ export async function buildLocalSyncPayload(): Promise<LocalSyncPayload> {
 
 export async function applyLocalSyncPayload(payload: LocalSyncPayload) {
   await useApiVaultStore().accept(payload.apiSettings)
-  useIdiomStore().restoreSyncData(clone(payload.idiom))
+  useIdiomStore().restoreSyncData(clone(payload.idiom), true)
   useReviewStore().restoreSyncData(clone(payload.review))
   useDailyStore().restoreSyncData(clone(payload.daily))
   useStatisticsStore().restoreSyncData(payload.statistics)

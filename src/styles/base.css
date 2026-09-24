@@ -75,3 +75,9 @@ html.app-update-entering #app {
   transition: background-color 240ms ease, border-color 240ms ease, color 200ms ease;
 }
 
+
+/* Suppress double-tap zoom while retaining pinch zoom. */
+html { touch-action: manipulation; }
+@media (pointer: coarse) {
+  input, textarea, select { font-size: max(16px, 1em); }
+}

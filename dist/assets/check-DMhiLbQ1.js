@@ -1,6 +1,6 @@
-import{c as o}from"./index-BIF8IcMb.js";/**
+import{c}from"./index-wVpzJ664.js";/**
  * @license lucide-vue-next v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
- */const e=o("ChevronDownIcon",[["path",{d:"m6 9 6 6 6-6",key:"qrunsl"}]]);export{e as C};
+ */const o=c("CheckIcon",[["path",{d:"M20 6 9 17l-5-5",key:"1gmf2c"}]]);export{o as C};
