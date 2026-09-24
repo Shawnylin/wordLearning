@@ -254,7 +254,25 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(22px) saturate(118%);
   transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.nav-indicator { box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent); }
+.nav-indicator {
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(255 255 255 / .18), transparent 58%), color-mix(in srgb, var(--zhuhong-solid) 88%, transparent);
+  border: 1px solid rgb(255 255 255 / .24);
+  backdrop-filter: blur(6px) saturate(125%);
+  -webkit-backdrop-filter: blur(6px) saturate(125%);
+  filter: blur(.3px);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / .3), inset 0 -1px 2px rgb(0 0 0 / .09), 0 2px 8px -2px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent);
+}
+.nav-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgb(255 255 255 / .32), rgb(255 255 255 / .08) 48%, transparent 75%);
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / .55);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .nav-shell { background: var(--card); }
 }
@@ -281,7 +299,11 @@ onBeforeUnmount(() => {
 .nav-item svg { color: inherit; }
 .nav-shell, .nav-shell * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .nav-shell { touch-action: none; }
-.nav-shell.is-pressed #bottom-nav-indicator { transform: scale(1.06); }
+.nav-shell.is-pressed #bottom-nav-indicator {
+  transform: scale(1.12);
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / .45), inset 0 -1px 2px rgb(0 0 0 / .06), 0 4px 14px -3px color-mix(in srgb, var(--zhuhong-solid) 55%, transparent);
+}
+.nav-shell.is-pressed .nav-indicator::after { opacity: 1; }
 .nav-item { -webkit-tap-highlight-color: transparent; }
 .nav-frame.compact .nav-item:not(.report-item) {
   flex: 0 0 0;
@@ -327,6 +349,7 @@ onBeforeUnmount(() => {
   .nav-frame,
   .nav-shell,
   #bottom-nav-indicator,
+  .nav-indicator::after,
   .nav-item,
   .nav-label {
     transition-duration: 1ms;
