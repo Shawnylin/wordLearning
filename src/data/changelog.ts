@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.2.2',
+    date: '2026-09-25',
+    title: '纯色底栏与明亮按压反馈',
+    changes: [
+      '选中框恢复纯色，移除玻璃模糊与透光；按住时呈现更明亮的边缘高光和柔和光晕。',
+      '选中框按压放大调整为 18%，底栏整体同时轻微缩小下沉，松手后平滑复原。'
+    ]
+  },
+  {
     version: '1.2.1',
     date: '2026-09-24',
     title: '底栏玻璃质感与按压反馈',
