@@ -9,6 +9,14 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.2.7',
+    date: '2026-09-25',
+    title: '限制页面手势缩放',
+    changes: [
+      '页面禁止双指缩放，同时保留单指上下和左右滚动。'
+    ]
+  },
+  {
     version: '1.2.6',
     date: '2026-09-25',
     title: '底栏按压动画放缓',
