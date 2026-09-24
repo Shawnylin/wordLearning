@@ -53,11 +53,11 @@ let pointerId: number | null = null;
 let startX = 0;
 let dragged = false;
 let animationFrame = 0;
-function settle(index = activeIndex.value) {
+function settle(index = activeIndex.value, milliseconds = 360) {
   cancelAnimationFrame(animationFrame);
   const from = position.value;
   const start = performance.now();
-  const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360;
+  const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : milliseconds;
   function tick(now: number) {
     const progress = duration ? Math.min(1, (now - start) / duration) : 1;
     position.value = from + (index - from) * (1 - Math.pow(1 - progress, 3));
@@ -81,11 +81,16 @@ function press(event: PointerEvent) {
   dragged = false;
   pressed.value = true;
   shell.value!.setPointerCapture(event.pointerId);
+  // Begin translation together with the 180ms press enlargement, before release.
+  settle(Math.round(pointerPosition(event.clientX)), 180);
 }
 function drag(event: PointerEvent) {
   if (event.pointerId !== pointerId) return;
   if (Math.abs(event.clientX - startX) > 4) dragged = true;
-  if (dragged) position.value = pointerPosition(event.clientX);
+  if (dragged) {
+    cancelAnimationFrame(animationFrame);
+    position.value = pointerPosition(event.clientX);
+  }
 }
 function release(event: PointerEvent) {
   if (event.pointerId !== pointerId) return;
