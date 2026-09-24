@@ -81,8 +81,8 @@ function press(event: PointerEvent) {
   dragged = false;
   pressed.value = true;
   shell.value!.setPointerCapture(event.pointerId);
-  // Begin translation together with the 180ms press enlargement, before release.
-  settle(Math.round(pointerPosition(event.clientX)), 180);
+  // Keep the preview's position and scale in sync for one continuous movement.
+  settle(Math.round(pointerPosition(event.clientX)), 360);
 }
 function drag(event: PointerEvent) {
   if (event.pointerId !== pointerId) return;
@@ -260,7 +260,7 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(22px) saturate(118%);
   -webkit-backdrop-filter: blur(22px) saturate(118%);
   transform-origin: center;
-  transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 180ms cubic-bezier(.22,1,.36,1);
+  transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(.22,1,.36,1);
 }
 .nav-indicator {
   pointer-events: none;
@@ -276,9 +276,9 @@ onBeforeUnmount(() => {
 #bottom-nav-indicator {
   transition:
     width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    transform 180ms cubic-bezier(.22,1,.36,1),
+    transform 360ms cubic-bezier(.22,1,.36,1),
     top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease;
+    opacity 360ms ease;
 }
 .nav-item {
   min-width: 0;
