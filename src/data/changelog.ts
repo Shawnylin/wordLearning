@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.2.5',
+    date: '2026-09-25',
+    title: '底栏同步放大反馈',
+    changes: [
+      '按住底栏时，底栏与选中框同步放大，选中框扩展到栏边缘之外。',
+      '选中框移除光效并提高透明度，按住时仍能透出底栏边缘。'
+    ]
+  },
+  {
     version: '1.2.4',
     date: '2026-09-25',
     title: '底栏纯色按压反馈',

@@ -265,7 +265,7 @@ onBeforeUnmount(() => {
 .nav-indicator {
   pointer-events: none;
   background: var(--zhuhong-solid);
-  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent);
+  box-shadow: none;
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .nav-shell { background: var(--card); }
@@ -293,10 +293,10 @@ onBeforeUnmount(() => {
 .nav-item svg { color: inherit; }
 .nav-shell, .nav-shell * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .nav-shell { touch-action: none; }
-.nav-shell.is-pressed { transform: translateY(3px) scale(.97); }
+.nav-shell.is-pressed { transform: translateY(-4px) scale(1.06); }
 .nav-shell.is-pressed #bottom-nav-indicator {
-  transform: scale(1.25);
-  opacity: .68;
+  transform: scale(1.45);
+  opacity: .45;
 }
 .nav-item { -webkit-tap-highlight-color: transparent; }
 .nav-frame.compact .nav-item:not(.report-item) {
