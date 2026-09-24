@@ -267,16 +267,6 @@ onBeforeUnmount(() => {
   background: var(--zhuhong-solid);
   box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--zhuhong-solid) 45%, transparent);
 }
-.nav-indicator::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / .68), rgb(255 255 255 / .12) 35%, transparent 65%);
-  box-shadow: inset 0 1.5px 1px rgb(255 255 255 / .95), 0 -2px 6px rgb(255 255 255 / .55);
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .nav-shell { background: var(--card); }
 }
@@ -288,7 +278,7 @@ onBeforeUnmount(() => {
     width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
     transform 180ms cubic-bezier(.22,1,.36,1),
     top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.42s ease;
+    opacity 180ms ease;
 }
 .nav-item {
   min-width: 0;
@@ -305,10 +295,9 @@ onBeforeUnmount(() => {
 .nav-shell { touch-action: none; }
 .nav-shell.is-pressed { transform: translateY(3px) scale(.97); }
 .nav-shell.is-pressed #bottom-nav-indicator {
-  transform: scale(1.18);
-  box-shadow: 0 0 8px rgb(255 255 255 / .32), 0 4px 16px -3px color-mix(in srgb, var(--zhuhong-solid) 65%, transparent);
+  transform: scale(1.25);
+  opacity: .68;
 }
-.nav-shell.is-pressed .nav-indicator::after { opacity: 1; }
 .nav-item { -webkit-tap-highlight-color: transparent; }
 .nav-frame.compact .nav-item:not(.report-item) {
   flex: 0 0 0;
@@ -354,7 +343,6 @@ onBeforeUnmount(() => {
   .nav-frame,
   .nav-shell,
   #bottom-nav-indicator,
-  .nav-indicator::after,
   .nav-item,
   .nav-label {
     transition-duration: 1ms;
