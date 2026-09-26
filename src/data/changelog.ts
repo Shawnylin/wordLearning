@@ -9,6 +9,15 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.2.8',
+    date: '2026-09-26',
+    title: '记录展开与底栏点击反馈修复',
+    changes: [
+      '修复记录详情展开时被最小高度提前撑大的问题，卡片从记录行连续展开，收回时原路恢复。',
+      '底栏按压改为轻缓起步和平滑回弹，快速点击只产生适度反馈，切页时选中框不会重复起步。'
+    ]
+  },
+  {
     version: '1.2.7',
     date: '2026-09-25',
     title: '限制页面手势缩放',

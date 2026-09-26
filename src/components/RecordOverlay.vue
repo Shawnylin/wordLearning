@@ -50,6 +50,11 @@ function moveRowDetails(reverse: boolean) {
 function frame(rect: DOMRect, radius: number): Keyframe {
   return { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: `${radius}px` }
 }
+function pinPanel(rect: DOMRect) {
+  // Freeze text wrapping while the outer shell moves from/to the row.
+  content.value!.style.width = panel.value!.clientWidth + 'px'
+  Object.assign(panel.value!.style, frame(rect, 24), { minHeight: '0px', maxHeight: 'none' })
+}
 function textFrame(element: HTMLElement): Keyframe {
   const range = document.createRange()
   range.selectNodeContents(element)
@@ -114,7 +119,7 @@ onMounted(() => {
   targetRect = panel.value!.getBoundingClientRect()
   const sourceRect = props.source?.getBoundingClientRect() || targetRect
   // Pin geometry before animating so changing width cannot recenter the panel.
-  Object.assign(panel.value!.style, frame(targetRect, 24))
+  pinPanel(targetRect)
   if (props.source) {
     oldVisibility = props.source.style.visibility
     rowGhost = props.source.cloneNode(true) as HTMLElement
@@ -147,6 +152,7 @@ onMounted(() => {
     animations.forEach(animation => animation.cancel())
     animations.length = 0
     panel.value!.removeAttribute('style')
+    content.value!.style.removeProperty('width')
     if (rowGhost) rowGhost.style.opacity = '0'
   })
 })
@@ -165,7 +171,7 @@ async function close() {
   }
   if (disposed) return
   targetRect = panel.value!.getBoundingClientRect()
-  Object.assign(panel.value!.style, frame(targetRect, 24))
+  pinPanel(targetRect)
   const sourceRect = props.source?.getBoundingClientRect() || targetRect
   if (rowGhost) {
     Object.assign(rowGhost.style, frame(sourceRect, 16))

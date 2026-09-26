@@ -49,12 +49,53 @@ const count = navItems.length;
 const shell = ref<HTMLElement>();
 const position = ref(activeIndex.value);
 const pressed = ref(false);
+const pressAmount = ref(0);
+let pressVelocity = 0;
+let pressFrame = 0;
+let pressTime = 0;
+function animatePress() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cancelAnimationFrame(pressFrame);
+    pressFrame = 0;
+    pressVelocity = 0;
+    pressAmount.value = pressed.value ? 1 : 0;
+    return;
+  }
+  if (pressFrame) return;
+  pressTime = performance.now();
+  function tick(now: number) {
+    const dt = Math.min((now - pressTime) / 1000, .05);
+    pressTime = now;
+    const target = pressed.value ? 1 : 0;
+    // Preserve position and velocity on release, including a brief tap.
+    const omega = pressed.value ? 10 : 14;
+    const offset = pressAmount.value - target;
+    const decay = Math.exp(-omega * dt);
+    const travel = (pressVelocity + omega * offset) * dt;
+    pressAmount.value = target + (offset + travel) * decay;
+    pressVelocity = (pressVelocity - omega * travel) * decay;
+    if (Math.abs(pressAmount.value - target) < .001 && Math.abs(pressVelocity) < .01) {
+      pressAmount.value = target;
+      pressVelocity = 0;
+      pressFrame = 0;
+    } else pressFrame = requestAnimationFrame(tick);
+  }
+  pressFrame = requestAnimationFrame(tick);
+}
+watch(pressed, animatePress, { flush: 'sync' });
+const shellStyle = computed(() => ({
+  transform: `translateY(${-4 * pressAmount.value}px) scale(${1 + .06 * pressAmount.value})`,
+}));
 let pointerId: number | null = null;
 let startX = 0;
 let dragged = false;
 let animationFrame = 0;
+let destinationIndex = activeIndex.value;
 function settle(index = activeIndex.value, milliseconds = 360) {
+  if (animationFrame && destinationIndex === index) return;
   cancelAnimationFrame(animationFrame);
+  animationFrame = 0;
+  destinationIndex = index;
   const from = position.value;
   const start = performance.now();
   const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : milliseconds;
@@ -62,6 +103,7 @@ function settle(index = activeIndex.value, milliseconds = 360) {
     const progress = duration ? Math.min(1, (now - start) / duration) : 1;
     position.value = from + (index - from) * (1 - Math.pow(1 - progress, 3));
     if (progress < 1) animationFrame = requestAnimationFrame(tick);
+    else animationFrame = 0;
   }
   animationFrame = requestAnimationFrame(tick);
 }
@@ -77,6 +119,7 @@ function press(event: PointerEvent) {
   if (!(event.target as HTMLElement).closest('.nav-item')) return;
   cancelAnimationFrame(animationFrame);
   pointerId = event.pointerId;
+  animationFrame = 0;
   startX = event.clientX;
   dragged = false;
   pressed.value = true;
@@ -89,6 +132,7 @@ function drag(event: PointerEvent) {
   if (Math.abs(event.clientX - startX) > 4) dragged = true;
   if (dragged) {
     cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
     position.value = pointerPosition(event.clientX);
   }
 }
@@ -97,15 +141,15 @@ function release(event: PointerEvent) {
   const rect = shell.value!.getBoundingClientRect();
   const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top - 20 && event.clientY <= rect.bottom + 20;
   const index = Math.round(pointerPosition(event.clientX));
-  cancelPress();
-  if (inside) { settle(index); navigateTo(navItems[index]!); }
+  cancelPress(inside ? index : activeIndex.value);
+  if (inside) navigateTo(navItems[index]!);
 }
-function cancelPress() {
+function cancelPress(index = activeIndex.value) {
   const id = pointerId;
   pointerId = null;
   pressed.value = false;
   if (id !== null && shell.value?.hasPointerCapture(id)) shell.value.releasePointerCapture(id);
-  settle();
+  settle(index);
 }
 function clickItem(event: MouseEvent, item: NavItem) {
   // Mobile pointer release owns navigation; preserve keyboard and assistive clicks.
@@ -124,6 +168,8 @@ watch([tablet, compact], () => cancelPress());
 const indicatorStyle = computed(() => tablet.value ? {
   width: 'calc(100% - 12px)', left: '6px', top: `${6 + activeIndex.value * 56}px`, height: '48px', bottom: 'auto',
 } : ({
+  transform: `scale(${1 + .45 * pressAmount.value})`,
+  opacity: 1 - .55 * pressAmount.value,
   width: compact.value
     ? "48px"
     : `calc((100% - 12px) / ${count})`,
@@ -167,6 +213,7 @@ watch(
 onMounted(() => window.addEventListener("daily-reading-mode", readingMode));
 onBeforeUnmount(() => {
   cancelAnimationFrame(animationFrame);
+  cancelAnimationFrame(pressFrame);
   window.removeEventListener("daily-reading-mode", readingMode);
 });
 </script>
@@ -188,9 +235,10 @@ onBeforeUnmount(() => {
       <div
         id="primary-nav-items"
         ref="shell"
+        :style="shellStyle"
         :class="{ 'is-pressed': pressed }"
         @pointerdown="press" @pointermove="drag" @pointerup="release"
-        @pointercancel="cancelPress" @lostpointercapture="pointerId !== null && cancelPress()"
+        @pointercancel="cancelPress()" @lostpointercapture="pointerId !== null && cancelPress()"
         @contextmenu.prevent
         class="nav-shell glass-card relative flex items-center rounded-full border p-1.5"
       >
@@ -260,7 +308,7 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(22px) saturate(118%);
   -webkit-backdrop-filter: blur(22px) saturate(118%);
   transform-origin: center;
-  transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 360ms cubic-bezier(.22,1,.36,1);
+  transition: min-height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .nav-indicator {
   pointer-events: none;
@@ -276,9 +324,7 @@ onBeforeUnmount(() => {
 #bottom-nav-indicator {
   transition:
     width var(--motion-spatial-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    transform 360ms cubic-bezier(.22,1,.36,1),
-    top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 360ms ease;
+    top 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .nav-item {
   min-width: 0;
@@ -293,11 +339,6 @@ onBeforeUnmount(() => {
 .nav-item svg { color: inherit; }
 .nav-shell, .nav-shell * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .nav-shell { touch-action: none; }
-.nav-shell.is-pressed { transform: translateY(-4px) scale(1.06); }
-.nav-shell.is-pressed #bottom-nav-indicator {
-  transform: scale(1.45);
-  opacity: .45;
-}
 .nav-item { -webkit-tap-highlight-color: transparent; }
 .nav-frame.compact .nav-item:not(.report-item) {
   flex: 0 0 0;
