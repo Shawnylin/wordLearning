@@ -9,6 +9,16 @@ export interface ChangelogRelease {
 // 每次修改 package.json 版本时，必须同时在数组顶部添加用户可读的更新内容。
 export const changelog: ChangelogRelease[] = [
   {
+    version: '1.2.9',
+    date: '2026-10-11',
+    title: '个人页面视觉对齐',
+    changes: [
+      '统一个人页卡片的圆角、内边距和标题缩进，应用设置与版本数据采用一致的卡片样式。',
+      '调整手机、平板与桌面的区块间距和列布局，保持卡片边缘及设置区顶部对齐。',
+      '窄屏下登录按钮独立成行，个人名称与说明更清晰，设置说明支持换行。'
+    ]
+  },
+  {
     version: '1.2.8',
     date: '2026-09-26',
     title: '记录展开与底栏点击反馈修复',

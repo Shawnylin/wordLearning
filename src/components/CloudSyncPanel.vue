@@ -71,6 +71,8 @@ function formatSummary(summary: typeof sync.localSummary) {
 
 <style scoped>
 .cloud-sync-heading h2 { font-size: 16px; font-weight: 600; }
+.cloud-sync-panel-compact .cloud-sync-heading { min-height: 30px; padding-bottom: 12px; }
+.cloud-sync-panel-compact .cloud-sync-heading h2 { color: var(--ink-mute); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
 .cloud-sync-heading > :first-child { min-width: 0; flex: 1 1 auto; }
 .cloud-sync-heading > .profile-sync-time { margin-left: auto; }
 .profile-sync-body { display: grid; }
